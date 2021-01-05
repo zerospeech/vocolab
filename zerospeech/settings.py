@@ -64,10 +64,11 @@ class _Settings(BaseSettings):
     MAIL_FROM: Union[EmailStr, str] = EmailStr("noreply@example.com")
     MAIL_FROM_NAME: str = "emailUsername"
     MAIL_PORT: int = 587
-    MAIL_SERVER: Union[HttpUrl, IPvAnyAddress, str] = "0.0.0.0"
+    MAIL_SERVER: str = "0.0.0.0"
     MAIL_TLS: bool = True
     MAIL_SSL: bool = False
     MAIL_TEMPLATE_DIR: DirectoryPath = Path('data/templates/emails')
+    HTML_TEMPLATE_DIR: DirectoryPath = Path('data/templates/pages')
 
     class Config:
         env_prefix = 'ZR_'
@@ -86,6 +87,5 @@ def get_settings() -> _Settings:
     if env_file:
         print(f'loading from env file {env_file}')
         # load_dotenv(dotenv_path=Path(env_file))
-
         return _Settings(_env_file=env_file, _env_file_encoding='utf-8')
     return _Settings()

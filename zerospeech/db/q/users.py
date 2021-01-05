@@ -9,6 +9,7 @@ from pydantic import BaseModel, EmailStr
 
 from zerospeech.db import users_db, schema
 from zerospeech.settings import get_settings
+from zerospeech import exc
 
 _settings = get_settings()
 
@@ -71,7 +72,10 @@ async def verify_user(username: str, verification_code: str):
         )
         await users_db.execute(query)
         return True
-    return False
+    elif secrets.compare_digest(user.verified, 'True'):
+        raise exc.ActionNotValidError("Email already verified")
+    else:
+        raise exc.ValueNotValidError("validation code was not correct")
 
 
 def check_users_password(password: str, user: schema.User):

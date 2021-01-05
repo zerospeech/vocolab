@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <title>Zerospeech Challenge</title>
+    <link rel="icon"
+      type="image/png"
+      href="https://zerospeech.com/_static/favicon.ico">
+</head>
+<body>
+{% if success %}
+    <p>
+        Account of <b>{{ username }}</b> was verified successfully !! <br/> <br/>
+        You can now head over to <a href="{{ url }}">{{ url }}</a> and login using your credentials.
+    </p>
+{% else %}
+    <p>
+        Account of <b>{{ username }}</b> failed to be verified !! <br/> <br/>
+        The following issue occurred :
+    </p>
+    <p>
+        <span style="font-weight: bold; display: inline-block;margin: 10px 10px 0 0;padding: 5px 10px;"> {{ error }}</span> <br/> <br/>
+        Please contact the website administrators for any issue with your account. <br/> <br/>
+        Via <a href="mailto:{{ admin_email }}">email</a> or by opening an issue with on our <a href="{{ contact_url }}">website</a>.
+    </p>
+{% endif %}
+</body>
+</html>

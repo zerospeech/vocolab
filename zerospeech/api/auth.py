@@ -7,7 +7,10 @@ from fastapi import (
     FastAPI, Depends, Response, HTTPException, status,
     Request, BackgroundTasks
 )
+from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+
+from zerospeech import exc
 from zerospeech.settings import get_settings
 from zerospeech.api import api_utils
 from zerospeech.db import q as queries, schema
@@ -37,9 +40,8 @@ async def validate_token(token: str = Depends(oauth2_scheme)) -> schema.LoggedUs
         return token_item
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is not found or invalid !",
-            headers={"WWW-Authenticate": "Bearer"},
         )
 
 
@@ -50,9 +52,8 @@ async def get_user(token: schema.LoggedUser = Depends(validate_token)) -> schema
         return user
     except ValueError:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is not in database !",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User is not in database !"
         )
 
 
@@ -81,8 +82,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Incorrect username or password"
         )
 
 
@@ -108,6 +108,7 @@ async def signup(request: Request, user: queries.users.UserCreate, background_ta
         'url': f"{request.url_for('email_verification')}?v={verification_code}&username={user.username}",
         'admin_email': _settings.local.admin_email
     }
+    # todo notify user of email failure (?)
     background_tasks.add_task(notify.email.template_email,
                               emails=[user.email],
                               subject='[Zerospeech] Account Verification',
@@ -117,15 +118,30 @@ async def signup(request: Request, user: queries.users.UserCreate, background_ta
     return Response(status_code=200)
 
 
-@auth_app.post('/email/verify')
+@auth_app.get('/email/verify', response_class=HTMLResponse)
 async def email_verification(v: str, username: str):
-    res = await queries.users.verify_user(username, v)
-    if res:
-        # verification success
-        return 'OK'
-    else:
-        # Verification failed
-        return 'KO'
+    msg = 'Success'
+    res = False
+
+    try:
+        res = await queries.users.verify_user(username, v)
+    except ValueError:
+        msg = 'Username does not exist'
+    except exc.ActionNotValidError as e:
+        msg = e.__str__()
+    except exc.ValueNotValidError as e:
+        msg = e.__str__()
+
+    data = {
+        "success": res,
+        "username": username,
+        "error": msg,
+        "url": "https://zerospeech.com",
+        "admin_email": _settings.local.admin_email,
+        "contact_url": "https://zerospeech.com/contact"
+    }
+
+    return notify.html.generate_html_response(data=data, template_name='email_verification.html.jinja2')
 
 
 @auth_app.post('/password/reset/safe')
