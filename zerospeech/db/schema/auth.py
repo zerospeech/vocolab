@@ -54,7 +54,6 @@ class PasswordResetSession(BaseModel):
     token: str
     user_id: int
     expiration_date: datetime
-    safe_reset: bool
 
     class Config:
         orm_mode = True
@@ -66,5 +65,4 @@ password_reset_table = sqlalchemy.Table(
     sqlalchemy.Column("token", sqlalchemy.String, primary_key=True),
     sqlalchemy.Column("user_id", sqlalchemy.Integer, primary_key=True),
     sqlalchemy.Column("expiration_date", sqlalchemy.DateTime),
-    sqlalchemy.Column("safe_reset", sqlalchemy.Boolean)
 )

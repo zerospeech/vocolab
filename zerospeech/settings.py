@@ -1,6 +1,7 @@
 from datetime import timedelta
 from pathlib import Path
 from functools import lru_cache
+import logging
 from typing import List, Union
 import os
 
@@ -20,7 +21,7 @@ class ApplicationSettings(BaseModel):
 
     # Users
     session_expiry_delay: timedelta = timedelta(days=7)
-    password_reset_expiry_delay: timedelta = timedelta(minutes=10)
+    password_reset_expiry_delay: timedelta = timedelta(minutes=45)
 
     # Mattermost
     mattermost_url: HttpUrl = 'https://mattermost.syntheticlearner.net/hooks'
@@ -52,8 +53,10 @@ class _Settings(BaseSettings):
         "https://api.zerospeech.com",
     ]
     STATIC_DIR: DirectoryPath = Path("data/_static")
+    HTML_TEMPLATE_DIR: DirectoryPath = Path('data/templates/pages')
     # Database related settings
     DB_HOME: DirectoryPath = Path('data/db')
+    USER_DATA_DIR: DirectoryPath = Path('data/db/user_data')
 
     # Mattermost related settings
     MATTERMOST_API_KEY: str = 'super-secret-key'
@@ -68,7 +71,11 @@ class _Settings(BaseSettings):
     MAIL_TLS: bool = True
     MAIL_SSL: bool = False
     MAIL_TEMPLATE_DIR: DirectoryPath = Path('data/templates/emails')
-    HTML_TEMPLATE_DIR: DirectoryPath = Path('data/templates/pages')
+
+    # Logging info
+    LOG_LEVEL: int = logging.INFO
+    LOGGER_TYPE: str = 'console'
+    LOG_FILE: Path = Path('out.log')
 
     class Config:
         env_prefix = 'ZR_'

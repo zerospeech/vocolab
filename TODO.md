@@ -7,15 +7,15 @@
     - [X] Cache settings for faster creation/parsing
     - [X] Load settings local env from file/env_file 
     
-- [ ] Logging
+- [X] Logging
 
 - [ ] index route should be a page, with links to docs & website
 
-- [ ] 
+- [ ] ....
  
 ## Auth 
 
-- [ ] user login
+- [X] user login
 
     - [X] create user_db (users & logged users table)
     - [X] add a security layer on passwords (hash & salt passwords, session expiry, etc)
@@ -25,35 +25,35 @@
     - [X] mount /auth sub-route to api
     - [ ] create pytest cases for all auth functions
 
-- [ ] user registration
+- [X] user registration
     
     - [X] add a function that handles insertion of new user
     - [X] add function to send email to new user for verification
     - [X] add route for user creation
     - [X] inherit login security features
     - [X] send email on registration to verify email
-    - [ ] create route for email validation page (with template)
+    - [X] create route for email validation page (with template)
     - [ ] add a delete user function (that deactivates the account) !!! should have triple confirmation
     - [ ] create pytest cases for all registration functions
 
-- [ ] reset password
+- [X] reset password
 
     - [X] create reset password session table
     - [X] create safe/unsafe password reset routes
-    - [ ] send email for password reset session to user
-    - [ ] create route for password reset page (with html template)
+    - [X] send email for password reset session to user
+    - [X] create route for password reset page (with html template)
     - [ ] add pytest cases for all registration functions
 
 ## User 
 
-- [ ] add user profile section
+- [X] add user profile section
 
-- [ ] add user profile back-end data (probably as json files ?)
+- [X] add user profile back-end data (probably as json files ?)
 
 
 ## Notify
 
-- [ ] Mattermost Notification
+- [X] Mattermost Notification
     
     - [X] Use jinja2 templates for messages
     

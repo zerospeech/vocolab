@@ -1,11 +1,14 @@
 from typing import List, Any, Dict
 
 from fastapi_mail import FastMail, ConnectionConfig, MessageSchema
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
 
 from zerospeech.settings import get_settings
+from zerospeech.log import LogSingleton
 
 _settings = get_settings()
+logger = LogSingleton.get()
+
 
 email_cgf = ConnectionConfig(
     MAIL_USERNAME=_settings.MAIL_USERNAME,
@@ -20,6 +23,14 @@ email_cgf = ConnectionConfig(
 )
 
 fm = FastMail(email_cgf)
+
+
+def parse_email_exceptions(e: Exception):
+    from fastapi_mail.errors import ConnectionErrors, WrongFile, TemplateFolderDoesNotExist
+
+    if isinstance(e, ConnectionErrors):
+        logger.error("issues with connections ?")
+    raise e
 
 
 async def simple_html_email(emails: List[EmailStr], subject: str, content: str):
@@ -37,7 +48,11 @@ async def simple_html_email(emails: List[EmailStr], subject: str, content: str):
         body=content,
         subtype="html"
     )
-    return await fm.send_message(message)
+    try:
+        await fm.send_message(message)
+        logger.info(f'email send successfully to {emails}')
+    except Exception as e:
+        parse_email_exceptions(e)
 
 
 async def template_email(emails: List[EmailStr], subject: str, data: Dict[str, Any], template_name: str):
@@ -57,7 +72,12 @@ async def template_email(emails: List[EmailStr], subject: str, data: Dict[str, A
         body=data,
         subtype="html"
     )
-    return await fm.send_message(message, template_name=template_name)
+    try:
+        await fm.send_message(message, template_name=template_name)
+        logger.info(f'email send successfully to {emails}')
+    except Exception as e:
+        logger.exception(f"an issue occurred while sending an email to {emails}")
+        parse_email_exceptions(e)
 
 
 async def notify_admin(subject: str, data: Dict[str, Any], template_name: str):
@@ -76,4 +96,8 @@ async def notify_admin(subject: str, data: Dict[str, Any], template_name: str):
         body=data,
         subtype="html"
     )
-    return await fm.send_message(message, template_name=template_name)
+    try:
+        await fm.send_message(message, template_name=template_name)
+        logger.info(f'email send successfully to {_settings.local.admin_email}')
+    except Exception as e:
+        parse_email_exceptions(e)

@@ -5,18 +5,20 @@ This section handles user authentication, user creation, etc..
 from pydantic import BaseModel, EmailStr
 from fastapi import (
     FastAPI, Depends, Response, HTTPException, status,
-    Request, BackgroundTasks
+    Request, BackgroundTasks, Form
 )
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from zerospeech import exc
+from zerospeech.log import LogSingleton
 from zerospeech.settings import get_settings
 from zerospeech.api import api_utils
 from zerospeech.db import q as queries, schema
 from zerospeech.utils import notify
 
 auth_app = FastAPI()
+logger = LogSingleton.get()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 _settings = get_settings()
 
@@ -29,6 +31,11 @@ class LoggedItem(BaseModel):
 
 class CurrentUser(BaseModel):
     """ Basic userinfo Model """
+    username: str
+    email: EmailStr
+
+
+class PasswordResetRequest(BaseModel):
     username: str
     email: EmailStr
 
@@ -102,13 +109,19 @@ async def logout(token: schema.LoggedUser = Depends(validate_token)):
 
 @auth_app.put('/signup')
 async def signup(request: Request, user: queries.users.UserCreate, background_tasks: BackgroundTasks):
-    verification_code = await queries.users.create_user(user)
+    try:
+        verification_code = await queries.users.create_user(user)
+    except exc.ValueNotValidError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"This {e.data} already exists !!",
+        )
+
     data = {
         'username': user.username,
         'url': f"{request.url_for('email_verification')}?v={verification_code}&username={user.username}",
         'admin_email': _settings.local.admin_email
     }
-    # todo notify user of email failure (?)
     background_tasks.add_task(notify.email.template_email,
                               emails=[user.email],
                               subject='[Zerospeech] Account Verification',
@@ -144,28 +157,68 @@ async def email_verification(v: str, username: str):
     return notify.html.generate_html_response(data=data, template_name='email_verification.html.jinja2')
 
 
-@auth_app.post('/password/reset/safe')
-async def password_reset(current_user: schema.User = Depends(get_current_active_user)):
-    await queries.users.create_password_reset_session(user=current_user)
-    # todo: needs to send email to user for reset
+@auth_app.post('/password/reset')
+async def password_reset_request(user: PasswordResetRequest, request: Request, background_tasks: BackgroundTasks):
+    session = await queries.users.create_password_reset_session(username=user.username, email=user.email)
+    data = {
+        'username': user.username,
+        'url': f"{request.url_for('password_update_page')}?v={session.token}",
+        'admin_email': _settings.local.admin_email
+    }
+    background_tasks.add_task(notify.email.template_email,
+                              emails=[user.email],
+                              subject='[Zerospeech] Password Reset',
+                              data=data,
+                              template_name='password_reset.jinja2'
+                              )
     return Response(status_code=200)
 
 
-@auth_app.post('/password/reset/unsafe')
-async def password_reset():
-    await queries.users.create_password_reset_session(email='')
-    # todo: needs to send email to user for reset
-    return Response(status_code=200)
+@auth_app.get('/password/update/page', response_class=HTMLResponse)
+async def password_update_page(v: str, request: Request):
+    try:
+        user = await queries.users.get_user(by_password_reset_session=v)
+    except ValueError as e:
+        logger.error(f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Page not found"
+        )
+
+    data = {
+        "username": user.username,
+        "submit_url": f"/auth{auth_app.url_path_for('password_update')}?v={v}",
+        "session": v
+    }
+
+    return notify.html.generate_html_response(data=data, template_name='password_reset.html.jinja2')
 
 
-@auth_app.put('/password/update')
-async def password_update():
-    # todo: implement password update
-    return 'OK'
+@auth_app.post('/password/update', response_class=PlainTextResponse)
+async def password_update(v: str, request: Request, password: str = Form(...),
+                          password_validation: str = Form(...), session_code: str = Form(...)):
+    try:
+        if v != session_code:
+            raise ValueError('session validation not passed !!!')
+
+        user = await queries.users.get_user(by_password_reset_session=v)
+    except ValueError as e:
+        logger.error(f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Page not found"
+        )
+
+    await queries.users.update_users_password(user, password, password_validation)
+
+    # maybe return result as page ?
+    return f'password of {user.username}  successfully changed !!'
 
 
-@auth_app.delete('/delete')
-async def delete_user():
+@auth_app.delete('/deactivate')
+async def deactivate_user():
     # todo: implement password update
     return 'OK'
 

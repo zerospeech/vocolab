@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import secrets
 from datetime import datetime
@@ -7,7 +8,7 @@ from typing import Optional
 from email_validator import validate_email, EmailSyntaxError
 from pydantic import BaseModel, EmailStr
 
-from zerospeech.db import users_db, schema
+from zerospeech.db import users_db, schema, exc as db_exc
 from zerospeech.settings import get_settings
 from zerospeech import exc
 
@@ -47,18 +48,34 @@ def hash_pwd(password: str, salt=None):
 
 async def create_user(usr: UserCreate):
     """ Create a new user entry in the users database. """
-    # todo raise & handle error if duplicate username/email
+
     hashed_pswd, salt = hash_pwd(usr.pwd)
     verification_code = secrets.token_urlsafe(8)
-    query = schema.users_table.insert().values(
+    try:
+        # insert user entry into the database
+        query = schema.users_table.insert().values(
+            username=usr.username,
+            email=usr.email,
+            active=True,
+            verified=verification_code,
+            hashed_pswd=hashed_pswd,
+            salt=salt
+        )
+
+        await users_db.execute(query)
+
+    except Exception as e:
+        db_exc.parse_user_insertion(e)
+
+    # create user profile data
+    data = schema.UserData(
         username=usr.username,
-        email=usr.email,
-        active=True,
-        verified=verification_code,
-        hashed_pswd=hashed_pswd,
-        salt=salt
+        affiliation=usr.affiliation,
+        first_name=usr.first_name,
+        last_name=usr.last_name
     )
-    await users_db.execute(query)
+    update_user_data(usr.username, data)
+
     return verification_code
 
 
@@ -107,9 +124,10 @@ async def validate_token(token: str):
 
 
 async def get_user(by_uid: Optional[int] = None, by_username: Optional[str] = None,
-                   by_email: Optional[str] = None) -> schema.User:
+                   by_email: Optional[str] = None, by_password_reset_session: Optional[str] = None) -> schema.User:
     """ Get a user from the database using uid, username or email as a search parameter.
 
+    :rtype: schema.User
     :returns the user object
     :raises ValueError if the user does not exist or no search value was provided
     """
@@ -126,6 +144,22 @@ async def get_user(by_uid: Optional[int] = None, by_username: Optional[str] = No
         query = schema.users_table.select().where(
             schema.users_table.c.email == by_email
         )
+    elif by_password_reset_session:
+        query = schema.password_reset_table.select().where(
+            schema.password_reset_table.c.token == by_password_reset_session
+        )
+
+        session = await users_db.fetch_one(query)
+        if session is None:
+            raise ValueError("session was not found")
+        session = schema.PasswordResetSession(**session)
+        if session.expiration_date < datetime.now():
+            raise ValueError("session expired")
+
+        query = schema.users_table.select().where(
+            schema.users_table.c.id == session.user_id
+        )
+
     else:
         raise ValueError('a value must be provided : uid, username, email')
 
@@ -178,11 +212,16 @@ async def login_user(login: str, pwd: str):
     return usr, user_token
 
 
-async def delete_session(token: str):
+async def delete_session(by_token: Optional[str] = None, by_uid: Optional[str] = None):
     """ Delete a specific user session """
-    query = schema.logged_users_table.delete().where(
-        schema.logged_users_table.c.token == token
-    )
+    if by_token:
+        query = schema.logged_users_table.delete().where(
+            schema.logged_users_table.c.token == by_token
+        )
+    elif by_uid:
+        query = schema.logged_users_table.delete().where(
+            schema.logged_users_table.c.user_id == by_uid
+        )
     # returns number of deleted entries
     return await users_db.execute(query)
 
@@ -196,17 +235,14 @@ async def clear_expired_sessions():
     return await users_db.execute(query)
 
 
-async def create_password_reset_session(user: Optional[schema.User] = None,
-                                        email: Optional[str] = None) -> schema.PasswordResetSession:
-    if user:
-        safe = True
+async def create_password_reset_session(username: str, email: str) -> schema.PasswordResetSession:
+    try:
+        user = await get_user(by_email=email)
+    except ValueError:
+        raise exc.UserNotFoundError("the user is not valid")
 
-    elif email:
-        user = get_user(by_email=email)
-        safe = False
-
-    else:
-        raise ValueError('No identifier provided')
+    if user.username != username:
+        raise exc.ValueNotValidError("username provided does not match email")
 
     user_token = secrets.token_urlsafe(64)
     token_best_by = datetime.now() + _settings.local.password_reset_expiry_delay
@@ -214,18 +250,43 @@ async def create_password_reset_session(user: Optional[schema.User] = None,
         token=user_token,
         user_id=user.id,
         expiration_date=token_best_by,
-        safe_reset=safe
     )
     await users_db.execute(query)
 
     return schema.PasswordResetSession(
         token=user_token,
         user_id=user.id,
-        expiration_date=token_best_by,
-        safe_reset=safe
+        expiration_date=token_best_by
     )
 
 
-def get_user_profile(username: str):
-    # TODO see how to implement this
-    pass
+async def update_users_password(user: schema.User, password: str, password_validation: str):
+
+    if password != password_validation:
+        raise ValueError('passwords do not match')
+
+    hashed_pswd, salt = hash_pwd(password)
+    query = schema.users_table.update().where(
+        schema.users_table.c.id == user.id
+    ).values(hashed_pswd=hashed_pswd, salt=salt)
+
+    query2 = schema.password_reset_table.delete().where(
+        schema.password_reset_table.c.user_id == user.id
+    )
+
+    await users_db.execute(query)
+    await users_db.execute(query2)
+
+
+def get_user_data(username: str) -> schema.UserData:
+    db_file = (_settings.USER_DATA_DIR / f"{username}.json")
+    if not db_file.is_file():
+        raise exc.UserNotFoundError('user requested has no data entry')
+    with db_file.open() as fp:
+        raw_data = json.load(fp)
+        return schema.UserData(**raw_data)
+
+
+def update_user_data(username: str, data: schema.UserData):
+    with (_settings.USER_DATA_DIR / f"{username}.json").open('w') as fp:
+        json.dump(data.dict(), fp)

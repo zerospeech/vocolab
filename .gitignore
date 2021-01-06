@@ -34,3 +34,5 @@ MANIFEST
 *.db
 *.env
 !example.env
+*.log
+data/db
