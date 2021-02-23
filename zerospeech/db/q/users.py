@@ -3,7 +3,7 @@ import json
 import os
 import secrets
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from email_validator import validate_email, EmailSyntaxError
 from pydantic import BaseModel, EmailStr
@@ -170,6 +170,15 @@ async def get_user(by_uid: Optional[int] = None, by_username: Optional[str] = No
     return schema.User(**user)
 
 
+async def get_user_list() -> List[schema.User]:
+    """ Return a list of all users """
+    query = schema.users_table.select()
+    user_list = await users_db.fetch_all(query)
+    if user_list is None:
+        raise ValueError(f'database does not contain any user')
+    return [schema.User(**usr) for usr in user_list]
+
+
 async def login_user(login: str, pwd: str):
     """ Create a new session for a user
     :arg login<str> argument used to identify user (can be username or email)
@@ -221,6 +230,10 @@ async def delete_session(by_token: Optional[str] = None, by_uid: Optional[str] =
     elif by_uid:
         query = schema.logged_users_table.delete().where(
             schema.logged_users_table.c.user_id == by_uid
+        )
+    else:
+        raise exc.OptionMissingError(
+            f"Function {delete_session.__name__} requires an uid or token but None was provided!"
         )
     # returns number of deleted entries
     return await users_db.execute(query)

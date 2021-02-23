@@ -4,6 +4,7 @@ import string
 
 from fastapi import FastAPI, Depends, Response, Request
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 from zerospeech.db import users_db, create_users, schema, q as queries
 from zerospeech.api import auth, api_utils
@@ -14,13 +15,13 @@ _settings = settings.get_settings()
 logger = log.LogSingleton.get()
 app = FastAPI(swagger_static={"favicon": _settings.favicon})
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=_settings.origins,
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_settings.origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.middleware("http")
@@ -52,12 +53,21 @@ def read_root():
     }
 
 
-@app.get("/users/profile")
+@app.get("/user")
+def get_user(current_user: schema.User = Depends(auth.get_current_active_user)):
+    return {
+        "username": current_user.username,
+        "email": current_user.email,
+        "verified": current_user.verified
+    }
+
+
+@app.get("/user/profile")
 def get_profile(current_user: schema.User = Depends(auth.get_current_active_user)):
     return queries.users.get_user_data(current_user.username)
 
 
-@app.post("/users/profile")
+@app.post("/user/profile")
 def update_profile(user_data: schema.UserData, current_user: schema.User = Depends(auth.get_current_active_user)):
     queries.users.update_user_data(current_user.username, data=user_data)
     return Response(status_code=200)

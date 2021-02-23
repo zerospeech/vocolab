@@ -18,6 +18,11 @@ class ZerospeechException(Exception):
         return f"{self.__class__.__name__}: {self.message}"
 
 
+class OptionMissingError(ZerospeechException):
+    """ Generic Exception used when a function was called with incorrect or missing arguments """
+    pass
+
+
 class UserError(ZerospeechException):
     """ Generic Exception for actions on users """
     pass

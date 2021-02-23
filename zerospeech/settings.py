@@ -1,3 +1,4 @@
+import sys
 from datetime import timedelta
 from pathlib import Path
 from functools import lru_cache
@@ -46,7 +47,7 @@ class _Settings(BaseSettings):
     version: str = "v0.1"
     favicon: str = 'http://zerospeech.com/_static/favicon.ico'
     origins: List[str] = [
-        "http://localhost:8000",
+        "http://localhost:1313",
         "http://zerospeech.com",
         "https://zerospeech.com",
         "http://api.zerospeech.com",
@@ -92,7 +93,5 @@ def get_settings() -> _Settings:
     """
     env_file = os.environ.get('ZR_ENV_FILE', None)
     if env_file:
-        print(f'loading from env file {env_file}')
-        # load_dotenv(dotenv_path=Path(env_file))
         return _Settings(_env_file=env_file, _env_file_encoding='utf-8')
     return _Settings()
