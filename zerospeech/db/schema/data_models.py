@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 
 
 class UserData(BaseModel):
@@ -8,4 +9,3 @@ class UserData(BaseModel):
     affiliation: str
     first_name: Optional[str]
     last_name: Optional[str]
-

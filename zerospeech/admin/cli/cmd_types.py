@@ -1,3 +1,4 @@
+import argparse
 import sys
 from abc import ABC, abstractmethod
 from typing import List
@@ -12,8 +13,11 @@ def cmd_parser(cmd):
 
 class CMD(ABC):
 
-    def __init__(self, parser, cmd_path):
-        self.parser = parser
+    def __init__(self, cmd_path):
+        self.parser = argparse.ArgumentParser(
+            prog=f"{cmd_path}:{self.name}",
+            description=self.short_description
+        )
         self.cmd_path = cmd_path
 
     @property
@@ -27,7 +31,7 @@ class CMD(ABC):
         pass
 
     @abstractmethod
-    def run(self, *args, **options):
+    def run(self, argv):
         pass
 
     @staticmethod
@@ -37,6 +41,14 @@ class CMD(ABC):
 
 class CommandCollection(ABC):
     __cmd_list__ = {}
+
+    def __init__(self, parser=None):
+        if parser is None:
+            self.parser = argparse.ArgumentParser(
+                usage=f"{self.name} [args]"
+            )
+        else:
+            self.parser = parser
 
     @property
     @abstractmethod
@@ -50,8 +62,24 @@ class CommandCollection(ABC):
             help_msg += f"{self.name}:{name}\t{cmd.short_description}\n"
         return help_msg
 
+    @property
+    @abstractmethod
+    def description(self) -> str:
+        pass
+
+    def root_cmd(self, argv):
+        print(f"cmd: {self.name}")
+        print(f"\t{self.description}")
+        print(f"usage: {self.name}:CMD [args]")
+        print('SUB-COMMANDS:')
+        for name, cmd in self.__cmd_list__.items():
+            print(f"\t{name}\t{cmd.short_description}\n")
+
     def run(self, cmd, argv):
         """ Run a sub-command or a sub-collection from list """
+        if cmd == "":
+            return self.root_cmd(argv)
+
         actual_cmd, rec_cmd = cmd_parser(cmd)
 
         cmd_obj = self.__cmd_list__.get(actual_cmd, None)

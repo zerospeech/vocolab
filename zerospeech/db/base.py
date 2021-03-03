@@ -2,6 +2,7 @@ import databases
 import sqlalchemy
 
 from zerospeech.db.schema import users_metadata
+from zerospeech.db.schema import challenge_metadata
 from zerospeech.settings import get_settings
 
 _settings = get_settings()
@@ -19,3 +20,4 @@ def create_users():
        _USERS_CONN, connect_args={"check_same_thread": False}
     )
     users_metadata.create_all(engine)
+    challenge_metadata.create_all(engine)

@@ -11,6 +11,10 @@ from zerospeech.db.q import users as user_q
 class UsersCMD(CommandCollection):
 
     @property
+    def description(self) -> str:
+        return 'command group to administrate users'
+
+    @property
     def name(self) -> str:
         return 'users'
 
@@ -18,9 +22,7 @@ class UsersCMD(CommandCollection):
 class ListUsers(CMD):
 
     def __init__(self, cmd_path):
-        parser = argparse.ArgumentParser()
-
-        super(ListUsers, self).__init__(parser, cmd_path)
+        super(ListUsers, self).__init__(cmd_path)
 
     @property
     def name(self) -> str:

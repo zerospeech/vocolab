@@ -1,17 +1,18 @@
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
+from typing import Optional
 
 import sqlalchemy
 from pydantic import BaseModel, HttpUrl
 
-users_metadata = sqlalchemy.MetaData()
+challenge_metadata = sqlalchemy.MetaData()
 
 
 class Challenge(BaseModel):
     id: int
     label: str
-    start_date: datetime
-    end_date: datetime
+    start_date: date
+    end_date: Optional[date]
     active: bool
     url: HttpUrl
     backend: str
@@ -22,7 +23,7 @@ class Challenge(BaseModel):
 
 challenges_table = sqlalchemy.Table(
     "challenges",
-    users_metadata,
+    challenge_metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True),
     sqlalchemy.Column("label", sqlalchemy.String, unique=True),
     sqlalchemy.Column("start_date", sqlalchemy.DateTime),
@@ -47,7 +48,7 @@ class ChallengeSubmissions(BaseModel):
 
 users_table = sqlalchemy.Table(
     "challenge_submissions",
-    users_metadata,
+    challenge_metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True),
     sqlalchemy.Column("user_id", sqlalchemy.Integer),
     sqlalchemy.Column("track_id", sqlalchemy.Integer),
