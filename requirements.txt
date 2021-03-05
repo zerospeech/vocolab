@@ -20,4 +20,4 @@ aiofiles==0.6.0
 python-multipart==0.0.5
 fastapi-mail==0.3.1.1
 requests==2.25.1
-rich==9.11.1
+rich==9.12.4
