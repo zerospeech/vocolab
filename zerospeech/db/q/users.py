@@ -8,7 +8,7 @@ from typing import Optional, List
 from email_validator import validate_email, EmailSyntaxError
 from pydantic import BaseModel, EmailStr
 
-from zerospeech.db import users_db, schema, exc as db_exc
+from zerospeech.db import zrDB, schema, exc as db_exc
 from zerospeech.settings import get_settings
 from zerospeech import exc
 
@@ -62,7 +62,7 @@ async def create_user(usr: UserCreate):
             salt=salt
         )
 
-        await users_db.execute(query)
+        await zrDB.execute(query)
 
     except Exception as e:
         db_exc.parse_user_insertion(e)
@@ -87,7 +87,7 @@ async def verify_user(username: str, verification_code: str):
         ).values(
             verified='True'
         )
-        await users_db.execute(query)
+        await zrDB.execute(query)
         return True
     elif secrets.compare_digest(user.verified, 'True'):
         raise exc.ActionNotValidError("Email already verified")
@@ -110,7 +110,7 @@ async def validate_token(token: str):
         schema.logged_users_table.c.token == token
     )
 
-    logged_usr = await users_db.fetch_one(query)
+    logged_usr = await zrDB.fetch_one(query)
     if logged_usr is None:
         raise ValueError('Token appears to not be valid')
 
@@ -149,7 +149,7 @@ async def get_user(by_uid: Optional[int] = None, by_username: Optional[str] = No
             schema.password_reset_table.c.token == by_password_reset_session
         )
 
-        session = await users_db.fetch_one(query)
+        session = await zrDB.fetch_one(query)
         if session is None:
             raise ValueError("session was not found")
         session = schema.PasswordResetSession(**session)
@@ -163,7 +163,7 @@ async def get_user(by_uid: Optional[int] = None, by_username: Optional[str] = No
     else:
         raise ValueError('a value must be provided : uid, username, email')
 
-    user = await users_db.fetch_one(query)
+    user = await zrDB.fetch_one(query)
     if user is None:
         raise ValueError(f'database does not contain a user for given credentials')
 
@@ -173,7 +173,7 @@ async def get_user(by_uid: Optional[int] = None, by_username: Optional[str] = No
 async def get_user_list() -> List[schema.User]:
     """ Return a list of all users """
     query = schema.users_table.select()
-    user_list = await users_db.fetch_all(query)
+    user_list = await zrDB.fetch_all(query)
     if user_list is None:
         raise ValueError(f'database does not contain any user')
     return [schema.User(**usr) for usr in user_list]
@@ -198,7 +198,7 @@ async def login_user(login: str, pwd: str):
             schema.users_table.c.username == login
         )
 
-    usr = await users_db.fetch_one(query)
+    usr = await zrDB.fetch_one(query)
     if usr is None:
         raise ValueError('Login or password incorrect')
 
@@ -216,7 +216,7 @@ async def login_user(login: str, pwd: str):
         user_id=usr.id,
         expiration_date=token_best_by
     )
-    await users_db.execute(query)
+    await zrDB.execute(query)
 
     return usr, user_token
 
@@ -236,7 +236,7 @@ async def delete_session(by_token: Optional[str] = None, by_uid: Optional[str] =
             f"Function {delete_session.__name__} requires an uid or token but None was provided!"
         )
     # returns number of deleted entries
-    return await users_db.execute(query)
+    return await zrDB.execute(query)
 
 
 async def clear_expired_sessions():
@@ -245,7 +245,7 @@ async def clear_expired_sessions():
         schema.logged_users_table.c.expiration_date <= datetime.now()
     )
     # returns number of deleted entries
-    return await users_db.execute(query)
+    return await zrDB.execute(query)
 
 
 async def create_password_reset_session(username: str, email: str) -> schema.PasswordResetSession:
@@ -264,7 +264,7 @@ async def create_password_reset_session(username: str, email: str) -> schema.Pas
         user_id=user.id,
         expiration_date=token_best_by,
     )
-    await users_db.execute(query)
+    await zrDB.execute(query)
 
     return schema.PasswordResetSession(
         token=user_token,
@@ -287,8 +287,8 @@ async def update_users_password(user: schema.User, password: str, password_valid
         schema.password_reset_table.c.user_id == user.id
     )
 
-    await users_db.execute(query)
-    await users_db.execute(query2)
+    await zrDB.execute(query)
+    await zrDB.execute(query2)
 
 
 def get_user_data(username: str) -> schema.UserData:

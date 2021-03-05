@@ -26,8 +26,8 @@ challenges_table = sqlalchemy.Table(
     challenge_metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True),
     sqlalchemy.Column("label", sqlalchemy.String, unique=True),
-    sqlalchemy.Column("start_date", sqlalchemy.DateTime),
-    sqlalchemy.Column("end_date", sqlalchemy.DateTime),
+    sqlalchemy.Column("start_date", sqlalchemy.Date),
+    sqlalchemy.Column("end_date", sqlalchemy.Date),
     sqlalchemy.Column("active", sqlalchemy.Boolean),
     sqlalchemy.Column("url", sqlalchemy.String),
     sqlalchemy.Column("backend", sqlalchemy.String)

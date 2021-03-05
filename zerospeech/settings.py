@@ -30,8 +30,7 @@ class ApplicationSettings(BaseModel):
     mattermost_channel: str = 'engineering-private'  # todo change to zerospeech channel
 
     # Databases
-    db_users_file: str = 'users.db'
-    db_challenges_file: str = 'challenges.db'
+    db_file: str = 'zerospeech.db'
 
     # Documentation
     doc_title: str = "Zerospeech Challenge API"
@@ -42,6 +41,7 @@ class ApplicationSettings(BaseModel):
 class _Settings(BaseSettings):
     """ Generic Config Class """
     local: ApplicationSettings = ApplicationSettings()
+    API_V1_STR: str = '/v1'
 
     app_home: Path = Path().cwd()
     version: str = "v0.1"
