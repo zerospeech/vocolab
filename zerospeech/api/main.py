@@ -2,12 +2,13 @@ import random
 import time
 import string
 
-from fastapi import FastAPI, Depends, Response, Request
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from zerospeech.db import users_db, create_users
-from zerospeech.api import auth, api_utils, challenges, users
+from zerospeech.db import zrDB, create_db
+from zerospeech.api import api_utils
+from zerospeech.api.v1 import router as v1_router
 from zerospeech import settings, log
 
 _settings = settings.get_settings()
@@ -42,36 +43,19 @@ async def log_requests(request: Request, call_next):
     return response
 
 
-@app.get("/")
-def read_root():
-
-    return {
-        "app": _settings.local.app_name,
-        "version": _settings.version,
-        "maintainers": _settings.local.maintainers,
-        "contact": _settings.local.admin_email
-    }
-
-
 @app.on_event("startup")
 async def startup():
     # conditional creation of the necessary files
-    create_users()
+    create_db()
     # pool connection to databases
-    await users_db.connect()
+    await zrDB.connect()
 
 
 @app.on_event("shutdown")
 async def shutdown():
     # clean up db connection pool
-    await users_db.disconnect()
-
-
-# Set docs parameters
-api_utils.set_documentation_params(app)
+    await zrDB.disconnect()
 
 # sub applications
-app.mount("/auth", auth.auth_app)
-app.mount("/user", users.users_app)
-app.mount("/challenges", challenges.challenge_app)
+app.include_router(v1_router.api_router, prefix=_settings.API_V1_STR)
 app.mount("/static", StaticFiles(directory=str(_settings.STATIC_DIR)), name="static")
