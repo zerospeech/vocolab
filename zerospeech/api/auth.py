@@ -83,6 +83,7 @@ async def get_current_active_user(current_user: schema.User = Depends(get_user))
 
 @auth_app.post('/login', response_model=LoggedItem)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """ Authenticate a user """
     try:
         _, token = await queries.users.login_user(form_data.username, form_data.password)
         return LoggedItem(access_token=token, token_type="bearer")
@@ -93,22 +94,16 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         )
 
 
-@auth_app.get('/check', response_model=CurrentUser)
-async def check(current_user: schema.User = Depends(get_current_active_user)):
-    return CurrentUser(
-        username=current_user.username,
-        email=current_user.email
-    )
-
-
 @auth_app.delete('/logout')
 async def logout(token: schema.LoggedUser = Depends(validate_token)):
+    """ Delete a user's session """
     await queries.users.delete_session(token.token)
     return Response(status_code=200)
 
 
 @auth_app.put('/signup')
 async def signup(request: Request, user: queries.users.UserCreate, background_tasks: BackgroundTasks):
+    """ Create a new user """
     try:
         verification_code = await queries.users.create_user(user)
     except exc.ValueNotValidError as e:
@@ -133,6 +128,7 @@ async def signup(request: Request, user: queries.users.UserCreate, background_ta
 
 @auth_app.get('/email/verify', response_class=HTMLResponse)
 async def email_verification(v: str, username: str):
+    """ Verify a new users email address """
     msg = 'Success'
     res = False
 
@@ -159,6 +155,7 @@ async def email_verification(v: str, username: str):
 
 @auth_app.post('/password/reset')
 async def password_reset_request(user: PasswordResetRequest, request: Request, background_tasks: BackgroundTasks):
+    """ Request a users password to be reset """
     session = await queries.users.create_password_reset_session(username=user.username, email=user.email)
     data = {
         'username': user.username,
@@ -176,6 +173,7 @@ async def password_reset_request(user: PasswordResetRequest, request: Request, b
 
 @auth_app.get('/password/update/page', response_class=HTMLResponse)
 async def password_update_page(v: str, request: Request):
+    """ An HTML page-form that allows a user to change their password """
     try:
         user = await queries.users.get_user(by_password_reset_session=v)
     except ValueError as e:
@@ -198,6 +196,7 @@ async def password_update_page(v: str, request: Request):
 @auth_app.post('/password/update', response_class=PlainTextResponse)
 async def password_update(v: str, request: Request, password: str = Form(...),
                           password_validation: str = Form(...), session_code: str = Form(...)):
+    """Update a users password (requires a reset session)"""
     try:
         if v != session_code:
             raise ValueError('session validation not passed !!!')
@@ -215,12 +214,6 @@ async def password_update(v: str, request: Request, password: str = Form(...),
 
     # maybe return result as page ?
     return f'password of {user.username}  successfully changed !!'
-
-
-@auth_app.delete('/deactivate')
-async def deactivate_user():
-    # todo: implement password update
-    return 'OK'
 
 
 # Set docs parameters

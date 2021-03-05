@@ -6,8 +6,8 @@ from fastapi import FastAPI, Depends, Response, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
-from zerospeech.db import users_db, create_users, schema, q as queries
-from zerospeech.api import auth, api_utils
+from zerospeech.db import users_db, create_users
+from zerospeech.api import auth, api_utils, challenges, users
 from zerospeech import settings, log
 
 _settings = settings.get_settings()
@@ -53,26 +53,6 @@ def read_root():
     }
 
 
-@app.get("/user")
-def get_user(current_user: schema.User = Depends(auth.get_current_active_user)):
-    return {
-        "username": current_user.username,
-        "email": current_user.email,
-        "verified": current_user.verified
-    }
-
-
-@app.get("/user/profile")
-def get_profile(current_user: schema.User = Depends(auth.get_current_active_user)):
-    return queries.users.get_user_data(current_user.username)
-
-
-@app.post("/user/profile")
-def update_profile(user_data: schema.UserData, current_user: schema.User = Depends(auth.get_current_active_user)):
-    queries.users.update_user_data(current_user.username, data=user_data)
-    return Response(status_code=200)
-
-
 @app.on_event("startup")
 async def startup():
     # conditional creation of the necessary files
@@ -92,4 +72,6 @@ api_utils.set_documentation_params(app)
 
 # sub applications
 app.mount("/auth", auth.auth_app)
+app.mount("/user", users.users_app)
+app.mount("/challenges", challenges.challenge_app)
 app.mount("/static", StaticFiles(directory=str(_settings.STATIC_DIR)), name="static")
