@@ -36,3 +36,4 @@ MANIFEST
 !example.env
 *.log
 data/db
+.python-version
