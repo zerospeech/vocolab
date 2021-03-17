@@ -1,22 +1,24 @@
 import asyncio
-import argparse
 import json
 from datetime import datetime
 from pathlib import Path
 
-from pydantic import AnyHttpUrl, ValidationError
+from pydantic import ValidationError
 from rich.console import Console
 from rich.table import Table
 from rich import inspect
 
 from zerospeech.admin.cli.cmd_types import CommandCollection, CMD
 from zerospeech.db.q import challenges as ch_queries
+from zerospeech.db.schema import challenges as db_challenges
+from zerospeech.utils import misc
 
 # Pretty Printing
 console = Console()
 
 
 class ChallengesCMD(CommandCollection):
+    __cmd_list__ = {}
 
     @property
     def description(self) -> str:
@@ -66,9 +68,15 @@ class ListChallenges(CMD):
         table.add_column("end_date")
 
         for ch in challenge_lst:
+            if ch.end_date:
+                end_date_str = ch.end_date.strftime('%d/%m/%Y')
+            else:
+                end_date_str = None
+
             table.add_row(
                 f"{ch.id}", f"{ch.label}", f"{ch.active}", f"{ch.url}",
-                f"{ch.backend}", f"{ch.start_date.strftime('%d/%m/%Y')}"
+                f"{ch.backend}", f"{ch.start_date.strftime('%d/%m/%Y')}",
+                f"{end_date_str}"
             )
         # print
         console.print(table)
@@ -106,11 +114,11 @@ class AddChallenge(CMD):
                 obj_list = [ch_queries.NewChallenge(**item) for item in obj]
 
             else:
-                print("Creating a new Challenge")
-                label = console.input("label: ")
-                url = console.input("URL: ")
-                start_date = console.input("start date (dd/mm/yyyy): ")
-                end_date = console.input("end date (dd/mm/yyyy or none): ")
+                console.print("Creating a new Challenge", style="bold purple")
+                label = console.input("[bold]label:[/bold] ")
+                url = console.input("[bold]URL:[/bold] ")
+                start_date = console.input("[bold]start date (dd/mm/yyyy):[/bold] ")
+                end_date = console.input("[bold]end date (dd/mm/yyyy or none):[/bold] ")
                 print("\n")
 
                 if end_date == "none":
@@ -129,19 +137,59 @@ class AddChallenge(CMD):
                 obj_list = [obj]
 
             if not args.dry_run:
-                loop = asyncio.get_event_loop()
-                for item in obj_list:
-                    loop.run_until_complete(ch_queries.create_new_challenge(item))
-                    console.print(f"insertion of {item.label} was successful:white_check_mark:")
+                with misc.get_event_loop() as loop:
+                    for item in obj_list:
+                        loop.run_until_complete(ch_queries.create_new_challenge(item))
+                        console.print(f"insertion of {item.label} was successful:white_check_mark:",
+                                      style="bold green")
             else:
                 inspect(obj_list)
 
         except json.JSONDecodeError as e:
-            console.print(f"json: {e} :x:")
+            console.print(f":x:\tjson: {e}", style="bold red")
         except ValidationError as e:
-            console.print(f"{e} :x:")
+            console.print(f":x:\t{e}", style="bold red")
         except ValueError as e:
-            console.print(f"{e} :x:")
+            console.print(f":x:\t{e}", style="bold red")
+
+
+class SetChallenge(CMD):
+    """ Command to alter properties of Challenges"""
+
+    def __init__(self, cmd_path):
+        super(SetChallenge, self).__init__(cmd_path)
+        # arguments
+        self.parser.add_argument('id', help='ID of the challenge to update')
+        self.parser.add_argument('field', help='the field that will be updated')
+        self.parser.add_argument('value', help='the value to add')
+        self.challenge_fields = db_challenges.Challenge.__annotations__
+        del self.challenge_fields['id']
+
+    @property
+    def name(self) -> str:
+        return 'set'
+
+    @property
+    def short_description(self):
+        return 'allows altering values of challenges'
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+
+        if args.field not in self.challenge_fields.keys():
+            console.print(f":x: field : {args.field} is not a valid field!", style="bold red")
+            console.print(f":right_arrow: please use one of the following fields : {self.challenge_fields}",
+                          style="bold green")
+
+        with misc.get_event_loop() as loop:
+            # todo check values and exceptions
+            loop.run_until_complete(
+                ch_queries.set_challenge_property(
+                    args.id, args.field, args.value, self.challenge_fields[args.field]
+                )
+            )
+            console.print(f"challenge:white_check_mark:",
+                          style="bold green")
 
 
 def get() -> ChallengesCMD:
@@ -149,5 +197,6 @@ def get() -> ChallengesCMD:
 
     challenges.add_cmd(ListChallenges(challenges.name))
     challenges.add_cmd(AddChallenge(challenges.name))
+    challenges.add_cmd(SetChallenge(challenges.name))
 
     return challenges

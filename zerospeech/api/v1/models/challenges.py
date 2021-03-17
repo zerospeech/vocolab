@@ -4,6 +4,12 @@ from typing import Optional, Dict
 from pydantic import BaseModel, HttpUrl
 
 
+class ChallengePreview(BaseModel):
+    id: int
+    label: str
+    active: bool
+
+
 class ChallengesResponse(BaseModel):
     id: str
     label: str
@@ -13,11 +19,4 @@ class ChallengesResponse(BaseModel):
     url: HttpUrl
     backend: str
 
-
-class SubmissionRequest(BaseModel):
-    author_label: str
-    affiliation: str
-    associates: str
-    open_source: bool
-    submission_params: Dict
 

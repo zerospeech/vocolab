@@ -36,4 +36,8 @@ MANIFEST
 !example.env
 *.log
 data/db
+
+# custom shortcut files
 .python-version
+.in
+.out

@@ -11,7 +11,7 @@ from pydantic import (
     BaseSettings, EmailStr, BaseModel,
     DirectoryPath, HttpUrl, IPvAnyAddress
 )
-
+import uvicorn
 
 class ApplicationSettings(BaseModel):
     """ Application Settings """
@@ -25,7 +25,7 @@ class ApplicationSettings(BaseModel):
     password_reset_expiry_delay: timedelta = timedelta(minutes=45)
 
     # Mattermost
-    mattermost_url: HttpUrl = 'https://mattermost.syntheticlearner.net/hooks'
+    mattermost_url: HttpUrl = 'https://mattermost.cognitive-ml.fr/hooks'
     mattermost_username: str = 'AdminBot'
     mattermost_channel: str = 'engineering-private'  # todo change to zerospeech channel
 
@@ -36,6 +36,9 @@ class ApplicationSettings(BaseModel):
     doc_title: str = "Zerospeech Challenge API"
     doc_version: str = 'v0'
     doc_description: str = 'A documentation of the API for the Zerospeech Challenge back-end !'
+
+    # Celery & Worker Settings
+    CELERY_APP: str = "ZR-CELERY"
 
 
 class _Settings(BaseSettings):
@@ -77,6 +80,10 @@ class _Settings(BaseSettings):
     LOG_LEVEL: int = logging.INFO
     LOGGER_TYPE: str = 'console'
     LOG_FILE: Path = Path('out.log')
+
+    # Celery options
+    CELERY_BACKEND: str = "rpc://"
+    CELERY_BROKER: str = "pyamqp://guest@localhost//"
 
     class Config:
         env_prefix = 'ZR_'

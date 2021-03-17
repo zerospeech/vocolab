@@ -29,7 +29,6 @@ class AdminCMD:
         args = parser.parse_args(sys.argv[1:2])
 
         actual_cmd, rec_cmd = cmd_types.cmd_parser(args.command)
-
         cmd_obj = self.__command_list__.get(actual_cmd, None)
         if cmd_obj is None:
             print(f'Unrecognized command {actual_cmd}\n')

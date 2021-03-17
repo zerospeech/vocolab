@@ -9,6 +9,7 @@ from zerospeech.db.q import users as user_q
 
 
 class UsersCMD(CommandCollection):
+    __cmd_list__ = {}
 
     @property
     def description(self) -> str:
@@ -54,6 +55,11 @@ class ListUsers(CMD):
             )
 
         console.print(table)
+
+# todo: new user
+# todo: deactivate
+# todo: get_all_date
+# todo: reset credentials
 
 
 def get() -> UsersCMD:

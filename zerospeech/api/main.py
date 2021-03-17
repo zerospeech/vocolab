@@ -49,6 +49,11 @@ async def startup():
     create_db()
     # pool connection to databases
     await zrDB.connect()
+    # create data_folders
+    _settings.USER_DATA_DIR.mkdir(exist_ok=True, parents=True)
+    (_settings.USER_DATA_DIR / 'api.lock').touch()
+    (_settings.USER_DATA_DIR / 'submissions').mkdir(exist_ok=True)
+    (_settings.USER_DATA_DIR / 'profiles').mkdir(exist_ok=True)
 
 
 @app.on_event("shutdown")

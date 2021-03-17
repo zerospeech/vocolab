@@ -1,23 +1,12 @@
-from datetime import date
-from typing import Optional, List
-
-from pydantic import BaseModel, AnyHttpUrl
+from datetime import datetime
+from typing import List, Optional
+from uuid import uuid4
 
 from zerospeech.db import zrDB, schema, exc as db_exc
+from zerospeech.db.schema import NewChallenge, NewSubmission
 from zerospeech.settings import get_settings
 
 _settings = get_settings()
-
-
-# TODO: implement submission/challenge queries
-class NewChallenge(BaseModel):
-    """ Dataclass for challenge creation """
-    label: str
-    active: bool
-    url: AnyHttpUrl
-    backend: str
-    start_date: date
-    end_date: Optional[date]
 
 
 async def create_new_challenge(item: NewChallenge):
@@ -38,18 +27,30 @@ async def create_new_challenge(item: NewChallenge):
 async def list_challenges(
         include_all=None,
 ) -> List[schema.Challenge]:
-
-    if include_all:
-        query = schema.challenges_table.select()
-    else:
-        query = schema.challenges_table.select().where(
-            schema.challenges_table.c.active == True
-        )
+    query = schema.challenges_table.select()
     challenges = await zrDB.fetch_all(query)
     if challenges is None:
         raise ValueError('No challenges were found')
 
-    return [schema.Challenge(**c) for c in challenges]
+    challenges = [schema.Challenge(**c) for c in challenges]
+    if include_all:
+        return challenges
+    else:
+        return [c for c in challenges if c.is_active()]
+
+
+async def get_challenge(
+        challenge_id: int, allow_inactive=False,
+) -> Optional[schema.Challenge]:
+    query = schema.challenges_table.select().where(
+        schema.challenges_table.c.id == challenge_id
+    )
+    ch = await zrDB.fetch_one(query)
+    ch = schema.Challenge(**ch)
+    if allow_inactive:
+        return ch
+    else:
+        return ch if ch.is_active() else None
 
 
 async def set_challenge_property(ch_id: int, property_name: str, value: str, m_type):
@@ -60,15 +61,25 @@ async def set_challenge_property(ch_id: int, property_name: str, value: str, m_t
     await zrDB.execute(query)
 
 
-def delete_challenge():
-    pass
+async def delete_challenge(ch_id: int):
+    query = schema.challenges_table.delete().where(
+        schema.challenges_table.c.id == ch_id
+    )
+    await zrDB.execute(query)
 
 
-def list_submissions(by_challenge, by_user, by_status, by_date):
-    pass
+async def add_submission(new_submission: NewSubmission):
+    submission_id = datetime.now().strftime('%Y%m-%d%H-%M%S-') + str(uuid4())
+    query = schema.submissions_table.insert()
+    values = new_submission.dict()
+    values["id"] = submission_id
+    values["submit_date"] = datetime.now()
+    values["status"] = schema.SubmissionStatus.uploading
+    await zrDB.execute(query=query, values=values)
+    return submission_id
 
 
-def add_submission():
+def list_submissions(by_challenge=None, by_user=None, by_status=None, by_date=None):
     pass
 
 

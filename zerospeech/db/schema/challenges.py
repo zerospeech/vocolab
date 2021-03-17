@@ -1,5 +1,5 @@
 from datetime import datetime, date
-from pathlib import Path
+from enum import Enum
 from typing import Optional
 
 import sqlalchemy
@@ -20,6 +20,11 @@ class Challenge(BaseModel):
     class Config:
         orm_mode = True
 
+    def is_active(self) -> bool:
+        """ Checks if challenge is active """
+        present = date.today()
+        return self.end_date > present and self.active
+
 
 challenges_table = sqlalchemy.Table(
     "challenges",
@@ -34,26 +39,33 @@ challenges_table = sqlalchemy.Table(
 )
 
 
+class SubmissionStatus(str, Enum):
+    uploading = 'uploading'
+    on_queue = 'on_queue'
+    validating = 'validating'
+    invalid = 'invalid'
+    evaluating = 'evaluating'
+    completed = 'completed'
+    failed = 'failed'
+
+
 class ChallengeSubmissions(BaseModel):
     id: int
     user_id: int
     track_id: int
     submit_date: datetime
-    status: str
-    file: Path
+    status: SubmissionStatus
 
     class Config:
         orm_mode = True
 
 
-users_table = sqlalchemy.Table(
+submissions_table = sqlalchemy.Table(
     "challenge_submissions",
     challenge_metadata,
-    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, autoincrement=True),
+    sqlalchemy.Column("id", sqlalchemy.String, primary_key=True, unique=True),
     sqlalchemy.Column("user_id", sqlalchemy.Integer),
     sqlalchemy.Column("track_id", sqlalchemy.Integer),
     sqlalchemy.Column("submit_date", sqlalchemy.DateTime),
-    sqlalchemy.Column("status", sqlalchemy.String),
-    sqlalchemy.Column("file", sqlalchemy.String),
-    sqlalchemy.Column("backend", sqlalchemy.String)
+    sqlalchemy.Column("status", sqlalchemy.String)
 )
