@@ -44,10 +44,12 @@ class AdminCMD:
 def run_cli():
     from zerospeech.admin.cli.user import get as get_user_cmd
     from zerospeech.admin.cli.challenges import get as get_ch_cmd
+    from zerospeech.admin.cli.checks import get as get_checks
 
     # add subcommands
     AdminCMD.add_cmd(get_user_cmd())
     AdminCMD.add_cmd(get_ch_cmd())
+    AdminCMD.add_cmd(get_checks())
 
     # run
     AdminCMD()

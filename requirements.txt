@@ -22,6 +22,5 @@ fastapi-mail==0.3.1.1
 requests==2.25.1
 rich==9.12.4
 setuptools>=49.2.1
-zerospeech>=0.0.0
 Jinja2>=2.11.3
 celery>=5.0.5

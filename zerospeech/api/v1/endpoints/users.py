@@ -53,3 +53,8 @@ def get_submission_status(submissions_id: int, current_user: schema.User = Depen
     """ Return status of a submission """
     raise NotImplemented()
 
+
+@router.get('/results/{track_id}')
+def get_user_results(track_id: int, current_user: schema.User = Depends(api_utils.get_current_active_user)):
+    """ Return status of a submission """
+    raise NotImplemented()

@@ -59,8 +59,9 @@ async def submit_to_challenge(
 @router.put("/{challenge_id}/submit/files")
 async def create_upload_file(
         submission_id: str,
+        part_number: int = None,
         file: UploadFile = File(...),
         current_user: schema.User = Depends(api_utils.get_current_active_user)
 ):
-    folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id / 'raw')
+    folder = (_settings.USER_DATA_DIR / current_user.username / 'submissions' / submission_id / 'raw')
     return {"filename": file.filename}
