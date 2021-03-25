@@ -1,0 +1,15 @@
+bin/
+data/db
+data/_static
+zerospeech.egg-info/
+.gitignore
+.git/
+.in
+.out
+.python-version
+app.Dockerfile
+docker-compose.yaml
+environment.yml
+example.env
+test.env
+TODO.md

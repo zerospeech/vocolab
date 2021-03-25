@@ -1,0 +1,59 @@
+version: "3.3"
+services:
+  api:
+    restart: unless-stopped
+    stop_grace_period: 10s
+    image: "api:latest"
+    container_name: zerospeech_api
+    depends_on:
+      - queue
+    build:
+      context: .
+      dockerfile: app.Dockerfile
+    env_file:
+      - .env
+      - test.env
+      - prod.env
+    environment:
+      # DOCKER PATH ENV
+      ZR_STATIC_DIR: /data/_static
+      ZR_HTML_TEMPLATE_DIR: /templates/pages
+      ZR_MATTERMOST_TEMPLATE_DIR: /templates/mattermost
+      ZR_DB_HOME: /data/db
+      # Server Values
+      MODULE_NAME: zerospeech.api
+      WORKERS_PER_CORE: 1
+      MAX_WORKERS: 32
+      WEB_CONCURRENCY: 2
+      LOG_LEVEL: debug
+    volumes:
+      - app-data:/app-data
+
+  queue:
+    image: rabbitmq:3
+    container_name: zerospeech_queue
+
+  dispatch:
+    restart: unless-stopped
+    stop_grace_period: 10s
+    image: "api:latest"
+    container_name: zerospeech_dispatch
+    depends_on:
+      - queue
+    build:
+      context: .
+      dockerfile: dispatch.Dockerfile
+    env_file:
+      - test.env
+    environment:
+      # DOCKER PATH ENV
+      ZR_STATIC_DIR: /data/_static
+      ZR_HTML_TEMPLATE_DIR: /data/templates/pages
+      ZR_DB_HOME: /data/db
+      # Celery Values
+    volumes:
+      - app-data:/app-data
+
+
+volumes:
+  app-data:
