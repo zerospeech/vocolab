@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 FROM install
 # Project files
-COPY zerospeech/ /app/
+COPY zerospeech /app/zerospeech
 COPY setup.py /app/
 COPY README.md /app/
 COPY pyproject.toml /app/
@@ -23,4 +23,4 @@ COPY data/templates /templates
 COPY scripts/prestart.sh /app/
 
 # install project
-RUN pip install /app
+RUN pip install /app/

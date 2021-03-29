@@ -23,4 +23,6 @@ requests==2.25.1
 rich==9.12.4
 setuptools>=49.2.1
 Jinja2>=2.11.3
-celery>=5.0.5
+dramatiq>=1.10.0
+pika>=1.2.0
+urllib3>=1.26.4

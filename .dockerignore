@@ -13,3 +13,4 @@ environment.yml
 example.env
 test.env
 TODO.md
+__pycache__/
