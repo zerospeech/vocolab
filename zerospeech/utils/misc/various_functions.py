@@ -1,6 +1,6 @@
-from datetime import datetime
 import asyncio
 from contextlib import contextmanager
+from datetime import datetime
 
 
 def str2type(value: str, m_type):

@@ -1,17 +1,17 @@
-import sys
-from datetime import timedelta
-from pathlib import Path
-from functools import lru_cache
 import logging
-from typing import List, Union
 import os
+from datetime import timedelta
+from enum import Enum
+from functools import lru_cache
+from pathlib import Path
+from typing import List, Union
 
-from dotenv import load_dotenv
 from pydantic import (
     BaseSettings, EmailStr, BaseModel,
-    DirectoryPath, HttpUrl, IPvAnyAddress
+    DirectoryPath, HttpUrl, IPvAnyNetwork,
+
 )
-import uvicorn
+
 
 class ApplicationSettings(BaseModel):
     """ Application Settings """
@@ -37,13 +37,36 @@ class ApplicationSettings(BaseModel):
     doc_version: str = 'v0'
     doc_description: str = 'A documentation of the API for the Zerospeech Challenge back-end !'
 
-    # Celery & Worker Settings
-    CELERY_APP: str = "ZR-CELERY"
+    # Relative Location
+    broker_bin: str = "bin"
 
 
-class _Settings(BaseSettings):
-    """ Generic Config Class """
+class _LocalBaseSettings(BaseSettings):
     local: ApplicationSettings = ApplicationSettings()
+
+    # Logging info
+    LOG_LEVEL: int = logging.INFO
+    LOGGER_TYPE: str = 'console'
+    LOG_FILE: Path = Path('out.log')
+
+    # Task Queue
+    RPC_USERNAME: str = "admin"
+    RPC_PASSWORD: str = "123"
+    RPC_HOST: Union[IPvAnyNetwork, str] = "0.0.0.0"
+
+    # Remote Settings
+    SHARED_STORAGE: bool = True
+    REMOTE: Union[IPvAnyNetwork, str] = 'oberon'
+    REMOTE_PATH: Path = "/zerospeech"
+
+    class Config:
+        env_prefix = 'ZR_'
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
+
+
+class _APISettings(_LocalBaseSettings):
+    """ Generic API Config Class """
     API_V1_STR: str = '/v1'
 
     app_home: Path = Path().cwd()
@@ -76,29 +99,39 @@ class _Settings(BaseSettings):
     MAIL_SSL: bool = False
     MAIL_TEMPLATE_DIR: DirectoryPath = Path('data/templates/emails')
 
-    # Logging info
-    LOG_LEVEL: int = logging.INFO
-    LOGGER_TYPE: str = 'console'
-    LOG_FILE: Path = Path('out.log')
 
-    # Celery options
-    CELERY_BACKEND: str = "rpc://"
-    CELERY_BROKER: str = "pyamqp://guest@localhost//"
+class _QueueWorkerSettings(_LocalBaseSettings):
+    pass
 
-    class Config:
-        env_prefix = 'ZR_'
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
+
+class SettingsTypes(str, Enum):
+    api = "api"
+    queue_worker = "queue_worker"
+    cli = "cli"
+
+    def to_cls(self) -> Union[_APISettings.__class__, _QueueWorkerSettings.__class__]:
+        if self == SettingsTypes.api:
+            return _APISettings
+        elif self == SettingsTypes.cli:
+            return _APISettings
+        elif self == SettingsTypes.queue_worker:
+            return _QueueWorkerSettings
+        else:
+            raise ValueError('unknown app type')
 
 
 @lru_cache()
-def get_settings() -> _Settings:
+def get_settings(settings_type: str = SettingsTypes.api) -> Union[_APISettings, _QueueWorkerSettings]:
     """ Getter for api setting
 
     :info uses cache policy for faster loading
     :returns Settings object
     """
     env_file = os.environ.get('ZR_ENV_FILE', None)
+    # load settings object
+    cls = SettingsTypes(settings_type).to_cls()
+
+    # check if env file overrides values
     if env_file:
-        return _Settings(_env_file=env_file, _env_file_encoding='utf-8')
-    return _Settings()
+        return cls(_env_file=env_file, _env_file_encoding='utf-8')
+    return cls()

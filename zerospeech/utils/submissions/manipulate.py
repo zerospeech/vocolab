@@ -20,3 +20,7 @@ def make_submission_on_disk(submission_id: str, username: str, track: str, nb_pa
     with (folder / 'info.json').open('w') as fp:
         json.dump(info, fp)
     (folder / 'upload.lock').touch()
+
+
+def transfer_submission():
+    pass

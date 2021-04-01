@@ -85,6 +85,9 @@ class CheckSettings(CMD):
                 if i == 'local':
                     continue
                 console.print(f"[red][bold]{i}[/bold][/red] => [blue]{_settings.__getattribute__(i)}[/blue]")
+            console.print("---------------- Zerospeech API Settings ----------------",
+                          style="bold italic purple")
+
             console.print("---------------------------------------------------------",
                           style="bold italic purple")
 

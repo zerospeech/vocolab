@@ -55,10 +55,6 @@ services:
       - test.env
     environment:
       # DOCKER PATH ENV
-      ZR_STATIC_DIR: /data/_static
-      ZR_HTML_TEMPLATE_DIR: /data/templates/pages
-      ZR_DB_HOME: /data/db
-      # Celery Values
     volumes:
       - app-data:/app-data
     command: sleep infinity
