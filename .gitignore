@@ -36,8 +36,10 @@ MANIFEST
 !example.env
 *.log
 data/db
+*.bin
 
 # custom shortcut files
 .python-version
 .in
 .out
+.pytest_cache/

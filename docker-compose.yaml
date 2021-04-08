@@ -53,8 +53,8 @@ services:
       dockerfile: dispatch.Dockerfile
     env_file:
       - test.env
-    environment:
-      # DOCKER PATH ENV
+#    environment:
+#      # DOCKER PATH ENV
     volumes:
       - app-data:/app-data
     command: sleep infinity

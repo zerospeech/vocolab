@@ -1,0 +1,20 @@
+stages:
+  - build
+  - test
+  - deploy
+  - verify
+
+publish-package:
+  image: python:3.8
+  tags:
+    - flores-docker
+  stage: deploy
+  only:
+    - tags
+  except:
+    - branches
+  script:
+    - pip install -r requirements-dev.txt
+    - python setup.py sdist bdist_wheel
+    - python -m twine upload --repository-url https://gitlab.cognitive-ml.fr/api/v4/projects/${CI_PROJECT_ID}/packages/pypi dist/*
+
