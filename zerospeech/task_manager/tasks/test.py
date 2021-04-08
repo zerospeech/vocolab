@@ -12,4 +12,4 @@ def dummy_function(where: str, lines: int, length: int):
                 chars = "".join([random.choice(string.ascii_letters) for _ in range(length)])
                 fp.write(f"{chars}\n")
     else:
-        print("bad location was provided")
+        raise ValueError("bad location was provided")

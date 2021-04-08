@@ -1,9 +1,10 @@
 import json
+import uuid
 from enum import Enum
 from shutil import which
-from typing import Any, Dict, Optional, List, Union
+from typing import Any, Dict, List
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, validator
 
 
 class QueuesNames(str, Enum):
@@ -17,27 +18,71 @@ class ExecutorsType(str, Enum):
     sbatch = "sbatch"
     function = 'function'
     docker = "docker"
+    messenger = "messenger"
 
     def to_exec(self):
         """ Returns absolute path to executable or None"""
-        if self == ExecutorsType.function:
+        if self not in self.subprocess:
             raise ValueError('function does not execute!!')
         return which(self)
 
+    @property
+    def is_subprocess(self) -> bool:
+        return self in {self.python, self.bash, self.sbatch, self.docker}
+
 
 class BrokerCMD(BaseModel):
+    """ A Generic description of a Broker Message Object """
     executor: ExecutorsType
     label: str
-    job_id: str
-    f_name: str
-    module_path: Optional[str]
-    args: Union[List[str], Dict[str, Any]]
+    job_id: str = str(uuid.uuid4())
 
     @classmethod
     def from_bytes(cls, byte_cmd: bytes):
         try:
             url_obj = json.loads(str(byte_cmd.decode("utf-8")))
-            return cls(**url_obj)
+            exe = url_obj["executor"]
+            _cls = get_broker_cmd_type(ExecutorsType(exe))
+            return _cls(**url_obj)
         except (json.JSONDecodeError, ValidationError):
             print("error while parsing command")
             raise ValueError("command not valid!!")
+
+
+class Function(BrokerCMD):
+    """ A Broker Message that contains a python function to execute """
+    executor: ExecutorsType = ExecutorsType.function
+    f_name: str
+    module: str
+    args: Dict[str, Any]
+
+
+class SubProcess(BrokerCMD):
+    """ A Broker Message that contains a subprocess task to be run"""
+    p_name: str
+    exe_path: str
+    args: List[str]
+
+    @validator('executor')
+    def executor_must_be_subprocess(cls, v):
+        assert v.is_subprocess, "executor must be a subprocess"
+        return v
+
+
+class Messenger(BrokerCMD):
+    """ A Broker Message that contains a simple string message """
+    executor: ExecutorsType = ExecutorsType.messenger
+    message: str
+
+
+def get_broker_cmd_type(exe: ExecutorsType):
+    """ Identify correct subclass of BrokerCMD"""
+
+    if exe == ExecutorsType.function:
+        return Function
+    elif exe == ExecutorsType.messenger:
+        return Messenger
+    elif exe.is_subprocess:
+        return SubProcess
+    else:
+        raise ValueError('unknown message type')

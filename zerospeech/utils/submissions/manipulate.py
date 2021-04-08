@@ -1,6 +1,9 @@
 import json
+from pathlib import Path
+import shutil
 
 from zerospeech.settings import get_settings
+from zerospeech.utils import misc
 
 _settings = get_settings()
 
@@ -22,5 +25,16 @@ def make_submission_on_disk(submission_id: str, username: str, track: str, nb_pa
     (folder / 'upload.lock').touch()
 
 
-def transfer_submission():
-    pass
+"""
+TODO: create a transfer job data function (that checks if job storage is remote)
+TODO: create a fake submission creation
+TODO: create an unzip & merge zips function
+"""
+
+
+def transfer_submission(submission_id: str, submission_location: Path):
+    """ Transfer a submission to worker storage """
+    if _settings.SHARED_WORKER_STORAGE:
+        shutil.copytree(submission_location, (_settings.JOB_STORAGE / submission_id))
+    else:
+        misc.scp(submission_location, Path(f"{_settings.REMOTE_WORKER_HOST}:{_settings.JOB_STORAGE}"))

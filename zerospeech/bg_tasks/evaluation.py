@@ -1,6 +1,6 @@
 from zerospeech.task_manager import BrokerCMD, ExecutorsType, QueuesNames
+from zerospeech.task_manager import publish_message
 
 
-# def eval_submission(cmd: )
-#
-# def zr2021(submission: Path)
+async def send_eval_task(msg, loop=None):
+    return await publish_message(msg, QueuesNames.eval_queue, loop)

@@ -4,7 +4,7 @@ from datetime import timedelta
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Optional
 
 from pydantic import (
     BaseSettings, EmailStr, BaseModel,
@@ -31,6 +31,7 @@ class ApplicationSettings(BaseModel):
 
     # Databases
     db_file: str = 'zerospeech.db'
+    app_data: str = 'appdata'
 
     # Documentation
     doc_title: str = "Zerospeech Challenge API"
@@ -55,9 +56,10 @@ class _LocalBaseSettings(BaseSettings):
     RPC_HOST: Union[IPvAnyNetwork, str] = "0.0.0.0"
 
     # Remote Settings
-    SHARED_STORAGE: bool = True
-    REMOTE: Union[IPvAnyNetwork, str] = 'oberon'
-    REMOTE_PATH: Path = "/zerospeech"
+    SHARED_WORKER_STORAGE: bool = False
+    REMOTE_WORKER_HOST: Optional[Union[IPvAnyNetwork, str]] = None
+    JOB_STORAGE: Optional[Path] = None
+    # SUBMISSIONS
 
     class Config:
         env_prefix = 'ZR_'

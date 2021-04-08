@@ -1,15 +1,14 @@
 import random
-import time
 import string
+import time
 
 from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from zerospeech.db import zrDB, create_db
-from zerospeech.api import api_utils
-from zerospeech.api.v1 import router as v1_router
 from zerospeech import settings, log
+from zerospeech.api.v1 import router as v1_router
+from zerospeech.db import zrDB, create_db
 
 _settings = settings.get_settings()
 
@@ -51,7 +50,7 @@ async def startup():
     await zrDB.connect()
     # create data_folders
     _settings.USER_DATA_DIR.mkdir(exist_ok=True, parents=True)
-    (_settings.USER_DATA_DIR / 'api.lock').touch()
+
     (_settings.USER_DATA_DIR / 'submissions').mkdir(exist_ok=True)
     (_settings.USER_DATA_DIR / 'profiles').mkdir(exist_ok=True)
 
@@ -64,3 +63,4 @@ async def shutdown():
 # sub applications
 app.include_router(v1_router.api_router, prefix=_settings.API_V1_STR)
 app.mount("/static", StaticFiles(directory=str(_settings.STATIC_DIR)), name="static")
+
