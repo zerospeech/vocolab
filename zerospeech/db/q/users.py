@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from email_validator import validate_email, EmailSyntaxError
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 
 from zerospeech.db import zrDB, schema, exc as db_exc
 from zerospeech.settings import get_settings
@@ -23,6 +23,11 @@ class UserCreate(BaseModel):
     first_name: str
     last_name: str
     affiliation: str
+
+    @validator('username', 'pwd', 'first_name', 'last_name', 'affiliation')
+    def non_empty_string(cls, v):
+        assert v, "UserCreate does not accept empty fields"
+        return v
 
 
 def hash_pwd(password: str, salt=None):
@@ -90,9 +95,9 @@ async def verify_user(username: str, verification_code: str):
         await zrDB.execute(query)
         return True
     elif secrets.compare_digest(user.verified, 'True'):
-        raise exc.ActionNotValidError("Email already verified")
+        raise exc.ActionNotValid("Email already verified")
     else:
-        raise exc.ValueNotValidError("validation code was not correct")
+        raise exc.ValueNotValid("validation code was not correct")
 
 
 def check_users_password(password: str, user: schema.User):
@@ -179,6 +184,15 @@ async def get_user_list() -> List[schema.User]:
     return [schema.User(**usr) for usr in user_list]
 
 
+async def get_logged_user_list() -> List[schema.User]:
+    """ Return a list of all users """
+    query = schema.logged_users_table.join(schema.users_table).select().where(
+        schema.logged_users_table.c.user_id == schema.users_table.c.id
+    )
+    logged_list = await zrDB.fetch_all(query)
+    return [schema.User(**usr) for usr in logged_list]
+
+
 async def login_user(login: str, pwd: str):
     """ Create a new session for a user
     :arg login<str> argument used to identify user (can be username or email)
@@ -221,7 +235,8 @@ async def login_user(login: str, pwd: str):
     return usr, user_token
 
 
-async def delete_session(by_token: Optional[str] = None, by_uid: Optional[str] = None):
+async def delete_session(by_token: Optional[str] = None, by_uid: Optional[str] = None,
+                         clear_all: bool = False):
     """ Delete a specific user session """
     if by_token:
         query = schema.logged_users_table.delete().where(
@@ -231,8 +246,10 @@ async def delete_session(by_token: Optional[str] = None, by_uid: Optional[str] =
         query = schema.logged_users_table.delete().where(
             schema.logged_users_table.c.user_id == by_uid
         )
+    elif clear_all:
+        query = schema.logged_users_table.delete()
     else:
-        raise exc.OptionMissingError(
+        raise exc.OptionMissing(
             f"Function {delete_session.__name__} requires an uid or token but None was provided!"
         )
     # returns number of deleted entries
@@ -252,10 +269,10 @@ async def create_password_reset_session(username: str, email: str) -> schema.Pas
     try:
         user = await get_user(by_email=email)
     except ValueError:
-        raise exc.UserNotFoundError("the user is not valid")
+        raise exc.UserNotFound("the user is not valid")
 
     if user.username != username:
-        raise exc.ValueNotValidError("username provided does not match email")
+        raise exc.ValueNotValid("username provided does not match email")
 
     user_token = secrets.token_urlsafe(64)
     token_best_by = datetime.now() + _settings.local.password_reset_expiry_delay
@@ -294,7 +311,7 @@ async def update_users_password(user: schema.User, password: str, password_valid
 def get_user_data(username: str) -> schema.UserData:
     db_file = (_settings.USER_DATA_DIR / f"{username}.json")
     if not db_file.is_file():
-        raise exc.UserNotFoundError('user requested has no data entry')
+        raise exc.UserNotFound('user requested has no data entry')
     with db_file.open() as fp:
         raw_data = json.load(fp)
         return schema.UserData(**raw_data)

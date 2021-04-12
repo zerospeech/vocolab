@@ -1,5 +1,6 @@
 from datetime import date
-from typing import Optional, Dict
+from pathlib import Path
+from typing import Optional, Tuple, List
 
 from pydantic import BaseModel, HttpUrl
 
@@ -18,5 +19,13 @@ class ChallengesResponse(BaseModel):
     active: bool
     url: HttpUrl
     backend: str
+
+
+class NewSubmissionRequest(BaseModel):
+    filename: str
+    location: Path
+    hash: str
+    multipart: bool
+    index: List[Tuple[str, int, str]]
 
 

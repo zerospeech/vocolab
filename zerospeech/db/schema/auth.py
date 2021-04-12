@@ -45,7 +45,8 @@ logged_users_table = sqlalchemy.Table(
     "logged_users",
     users_metadata,
     sqlalchemy.Column("token", sqlalchemy.String, primary_key=True),
-    sqlalchemy.Column("user_id", sqlalchemy.Integer, primary_key=True),
+    sqlalchemy.Column("user_id", sqlalchemy.Integer,
+                      sqlalchemy.ForeignKey("users_credentials.id"), primary_key=True),
     sqlalchemy.Column("expiration_date", sqlalchemy.DateTime)
 )
 

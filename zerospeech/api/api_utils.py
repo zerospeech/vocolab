@@ -7,7 +7,7 @@ from zerospeech.db import q as queries, schema
 _settings = settings.get_settings()
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
 
 
 async def validate_token(token: str = Depends(oauth2_scheme)) -> schema.LoggedUser:

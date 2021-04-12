@@ -18,7 +18,7 @@ class ZerospeechException(Exception):
         return f"{self.__class__.__name__}: {self.message}"
 
 
-class OptionMissingError(ZerospeechException):
+class OptionMissing(ZerospeechException):
     """ Generic Exception used when a function was called with incorrect or missing arguments """
     pass
 
@@ -28,16 +28,26 @@ class UserError(ZerospeechException):
     pass
 
 
-class UserNotFoundError(UserError):
+class UserNotFound(UserError):
     """ Exception to be raised when user cannot be found"""
     pass
 
 
-class ActionNotValidError(ZerospeechException):
+class ActionNotValid(ZerospeechException):
     """ Error you are performing a useless or invalid action"""
     pass
 
 
-class ValueNotValidError(ZerospeechException):
+class ValueNotValid(ZerospeechException):
     """ Error one of the values used was not valid """
+    pass
+
+
+class InvalidRequest(ZerospeechException):
+    """ Error the request made was not valid """
+    pass
+
+
+class ResourceRequestedNotFound(ZerospeechException):
+    """ Error the request made was not valid """
     pass

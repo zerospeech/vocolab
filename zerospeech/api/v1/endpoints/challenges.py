@@ -35,9 +35,9 @@ async def get_challenge_info(challenge_id: int):
 
 
 # todo test submit creation
-@router.post('/{challenge_id}/submit')
-async def submit_to_challenge(
-        challenge_id: int, nb_parts: int,
+@router.post('/{challenge_id}/submission/create')
+async def create_submission(
+        challenge_id: int, data: models.NewSubmissionRequest,
         current_user: schema.User = Depends(api_utils.get_current_active_user)
 ):
     """ Create a new submission """
@@ -45,23 +45,25 @@ async def submit_to_challenge(
     if challenge is None:
         return ValueError('not found or inactive')
 
+    # todo re-check db entry
     submission_id = await ch_queries.add_submission(ch_queries.NewSubmission(
         user_id=current_user.id,
         track_id=challenge.id
     ))
+    # todo fix disk-entry
     submission_utils.make_submission_on_disk(
-        submission_id, current_user.username, challenge.label, nb_parts
+        submission_id, current_user.username, challenge.label, meta=data
     )
     return submission_id
 
 
 # todo test file upload & multi-part upload
-@router.put("/{challenge_id}/submit/files")
-async def create_upload_file(
+@router.put("/{challenge_id}/submission/upload")
+async def upload_submission(
         submission_id: str,
-        part_number: int = None,
+        part_name: str = None,
         file: UploadFile = File(...),
         current_user: schema.User = Depends(api_utils.get_current_active_user)
 ):
-    folder = (_settings.USER_DATA_DIR / current_user.username / 'submissions' / submission_id / 'raw')
+    # submission_utils.add_part(submission_id, file)
     return {"filename": file.filename}

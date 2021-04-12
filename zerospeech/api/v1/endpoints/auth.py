@@ -8,6 +8,9 @@ from fastapi import (
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
+from rich.console import Console
+from rich import inspect
+
 from zerospeech import exc
 from zerospeech.log import LogSingleton
 from zerospeech.settings import get_settings
@@ -20,6 +23,7 @@ router = APIRouter()
 logger = LogSingleton.get()
 
 _settings = get_settings()
+console = Console()
 
 
 @router.post('/login', response_model=models.LoggedItem)
@@ -27,6 +31,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """ Authenticate a user """
     try:
         _, token = await queries.users.login_user(form_data.username, form_data.password)
+        inspect(form_data)
         return models.LoggedItem(access_token=token, token_type="bearer")
     except ValueError:
         raise HTTPException(
@@ -48,7 +53,7 @@ async def signup(request: Request, user: queries.users.UserCreate, background_ta
     """ Create a new user """
     try:
         verification_code = await queries.users.create_user(user)
-    except exc.ValueNotValidError as e:
+    except exc.ValueNotValid as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"This {e.data} already exists !!",
@@ -78,9 +83,9 @@ async def email_verification(v: str, username: str):
         res = await queries.users.verify_user(username, v)
     except ValueError:
         msg = 'Username does not exist'
-    except exc.ActionNotValidError as e:
+    except exc.ActionNotValid as e:
         msg = e.__str__()
-    except exc.ValueNotValidError as e:
+    except exc.ValueNotValid as e:
         msg = e.__str__()
 
     data = {

@@ -3,7 +3,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from shutil import which
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -18,11 +18,13 @@ _settings = get_settings(settings_type="queue_worker")
 
 
 class SplitManifest(BaseModel):
-    og_filename: str
-    location: Path
+    filename: str
+    tmp_location: Path
     hash: str
-    index: Union[List[Tuple[str, int, str]], List[Tuple[str, int]]]
-    hashed_parts: bool = False
+    index: Optional[Union[List[Tuple[str, int, str]], List[Tuple[str, int]]]]
+    multipart: bool = True
+    hashed_parts: bool = True
+    completed: int = 0
 
 
 def scp(src: Path, dest: Path, recursive=True):
@@ -95,8 +97,8 @@ def split_zip_v2(zipfile: Path, chunk_max_size: int = 500000000, hash_parts: boo
         index: List[Tuple[str, int]] = list(zip(df['filename'], df['filesize']))
 
     return SplitManifest(
-        og_filename=zipfile.name,
-        location=tmp_loc,
+        filename=zipfile.name,
+        tmp_location=tmp_loc,
         hash=md5sum(zipfile),
         index=index,
         hashed_parts=hash_parts
@@ -106,21 +108,21 @@ def split_zip_v2(zipfile: Path, chunk_max_size: int = 500000000, hash_parts: boo
 def merge_zip_v2(manifest: SplitManifest, output_location: Path, clean: bool = True):
     if manifest.hashed_parts:
         for f, s, h in manifest.index:
-            assert md5sum(manifest.location / f) == h, f"file {f} does not match md5"
+            assert md5sum(manifest.tmp_location / f) == h, f"file {f} does not match md5"
 
     df = pd.DataFrame(manifest.index)
     df.columns = ['filename', 'filesize', 'hash']
     del df['hash']
     df['encoding'] = np.nan
     df['header'] = np.nan
-    df.to_csv((manifest.location / 'fs_manifest.csv'))
+    df.to_csv((manifest.tmp_location / 'fs_manifest.csv'))
     fs = Filesplit()
-    fs.merge(input_dir=f"{manifest.location}", output_file=f"{output_location / manifest.og_filename}")
-    assert md5sum(output_location / manifest.og_filename) == manifest.hash, "output file does not match original md5"
+    fs.merge(input_dir=f"{manifest.tmp_location}", output_file=f"{output_location / manifest.filename}")
+    assert md5sum(output_location / manifest.filename) == manifest.hash, "output file does not match original md5"
 
     if clean:
-        shutil.rmtree(manifest.location)
-    return output_location / manifest.og_filename
+        shutil.rmtree(manifest.tmp_location)
+    return output_location / manifest.filename
 
 
 # Normalize function names
