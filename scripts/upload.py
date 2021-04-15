@@ -38,9 +38,9 @@ class UploadManifest:
     def load(cls, filename: Path, retries: int = 2):
         with filename.open('r') as fp:
             dd = json.load(fp)
-        return cls(dd, filename, retries)
+        return cls(dd["manifest"], filename, metadata=dd["metadata"], retries=retries)
 
-    def __init__(self, list_manifest, save_file: Path, retries: int = 2):
+    def __init__(self, list_manifest, save_file: Path, metadata=None, retries: int = 2):
         if isinstance(list_manifest, dict):
             self.man = list_manifest
         else:
@@ -50,10 +50,23 @@ class UploadManifest:
             }
         self.save_file = save_file
         self.retries = retries
+        if metadata:
+            self._metadata = metadata
+        else:
+            self._metadata = {}
         self.save()
 
     def __iter__(self):
         return self
+
+    @property
+    def metadata(self):
+        return self._metadata
+
+    @metadata.setter
+    def metadata(self, data):
+        self._metadata.update(data)
+        self.save()
 
     def __next__(self):
         for k, v in self.man.items():
@@ -95,7 +108,10 @@ class UploadManifest:
 
     def save(self):
         with self.save_file.open('w') as fp:
-            json.dump(self.man, fp)
+            json.dump({
+                "manifest": self.man,
+                "metadata": self.metadata
+            }, fp)
 
     def is_complete(self):
         for k, v in self.man.items():
@@ -167,8 +183,8 @@ def select_challenge():
 
 def create_multipart_submission(challenge_id: int, manifest: SplitManifest, _token: str):
     """..."""
-    response = requests.post(
-        f'{SERVER_LOCATION}/v1/challenges/{challenge_id}/submission/create',
+    return requests.post(
+        f'{SERVER_LOCATION}/challenges/{challenge_id}/submission/create',
         data={
             "filename": manifest.filename,
             "hash": manifest.hash,
@@ -176,27 +192,36 @@ def create_multipart_submission(challenge_id: int, manifest: SplitManifest, _tok
             "index": manifest.index
         },
         headers={
-            'Authentication': f'BEARER {_token}'
+            'Authorization': f'Bearer {_token}'
         })
-    return response
 
 
 def create_single_part_submission(challenge_id: int, filename: Path, _hash: str, _token: str):
     """..."""
-    response = requests.post(
-        f'{SERVER_LOCATION}/v1/challenges/{challenge_id}/submission/create',
+    return requests.post(
+        f'{SERVER_LOCATION}/challenges/{challenge_id}/submission/create',
         data={
             "filename": f"{filename}",
             "hash": _hash,
         },
         headers={
-            'Authentication': f'BEARER {_token}'
+            'Authorization': f'Bearer {_token}'
         })
 
-    if response.status_code != 200:
-        raise ValueError('Request to server Failed !!')
 
-    return response.text
+def submission_upload(challenge_id: int, submission_id: str, file: Path, _token: str):
+    """..."""
+    return requests.put(
+        f'{SERVER_LOCATION}/challenges/{challenge_id}/submission/upload',
+        params={
+            "submission_id": f"{submission_id}",
+            "part_name": f"{file.name}"
+        },
+        files={f'{file.name}': file.open('rb')},
+        headers={
+            'Authorization': f'Bearer {_token}'
+        }
+    )
 
 
 def split_zip_v2(zipfile: Path, chunk_max_size: int = 500000000, hash_parts: bool = True):
@@ -225,21 +250,41 @@ def split_zip_v2(zipfile: Path, chunk_max_size: int = 500000000, hash_parts: boo
     )
 
 
+def ask_resume(file: Path):
+    if file.is_file():
+        choice = Prompt.ask("A checkpoint file was found. Do you wish to resume ?",
+                            choices=["Yes", "No"])
+        if choice == "No":
+            file.unlink()
+
+
 def multipart_upload(challenge_id: int, zipfile: Path, _token: str):
-    manifest = split_zip_v2(zipfile)
-    response = create_multipart_submission(ch_id, manifest, _token)
-    file_list = [i[0] for i in manifest.index]
     checkpoint = zipfile.parents[0] / f"{zipfile.stem}.checkpoint.json"
+    ask_resume(checkpoint)
 
     if checkpoint.is_file():
         file_list = UploadManifest.load(checkpoint, retries=NB_RETRY_ATTEMPTS)
+        tmp_location = Path(file_list.metadata.get("tmp_location"))
+        submission_id = file_list.metadata.get('submission_id')
     else:
-        file_list = UploadManifest(file_list, checkpoint, retries=NB_RETRY_ATTEMPTS)
+        manifest = split_zip_v2(archive_path)
+        tmp_location = manifest.tmp_location
+        response = create_multipart_submission(ch_id, manifest, token)
+        if response.status_code != 200:
+            # todo error for submission
+            pass
+        submission_id = response.text
+        file_list = [i[0] for i in manifest.index]
+        metadata = {
+            "submission_id": submission_id,
+            "tmp_location": tmp_location
+        }
+        file_list = UploadManifest(file_list, checkpoint, metadata, retries=NB_RETRY_ATTEMPTS)
 
     for item in file_list:
         file_list.set_waiting(item)
-        # todo upload request
-        response = ...
+        file_path = tmp_location / item
+        response = submission_upload(challenge_id, submission_id, file_path, _token)
 
         if response.status_code == 200:
             file_list.set_done(item)
@@ -256,20 +301,25 @@ def single_part_upload(challenge_id: int, zipfile: Path, _token: str):
     zip_hash = md5sum(zipfile)
     response = create_single_part_submission(challenge_id, filename=zipfile, _hash=zip_hash, _token=_token)
 
-    # todo upload request
-    response = ...
+    if response.status_code != 200:
+        # error case
+        pass
+    submission_id = response.text
+    response = submission_upload(challenge_id, submission_id, zipfile, _token)
+
+    if response.status_code != 200:
+        # error case
+        pass
 
 
 if __name__ == '__main__':
     print("testing")
+    # TODO ask multipart and archive path
     multipart = ...
     archive_path = ...
     token = login()
     ch_id, _ = select_challenge()
     if multipart:
-        multipart_upload(ch_id, ..., ...)
+        multipart_upload(ch_id, archive_path, token)
     else:
         single_part_upload(ch_id, archive_path, token)
-    # todo: create submission session
-    # todo: split file
-    # todo: upload parts
