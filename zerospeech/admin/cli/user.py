@@ -1,12 +1,13 @@
 import asyncio
-import argparse
-import getpass
+import json
 import string
+import sys
 import time
+from pathlib import Path
 
 from pydantic import EmailStr
 from rich.console import Console
-from rich.progress import Progress, BarColumn, TimeRemainingColumn
+from rich.progress import Progress, BarColumn
 from rich.table import Table
 
 from zerospeech.admin.cli.cmd_types import CommandCollection, CMD
@@ -115,6 +116,7 @@ class CreateUser(CMD):
 
     def __init__(self, cmd_path):
         super(CreateUser, self).__init__(cmd_path)
+        self.parser.add_argument('-f', '--from-file', type=str, help="Load users from a json file")
 
     @property
     def name(self) -> str:
@@ -124,9 +126,34 @@ class CreateUser(CMD):
     def short_description(self):
         return "create a new user"
 
-    def run(self, argv):
-        _ = self.parser.parse_args(argv)
-        console = Console()
+    @staticmethod
+    def _make_usr(user: user_q.UserCreate, progress):
+        task = progress.add_task(f"[red]--> Creating...{user.username}", start=False)
+        time.sleep(1)
+        _ = asyncio.run(user_q.create_user(user))
+        progress.update(task, completed=True,
+                        description=f"[bold][green]:heavy_check_mark: User "
+                                    f"{user.username} Created Successfully[/green][/bold]")
+
+    def _create_from_file(self, file: Path, progress):
+        with file.open() as fp:
+            user_list = json.load(fp)
+            task1 = progress.add_task("[red]Creating users...", total=len(user_list))
+
+            for data in user_list:
+                progress.update(task1, advance=0.5)
+                user = user_q.UserCreate(
+                    username=data.get("username"),
+                    email=EmailStr(data.get('email')),
+                    pwd=data.get("password"),
+                    first_name=data.get('first_name'),
+                    last_name=data.get('last_name'),
+                    affiliation=data.get('affiliation')
+                )
+                self._make_usr(user, progress)
+                progress.update(task1, advance=0.5)
+
+    def _create_form_input(self, console, progress):
         console.print("-- New User Info --", style="bold")
         first_name = console.input("First Name: ")
         last_name = console.input("Last Name: ")
@@ -148,14 +175,24 @@ class CreateUser(CMD):
             last_name=last_name,
             affiliation=affiliation
         )
+        self._make_usr(user, progress)
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        console = Console()
         with Progress("[progress.description]{task.description}",
                       BarColumn(), "[progress.percentage]"
                       ) as progress:
-            task = progress.add_task(f"[red]--> Creating...{username}", start=False)
-            time.sleep(10)
-            _ = asyncio.run(user_q.create_user(user))
-            progress.update(task, completed=True)
-        console.print(":heavy_check_mark: User Created Successfully", style="green bold")
+
+            if args.from_file:
+                json_file = Path(args.from_file)
+                if not json_file.is_file() or json_file.suffix != ".json":
+                    console.print(f":x: Input: {json_file} does not exist or is not a valid json file.")
+                    sys.exit(1)
+                self._create_from_file(json_file, progress)
+            else:
+                self._create_form_input(console, progress)
+
 
 # todo: new user
 # todo: deactivate
