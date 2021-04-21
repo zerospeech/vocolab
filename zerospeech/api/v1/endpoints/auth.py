@@ -31,7 +31,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """ Authenticate a user """
     try:
         _, token = await queries.users.login_user(form_data.username, form_data.password)
-        inspect(form_data)
+        # inspect(form_data)
         return models.LoggedItem(access_token=token, token_type="bearer")
     except ValueError:
         raise HTTPException(

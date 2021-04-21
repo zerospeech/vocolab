@@ -70,6 +70,7 @@ class _LocalBaseSettings(BaseSettings):
 class _APISettings(_LocalBaseSettings):
     """ Generic API Config Class """
     API_V1_STR: str = '/v1'
+    DEBUG: bool = True
 
     app_home: Path = Path().cwd()
     version: str = "v0.1"

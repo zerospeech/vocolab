@@ -23,7 +23,10 @@ class Challenge(BaseModel):
     def is_active(self) -> bool:
         """ Checks if challenge is active """
         present = date.today()
-        return self.end_date > present and self.active
+        if self.end_date:
+            return self.start_date <= present <= self.end_date and self.active
+        else:
+            return self.start_date <= present and self.active
 
 
 challenges_table = sqlalchemy.Table(
@@ -46,11 +49,12 @@ class SubmissionStatus(str, Enum):
     invalid = 'invalid'
     evaluating = 'evaluating'
     completed = 'completed'
+    canceled = 'canceled'
     failed = 'failed'
 
 
-class ChallengeSubmissions(BaseModel):
-    id: int
+class ChallengeSubmission(BaseModel):
+    id: str
     user_id: int
     track_id: int
     submit_date: datetime
@@ -65,7 +69,7 @@ submissions_table = sqlalchemy.Table(
     challenge_metadata,
     sqlalchemy.Column("id", sqlalchemy.String, primary_key=True, unique=True),
     sqlalchemy.Column("user_id", sqlalchemy.Integer),
-    sqlalchemy.Column("track_id", sqlalchemy.Integer),
+    sqlalchemy.Column("track_id",sqlalchemy.Integer, sqlalchemy.ForeignKey("challenges.id")),
     sqlalchemy.Column("submit_date", sqlalchemy.DateTime),
     sqlalchemy.Column("status", sqlalchemy.String)
 )

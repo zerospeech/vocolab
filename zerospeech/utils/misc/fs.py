@@ -17,14 +17,26 @@ from zerospeech.settings import get_settings
 _settings = get_settings(settings_type="queue_worker")
 
 
+class ManifestIndexItem(BaseModel):
+    file_name: str
+    file_size: int
+    file_hash: str
+
+    def __eq__(self, other: 'ManifestIndexItem'):
+        return self.file_hash == other.file_hash
+
+    def __hash__(self):
+        return int(self.file_hash, 16)
+
+
 class SplitManifest(BaseModel):
     filename: str
     tmp_location: Path
     hash: str
-    index: Optional[Union[List[Tuple[str, int, str]], List[Tuple[str, int]]]]
+    index: Optional[List[ManifestIndexItem]]
+    received: Optional[List[ManifestIndexItem]] = []
     multipart: bool = True
     hashed_parts: bool = True
-    completed: int = 0
 
 
 def scp(src: Path, dest: Path, recursive=True):
@@ -107,12 +119,15 @@ def split_zip_v2(zipfile: Path, chunk_max_size: int = 500000000, hash_parts: boo
 
 def merge_zip_v2(manifest: SplitManifest, output_location: Path, clean: bool = True):
     if manifest.hashed_parts:
-        for f, s, h in manifest.index:
-            assert md5sum(manifest.tmp_location / f) == h, f"file {f} does not match md5"
+        for item in manifest.index:
+            assert md5sum(manifest.tmp_location / item.file_name) == item.file_hash, \
+                f"file {item.file_name} does not match md5"
 
-    df = pd.DataFrame(manifest.index)
-    df.columns = ['filename', 'filesize', 'hash']
-    del df['hash']
+    df = pd.DataFrame([
+        (i.file_name, i.file_size)
+        for i in manifest.index
+        ])
+    df.columns = ['filename', 'filesize']
     df['encoding'] = np.nan
     df['header'] = np.nan
     df.to_csv((manifest.tmp_location / 'fs_manifest.csv'))

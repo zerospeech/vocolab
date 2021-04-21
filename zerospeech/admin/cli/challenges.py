@@ -1,6 +1,7 @@
 import asyncio
 import json
-from datetime import datetime
+import sys
+from datetime import datetime, date
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -30,7 +31,7 @@ class ChallengesCMD(CommandCollection):
 
 
 class ListChallenges(CMD):
-    """ cmd to list all challenges"""
+    """ Command to list all challenges"""
 
     def __init__(self, cmd_path):
         super(ListChallenges, self).__init__(cmd_path)
@@ -43,10 +44,6 @@ class ListChallenges(CMD):
     @property
     def name(self) -> str:
         return 'list'
-
-    @property
-    def short_description(self):
-        return 'list available challenges'
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -98,10 +95,6 @@ class AddChallenge(CMD):
     @property
     def name(self) -> str:
         return 'new'
-
-    @property
-    def short_description(self):
-        return 'create a new challenge'
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -169,32 +162,36 @@ class SetChallenge(CMD):
     def name(self) -> str:
         return 'set'
 
-    @property
-    def short_description(self):
-        return 'allows altering values of challenges'
+    def _type_safety(self, field_name: str, value: str):
+        print(field_name)
+        if field_name in ('start_date', 'end_date'):
+            return datetime.strptime(value, "%d/%m/%Y").date()
+        else:
+            p_type = self.challenge_fields[field_name]
+            return p_type(value)
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
         if args.field not in self.challenge_fields.keys():
             console.print(f":x: field : {args.field} is not a valid field!", style="bold red")
-            console.print(f":right_arrow: please use one of the following fields : {self.challenge_fields}",
+            console.print(f":right_arrow: please use one of the following fields : "
+                          f"{list(self.challenge_fields.keys())}",
                           style="bold green")
+            sys.exit(1)
 
-        with misc.get_event_loop() as loop:
-            # todo check values and exceptions
-            loop.run_until_complete(
-                ch_queries.set_challenge_property(
-                    args.id, args.field, args.value, self.challenge_fields[args.field]
-                )
+        type_safe_value = self._type_safety(args.field, args.value)
+        asyncio.run(
+            ch_queries.set_challenge_property(
+                args.id, args.field, type_safe_value
             )
-            console.print(f"challenge:white_check_mark:",
-                          style="bold green")
+        )
+        console.print(f"challenge:white_check_mark:",
+                      style="bold green")
 
 
 def get() -> ChallengesCMD:
     challenges = ChallengesCMD()
-
     challenges.add_cmd(ListChallenges(challenges.name))
     challenges.add_cmd(AddChallenge(challenges.name))
     challenges.add_cmd(SetChallenge(challenges.name))

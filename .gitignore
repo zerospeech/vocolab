@@ -43,3 +43,4 @@ data/db
 .in
 .out
 .pytest_cache/
+.ipynb_checkpoints/

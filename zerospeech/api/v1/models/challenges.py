@@ -1,8 +1,7 @@
-from datetime import date
-from pathlib import Path
 from typing import Optional, Tuple, List
+from pydantic import BaseModel
 
-from pydantic import BaseModel, HttpUrl
+from zerospeech.db.schema.challenges import Challenge
 
 
 class ChallengePreview(BaseModel):
@@ -11,21 +10,23 @@ class ChallengePreview(BaseModel):
     active: bool
 
 
-class ChallengesResponse(BaseModel):
-    id: str
-    label: str
-    start_date: date
-    end_date: Optional[date]
-    active: bool
-    url: HttpUrl
-    backend: str
+class ChallengesResponse(Challenge):
+    pass
+
+
+class SubmissionRequestFileIndexItem(BaseModel):
+    file_name: str
+    file_size: int
+    file_hash: Optional[str] = None
 
 
 class NewSubmissionRequest(BaseModel):
     filename: str
-    location: Path
     hash: str
     multipart: bool
-    index: List[Tuple[str, int, str]]
+    index: Optional[List[SubmissionRequestFileIndexItem]]
 
 
+class UploadSubmissionPartResponse(BaseModel):
+    completed: bool
+    remaining: List[str]

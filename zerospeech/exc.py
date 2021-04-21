@@ -1,9 +1,12 @@
 """ A File containing Exceptions definitions """
 from typing import Any, Optional
 
+from starlette import status as http_status
+
 
 class ZerospeechException(Exception):
     """ Generic Base Exception definition for the Zerospeech API """
+    __http_status__: int = http_status.HTTP_400_BAD_REQUEST
 
     def __init__(self, msg: Optional[str] = None, data: Optional[Any] = None):
 
@@ -13,6 +16,11 @@ class ZerospeechException(Exception):
         self.message = msg
         self.data = data
         super(ZerospeechException, self).__init__(msg)
+
+    @property
+    def status(self):
+        """ Returns the https status code of the exception """
+        return self.__http_status__
 
     def __str__(self):
         return f"{self.__class__.__name__}: {self.message}"

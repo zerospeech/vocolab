@@ -1,14 +1,18 @@
 import random
 import string
+import sys
 import time
+import traceback
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import JSONResponse
 
 from zerospeech import settings, log
 from zerospeech.api.v1 import router as v1_router
 from zerospeech.db import zrDB, create_db
+from zerospeech.exc import ZerospeechException
 
 _settings = settings.get_settings()
 
@@ -26,7 +30,6 @@ app.add_middleware(
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-
     idem = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
     logger.info(f'[rid={idem}] {request.client.host}:{request.client.port} "{request.method} {request.url.path}"')
     logger.debug(f"[rid={idem}] params={request.path_params}, {request.query_params}")
@@ -40,6 +43,36 @@ async def log_requests(request: Request, call_next):
     logger.info(f"[rid={idem}] completed_in={formatted_process_time}ms status_code={response.status_code}")
 
     return response
+
+
+@app.exception_handler(ValueError)
+async def value_error_reformatting(request: Request, exc: ValueError):
+    if _settings.DEBUG:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={
+                "message": f"{exc}",
+                "trace": f"{traceback.format_tb(sys.exc_info()[2])}"
+            },
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"message": f"{exc}"},
+    )
+
+
+@app.exception_handler(ZerospeechException)
+async def zerospeech_error_formatting(request: Request, exc: ZerospeechException):
+    if exc.data:
+        content = dict(message=f"{str(exc)}", data=str(exc.data))
+    else:
+        content = dict(message=f"{str(exc)}")
+
+    return JSONResponse(
+        status_code=exc.status,
+        content=content,
+    )
 
 
 @app.on_event("startup")
@@ -60,7 +93,7 @@ async def shutdown():
     # clean up db connection pool
     await zrDB.disconnect()
 
+
 # sub applications
 app.include_router(v1_router.api_router, prefix=_settings.API_V1_STR)
 app.mount("/static", StaticFiles(directory=str(_settings.STATIC_DIR)), name="static")
-

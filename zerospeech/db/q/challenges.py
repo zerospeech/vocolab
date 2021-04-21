@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Any
 from uuid import uuid4
 
 from zerospeech.db import zrDB, schema, exc as db_exc
@@ -10,6 +10,7 @@ _settings = get_settings()
 
 
 async def create_new_challenge(item: NewChallenge):
+    """ Creates a new challenge entry in the database """
     try:
         query = schema.challenges_table.insert().values(
             label=item.label,
@@ -25,8 +26,12 @@ async def create_new_challenge(item: NewChallenge):
 
 
 async def list_challenges(
-        include_all=None,
+        include_all: bool = False,
 ) -> List[schema.Challenge]:
+    """ Returns a list of all the challenges
+
+    :flag include_all allows to filter out inactive challenges
+    """
     query = schema.challenges_table.select()
     challenges = await zrDB.fetch_all(query)
     if challenges is None:
@@ -41,34 +46,45 @@ async def list_challenges(
 
 async def get_challenge(
         challenge_id: int, allow_inactive=False,
-) -> Optional[schema.Challenge]:
+) -> schema.Challenge:
+    """ Fetches the Challenge object from the database
+
+    :note:  in strict mode (allow_inactive = False) the function raises a ValueError
+    if the challenge has expired or is inactive.
+    """
     query = schema.challenges_table.select().where(
         schema.challenges_table.c.id == challenge_id
     )
     ch = await zrDB.fetch_one(query)
+    if ch is None:
+        raise ValueError(f'There is no challenge with the following id: {challenge_id}')
     ch = schema.Challenge(**ch)
     if allow_inactive:
         return ch
     else:
-        return ch if ch.is_active() else None
+        if not ch.is_active():
+            raise ValueError(f"The Challenge {ch.label}[{ch.id}] is not active")
+        return ch
 
 
-async def set_challenge_property(ch_id: int, property_name: str, value: str, m_type):
+async def set_challenge_property(ch_id: int, property_name: str, value: Any):
+    """ Update the property of a challenge """
     query = schema.challenges_table.update().where(
         schema.challenges_table.c.id == ch_id
     ).values({f"{property_name}": value})
-
-    await zrDB.execute(query)
+    return await zrDB.execute(query)
 
 
 async def delete_challenge(ch_id: int):
+    """ Delete the database entry of a challenge """
     query = schema.challenges_table.delete().where(
         schema.challenges_table.c.id == ch_id
     )
-    await zrDB.execute(query)
+    return await zrDB.execute(query)
 
 
 async def add_submission(new_submission: NewSubmission):
+    """ Creates a database entry to a new submission """
     submission_id = datetime.now().strftime('%Y%m-%d%H-%M%S-') + str(uuid4())
     query = schema.submissions_table.insert()
     values = new_submission.dict()
@@ -79,21 +95,60 @@ async def add_submission(new_submission: NewSubmission):
     return submission_id
 
 
-def list_submissions(by_challenge=None, by_user=None, by_status=None, by_date=None):
-    pass
+async def list_submission(filter_user=None, filter_status=None):
+    """ Fetches a list of submission from the database """
+    query = schema.submissions_table.select()
+    if filter_user:
+        query = query.where(
+            schema.submissions_table.c.id == filter_user
+        )
+
+    if filter_status:
+        query = query.where(
+            schema.submissions_table.c.status == filter_status
+        )
+
+    sub_list = await zrDB.fetch_all(query)
+    
+    # map & return
+    return [schema.ChallengeSubmission(**sub) for sub in sub_list]
 
 
-def get_submission():
-    pass
+async def get_submission(by_id: str):
+    """ Fetches a submission from the database """
+    query = schema.submissions_table.select().where(
+        schema.submissions_table.c.id == by_id
+    )
+    sub = await zrDB.fetch_one(query)
+    if sub is None:
+        raise ValueError(f'There is no challenge with the following id: {by_id}')
+    # map & return
+    return schema.ChallengeSubmission(**sub)
 
 
-def drop_submission():
-    pass
+async def update_submission_status(by_id: str, status: schema.SubmissionStatus):
+    """ Update the status of a submission """
+    query = schema.submissions_table.update().where(
+        schema.submissions_table.c.id == by_id
+    ).values(status=status)
+    return await zrDB.execute(query)
 
 
-def submission_status():
-    pass
+async def drop_submission(by_id: str):
+    """ Delete db entry of a submission """
+    query = schema.submissions_table.delete().where(
+        schema.submissions_table.c.id == by_id
+    )
+    await zrDB.execute(query)
 
 
-def update_submission_status():
-    pass
+async def submission_status(by_id: str) -> schema.SubmissionStatus:
+    """ Returns the status of a submission """
+    query = schema.submissions_table.select().where(
+        schema.submissions_table.c.id == by_id
+    )
+    sub = await zrDB.fetch_one(query)
+    if sub is None:
+        raise ValueError(f'There is no challenge with the following id: {by_id}')
+    # map & return
+    return schema.ChallengeSubmission(**sub).status

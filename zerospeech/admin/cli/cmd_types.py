@@ -26,9 +26,8 @@ class CMD(ABC):
         pass
 
     @property
-    @abstractmethod
     def short_description(self):
-        pass
+        return self.__doc__
 
     @abstractmethod
     def run(self, argv):

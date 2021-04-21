@@ -40,3 +40,4 @@ MANIFEST
 .in
 .out
 .pytest_cache/
+scratches/
