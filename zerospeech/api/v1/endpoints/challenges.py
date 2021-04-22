@@ -4,9 +4,8 @@ This section handles challenge data
 from typing import List
 
 from fastapi import (
-    APIRouter, Depends, UploadFile, File
+    APIRouter, Depends, UploadFile, File, BackgroundTasks
 )
-
 
 from zerospeech.db import schema
 from zerospeech.log import LogSingleton
@@ -62,12 +61,18 @@ async def upload_submission(
         challenge_id: int,
         submission_id: str,
         part_name: str,
-        file_date: UploadFile = File(...),
-        current_user: schema.User = Depends(api_utils.get_current_active_user)
+        background_tasks: BackgroundTasks,
+        file_data: UploadFile = File(...),
+        current_user: schema.User = Depends(api_utils.get_current_active_user),
 ):
     challenge = await ch_queries.get_challenge(challenge_id)
     if challenge is None:
         return ValueError(f'challenge {challenge_id} not found or inactive')
 
-    is_completed, remaining = submission_utils.add_part(submission_id, part_name, file_date)
+    is_completed, remaining = submission_utils.add_part(submission_id, part_name, file_data)
+
+    if is_completed:
+        # run the completion of the submission on the background
+        background_tasks.add_task(submission_utils.complete_submission, submission_id)
+
     return models.UploadSubmissionPartResponse(completed=is_completed, remaining=[n.file_name for n in remaining])

@@ -44,6 +44,7 @@ challenges_table = sqlalchemy.Table(
 
 class SubmissionStatus(str, Enum):
     uploading = 'uploading'
+    uploaded = 'uploaded'
     on_queue = 'on_queue'
     validating = 'validating'
     invalid = 'invalid'

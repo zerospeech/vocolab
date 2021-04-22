@@ -1,3 +1,4 @@
+import asyncio
 import json
 from pathlib import Path
 import shutil
@@ -9,6 +10,8 @@ from fastapi import UploadFile
 from zerospeech.settings import get_settings
 from zerospeech.utils import misc
 from zerospeech.exc import ResourceRequestedNotFound, InvalidRequest, ValueNotValid
+from zerospeech.db.q import challenges as q_challenge
+
 
 if TYPE_CHECKING:
     from zerospeech.api.v1.models import NewSubmissionRequest
@@ -58,11 +61,16 @@ def multipart_add(submission_id: str, filename: str, data: UploadFile):
     with (folder / 'tmp' / 'upload.json').open() as fp:
         mf_data = misc.SplitManifest(**json.load(fp))
 
+    if not isinstance(mf_data.index, list):
+        raise ValueError('something went bad')
+
     # lookup hash
-    f_hash, file_index = next(((val.file_hash, ind) for ind, val in enumerate(mf_data.index) if val.file_name == filename), None)
+    file_meta = next(((val.file_hash, ind) for ind, val in enumerate(mf_data.index) if val.file_name == filename), None)
     # file not found in submission => raise exception
-    if f_hash is None:
+    if file_meta is None:
         raise ResourceRequestedNotFound(f"Part {filename} is not part of submission {submission_id}!!")
+
+    f_hash, file_index = file_meta
 
     # Add the part
     file_part = (folder / "tmp" / f"{filename}")
@@ -141,9 +149,27 @@ def add_part(submission_id: str, filename: str, data: UploadFile):
     return completed, expecting_list
 
 
+def complete_submission(submission_id: str):
+    folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
+
+    if (folder / 'tmp').is_dir() and (folder / 'tmp/upload.json').is_file():
+        with (folder / 'tmp' / 'upload.json').open() as fp:
+            mf_data = misc.SplitManifest(**json.load(fp))
+
+        archive = misc.merge_zip(mf_data, folder)
+    else:
+        archive = folder / 'input.zip'
+
+    misc.unzip(archive, folder / 'input')
+    asyncio.run(
+        q_challenge.update_submission_status(submission_id, q_challenge.schema.SubmissionStatus.uploaded)
+    )
+    # todo start eval task
+
+
 def transfer_submission(submission_id: str, submission_location: Path):
     """ Transfer a submission to worker storage """
     if _settings.SHARED_WORKER_STORAGE:
         shutil.copytree(submission_location, (_settings.JOB_STORAGE / submission_id))
     else:
-        misc.scp(submission_location, Path(f"{_settings.REMOTE_WORKER_HOST}:{_settings.JOB_STORAGE}"))
+        misc.scp(submission_location, f"{_settings.REMOTE_WORKER_HOST}", f"{_settings.JOB_STORAGE}")

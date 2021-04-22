@@ -4,6 +4,8 @@ import tempfile
 from pathlib import Path
 from shutil import which
 from typing import Union, Tuple, List, Optional
+from zipfile import ZipFile
+
 
 import numpy as np
 import pandas as pd
@@ -39,9 +41,12 @@ class SplitManifest(BaseModel):
     hashed_parts: bool = True
 
 
-def scp(src: Path, dest: Path, recursive=True):
+def scp(src: Path, host: str, dest: str, recursive=True):
     """ Copy files over using scp """
-    subprocess.run([which("scp"), f"{'-r' if recursive else ''}", f"{src}", f"{dest}"])
+    if not src.is_file() and not src.is_dir():
+        raise ValueError(f"Input {src} does not appear to exist as a file or directory !")
+
+    subprocess.run([which("scp"), f"{'-r' if recursive else ''}", f"{src}", f"{host}:{dest}"])
 
 
 def md5sum(file_path: Path, chunk_size: int = 8192):
@@ -56,6 +61,15 @@ def md5sum(file_path: Path, chunk_size: int = 8192):
             else:
                 break
     return h.hexdigest()
+
+
+def unzip(archive: Path, output: Path):
+    """ Unzips contents of a zip archive into the output directory """
+    # create folder if it does not exist
+    output.mkdir(exist_ok=True, parents=True)
+    # open & extract
+    with ZipFile(archive, 'r') as zipObj:
+        zipObj.extractall(output)
 
 
 def split_zip_v1(zipfile: Path, chunk_max_size: str = "500m", hash_parts: bool = False):

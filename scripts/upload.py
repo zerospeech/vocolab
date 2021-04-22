@@ -2,33 +2,73 @@
 
 import getpass
 import json
+import shutil
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union, List, Tuple
+from typing import Optional, List
 
 import pandas as pd
 import requests
 from Crypto.Hash import MD5
 from fsplit.filesplit import Filesplit
-from rich import print
+from rich import print, inspect
+from rich.progress import Progress
 from rich.prompt import Prompt
 
 SERVER_LOCATION: str = "http://127.0.0.1:8000/v1"
 CLIENT_ID: str = "cli_uploader"
 CLIENT_SECRET: str = 'cli_uploader'
 NB_RETRY_ATTEMPTS: int = 2
+MULTIPART_THRESHOLD: int = 500000000  # in bytes
+
+
+class ZrApiException(Exception):
+    pass
+
+
+@dataclass
+class ManifestFileIndexItem:
+    file_name: str
+    file_size: int
+    file_hash: Optional[str] = None
+
+    def dict(self):
+        return {f"{x}": getattr(self, x) for x in self.__dataclass_fields__.keys()}
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(**data)
 
 
 @dataclass
 class SplitManifest:
+    """ A class containing information about archive split"""
     filename: str
     tmp_location: Path
     hash: str
-    index: Optional[Union[List[Tuple[str, int, str]], List[Tuple[str, int]]]]
+    index: Optional[List[ManifestFileIndexItem]]
     multipart: bool = True
     hashed_parts: bool = True
     completed: int = 0
+
+    def dict(self):
+        data = {f"{x}": f"{getattr(self, x)}" for x in self.__dataclass_fields__.keys()}
+        if "index" in data.keys():
+            data["index"] = [
+                item.dict() for item in self.index
+            ]
+
+        return data
+
+    @classmethod
+    def from_dict(cls, data):
+        if "index" in data.keys():
+            data["index"] = [
+                ManifestFileIndexItem.from_dict(item) for item in data["index"]
+            ]
+        return cls(**data)
 
 
 class UploadManifest:
@@ -161,6 +201,9 @@ def login():
             "client_secret": CLIENT_SECRET
         }
     )
+    if response.status_code != 200:
+        print(f"[red]:x:{response.status_code}[/red]: {response.json().get('detail')}")
+        sys.exit(1)
 
     return response.json().get("access_token")
 
@@ -175,22 +218,24 @@ def select_challenge():
     challenges = response.json()
     choices = [ch.get('label') for ch in challenges]
     name = Prompt.ask("Choose one of the available challenges: ",
-                      choices=choices, default=choices[0])
+                      choices=choices, default="zr2021")
     return next((
         (v.get('id'), v.get('label'))
         for v in challenges if v.get('label') == name), None)
 
 
-def create_multipart_submission(challenge_id: int, manifest: SplitManifest, _token: str):
+def create_multipart_submission(challenge_id: int, file_meta: dict, _token: str):
     """..."""
+    data = {
+        "filename": file_meta["filename"],
+        "hash": file_meta["hash"],
+        "multipart": True,
+        "index": file_meta['index']
+    }
+
     return requests.post(
         f'{SERVER_LOCATION}/challenges/{challenge_id}/submission/create',
-        data={
-            "filename": manifest.filename,
-            "hash": manifest.hash,
-            "multipart": 'true',
-            "index": manifest.index
-        },
+        json=data,
         headers={
             'Authorization': f'Bearer {_token}'
         })
@@ -200,7 +245,7 @@ def create_single_part_submission(challenge_id: int, filename: Path, _hash: str,
     """..."""
     return requests.post(
         f'{SERVER_LOCATION}/challenges/{challenge_id}/submission/create',
-        data={
+        json={
             "filename": f"{filename}",
             "hash": _hash,
         },
@@ -211,22 +256,24 @@ def create_single_part_submission(challenge_id: int, filename: Path, _hash: str,
 
 def submission_upload(challenge_id: int, submission_id: str, file: Path, _token: str):
     """..."""
-    return requests.put(
+    response = requests.put(
         f'{SERVER_LOCATION}/challenges/{challenge_id}/submission/upload',
         params={
-            "submission_id": f"{submission_id}",
-            "part_name": f"{file.name}"
+            "part_name": file.name,
+            "submission_id": f"{submission_id}"
         },
-        files={f'{file.name}': file.open('rb')},
+        files={f'file_data': file.open('rb').read()},
         headers={
             'Authorization': f'Bearer {_token}'
         }
     )
+    return response
 
 
 def split_zip_v2(zipfile: Path, chunk_max_size: int = 500000000, hash_parts: bool = True):
     """..."""
     assert zipfile.is_file(), f"entry file ({zipfile}) was not found"
+    print(f"splitting {zipfile} into chunks...")
 
     tmp_loc = Path(tempfile.mkdtemp(dir=f"{zipfile.parents[0]}"))
     fs = Filesplit()
@@ -235,11 +282,11 @@ def split_zip_v2(zipfile: Path, chunk_max_size: int = 500000000, hash_parts: boo
     if hash_parts:
         df['hash'] = df.apply(lambda row: md5sum(
             (tmp_loc / row['filename'])), axis=1)
-        index: List[Tuple[str, int, str]] = list(
-            zip(df['filename'], df['filesize'], df['hash']))
+        index: List[ManifestFileIndexItem] = [ManifestFileIndexItem(file_name=x[0], file_size=x[1], file_hash=x[2])
+                                              for x in zip(df['filename'], df['filesize'], df['hash'])]
     else:
-        index: List[Tuple[str, int]] = list(
-            zip(df['filename'], df['filesize']))
+        index: List[ManifestFileIndexItem] = [ManifestFileIndexItem(file_name=x[0], file_size=x[1])
+                                              for x in zip(df['filename'], df['filesize'])]
 
     return SplitManifest(
         filename=zipfile.name,
@@ -251,47 +298,73 @@ def split_zip_v2(zipfile: Path, chunk_max_size: int = 500000000, hash_parts: boo
 
 
 def ask_resume(file: Path):
+    choice = "No"
     if file.is_file():
         choice = Prompt.ask("A checkpoint file was found. Do you wish to resume ?",
                             choices=["Yes", "No"])
         if choice == "No":
             file.unlink()
 
+    return choice == "Yes"
 
-def multipart_upload(challenge_id: int, zipfile: Path, _token: str):
-    checkpoint = zipfile.parents[0] / f"{zipfile.stem}.checkpoint.json"
-    ask_resume(checkpoint)
 
+def multipart_upload(challenge_id: int, zipfile: Path, _token: str, checkpoint: Path):
+    print("preparing metadata....")
+
+    # check for checkpoint
     if checkpoint.is_file():
         file_list = UploadManifest.load(checkpoint, retries=NB_RETRY_ATTEMPTS)
         tmp_location = Path(file_list.metadata.get("tmp_location"))
+        _token = file_list.metadata.get('token')
+        challenge_id = file_list.metadata.get("challenge_id")
+    else:
+        manifest = split_zip_v2(zipfile)
+        file_list = [i.file_name for i in manifest.index]
+        tmp_location = manifest.tmp_location
+        meta = {
+            "tmp_location": f"{tmp_location}",
+            "filename": manifest.filename,
+            "hash": manifest.hash,
+            "index": [i.dict() for i in manifest.index],
+            "token": _token,
+            "challenge_id": challenge_id
+        }
+        file_list = UploadManifest(file_list, checkpoint, meta, retries=NB_RETRY_ATTEMPTS)
+
+    # check if submission session exists
+    if "submission_id" in file_list.metadata:
         submission_id = file_list.metadata.get('submission_id')
     else:
-        manifest = split_zip_v2(archive_path)
-        tmp_location = manifest.tmp_location
-        response = create_multipart_submission(ch_id, manifest, token)
+        response = create_multipart_submission(ch_id, file_list.metadata, token)
         if response.status_code != 200:
-            # todo error for submission
-            pass
-        submission_id = response.text
-        file_list = [i[0] for i in manifest.index]
-        metadata = {
-            "submission_id": submission_id,
-            "tmp_location": tmp_location
-        }
-        file_list = UploadManifest(file_list, checkpoint, metadata, retries=NB_RETRY_ATTEMPTS)
+            print(f'[red]:x:[/red][bold]Submission Creation Failed with code [red] {response.status_code}[/red][/bold]')
+            inspect(response.json())
+            sys.exit(1)
 
-    for item in file_list:
-        file_list.set_waiting(item)
-        file_path = tmp_location / item
-        response = submission_upload(challenge_id, submission_id, file_path, _token)
+        submission_id = response.text.replace('"', '')
+        file_list.metadata = {"submission_id": submission_id}
 
-        if response.status_code == 200:
-            file_list.set_done(item)
-        else:
-            file_list.set_failed(item)
+    with Progress() as progress:
+        task1 = progress.add_task("[red]Uploading parts...", total=len(file_list.man))
+
+        for item in file_list:
+            file_list.set_waiting(item)
+            progress.update(task1, advance=0.5)
+            file_path = tmp_location / item
+            print(f'uploading : {file_path.name}...')
+            response = submission_upload(challenge_id, submission_id, file_path, _token)
+
+            if response.status_code == 200:
+                print(f'[green]:heavy_check_mark: {file_path}')
+                file_list.set_done(item)
+                progress.update(task1, advance=0.5)
+            else:
+                progress.update(task1, advance=-0.5)
+                file_list.set_failed(item)
 
     if file_list.is_complete():
+        checkpoint.unlink()
+        shutil.rmtree(tmp_location)
         return []
     else:
         return file_list.get_failed()
@@ -302,24 +375,37 @@ def single_part_upload(challenge_id: int, zipfile: Path, _token: str):
     response = create_single_part_submission(challenge_id, filename=zipfile, _hash=zip_hash, _token=_token)
 
     if response.status_code != 200:
-        # error case
-        pass
+        print(f'[red]:x:[/red][bold]Submission Creation Failed with code [red] {response.status_code}[/red][/bold]')
+        inspect(response.json())
+        sys.exit(1)
+
     submission_id = response.text
     response = submission_upload(challenge_id, submission_id, zipfile, _token)
 
     if response.status_code != 200:
-        # error case
-        pass
+        print(f'[red]:x:[/red][bold]Archive upload failed with code [red] {response.status_code}[/red][/bold]')
+        inspect(response.json())
+        sys.exit(1)
 
 
 if __name__ == '__main__':
-    print("testing")
-    # TODO ask multipart and archive path
-    multipart = ...
-    archive_path = ...
-    token = login()
-    ch_id, _ = select_challenge()
+    archive_path = Path(sys.argv[1])
+    if not archive_path.is_file() and archive_path.suffix != ".zip":
+        raise ValueError(f"{archive_path} must be an existing zip file")
+
+    multipart = archive_path.stat().st_size > MULTIPART_THRESHOLD * 2
+    print(f"uploading as multipart: {multipart}")
+
+    checkpoint_file = archive_path.parents[0] / f"{archive_path.stem}.checkpoint.json"
+    if not ask_resume(checkpoint_file):
+        token = login()
+        ch_id, _ = select_challenge()
+    else:
+        token = ''
+        ch_id = ''
+
     if multipart:
-        multipart_upload(ch_id, archive_path, token)
+        multipart_upload(ch_id, archive_path, token, checkpoint_file)
     else:
         single_part_upload(ch_id, archive_path, token)
+
