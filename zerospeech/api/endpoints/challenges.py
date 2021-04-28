@@ -10,8 +10,7 @@ from fastapi import (
 from zerospeech.db import schema
 from zerospeech.log import LogSingleton
 from zerospeech.settings import get_settings
-from zerospeech.api import api_utils
-from zerospeech.api.v1 import models
+from zerospeech.api import api_utils, models
 from zerospeech.db.q import challenges as ch_queries
 from zerospeech.utils import submissions as submission_utils
 

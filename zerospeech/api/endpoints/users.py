@@ -10,6 +10,7 @@ from zerospeech.api import api_utils
 from zerospeech.db import schema, q as queries
 from zerospeech.log import LogSingleton
 from zerospeech.settings import get_settings
+from zerospeech.utils.submissions import SubmissionLogger
 
 router = APIRouter()
 logger = LogSingleton.get()
@@ -42,6 +43,12 @@ def submissions_list(current_user: schema.User = Depends(api_utils.get_current_a
     raise NotImplemented()
 
 
+@router.get('/submissions/{track_id}')
+def submissions_list_by_track(current_user: schema.User = Depends(api_utils.get_current_active_user)):
+    """ Return a list of all user submissions """
+    raise NotImplemented()
+
+
 @router.get('/submissions/{submissions_id}')
 def get_submission(submissions_id: int, current_user: schema.User = Depends(api_utils.get_current_active_user)):
     """ Return information on a submission """
@@ -54,7 +61,15 @@ def get_submission_status(submissions_id: int, current_user: schema.User = Depen
     raise NotImplemented()
 
 
-@router.get('/results/{track_id}')
+@router.get('/submissions/{submissions_id}/log')
+def get_submission_status(submissions_id: int, current_user: schema.User = Depends(api_utils.get_current_active_user)):
+    """ Return status of a submission """
+    log = SubmissionLogger(submissions_id)
+
+    return log.get_text()
+
+
+@router.get('/submissions/{submissions_id}/scores')
 def get_user_results(track_id: int, current_user: schema.User = Depends(api_utils.get_current_active_user)):
     """ Return status of a submission """
     raise NotImplemented()

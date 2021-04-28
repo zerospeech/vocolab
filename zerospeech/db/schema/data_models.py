@@ -19,7 +19,7 @@ class NewChallenge(BaseModel):
     label: str
     active: bool
     url: AnyHttpUrl
-    backend: str
+    evaluator: Optional[int]
     start_date: date
     end_date: Optional[date]
 

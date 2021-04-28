@@ -62,9 +62,8 @@ class CommandCollection(ABC):
         return help_msg
 
     @property
-    @abstractmethod
     def description(self) -> str:
-        pass
+        return self.__doc__
 
     def root_cmd(self, argv):
         print(f"cmd: {self.name}")

@@ -1,5 +1,8 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from typing import Dict, Any
+
+from jinja2 import FileSystemLoader, Environment
 
 from zerospeech import settings
 from zerospeech.db import q as queries, schema
@@ -49,3 +52,10 @@ async def get_current_active_user(current_user: schema.User = Depends(get_user))
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
             detail='User not verified'
         )
+
+
+def generate_html_response(data: Dict[str, Any], template_name: str) -> str:
+    """ Render an html template using values from data"""
+    env = Environment(loader=FileSystemLoader(_settings.HTML_TEMPLATE_DIR))
+    template = env.get_template(template_name)
+    return template.render(**data)

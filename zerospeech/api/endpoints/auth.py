@@ -9,13 +9,11 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from rich.console import Console
-from rich import inspect
 
 from zerospeech import exc
 from zerospeech.log import LogSingleton
 from zerospeech.settings import get_settings
-from zerospeech.api import api_utils
-from zerospeech.api.v1 import models
+from zerospeech.api import api_utils, models
 from zerospeech.db import q as queries, schema
 from zerospeech.utils import notify
 
@@ -73,33 +71,6 @@ async def signup(request: Request, user: queries.users.UserCreate, background_ta
     return Response(status_code=200)
 
 
-@router.get('/email/verify', response_class=HTMLResponse)
-async def email_verification(v: str, username: str):
-    """ Verify a new users email address """
-    msg = 'Success'
-    res = False
-
-    try:
-        res = await queries.users.verify_user(username, v)
-    except ValueError:
-        msg = 'Username does not exist'
-    except exc.ActionNotValid as e:
-        msg = e.__str__()
-    except exc.ValueNotValid as e:
-        msg = e.__str__()
-
-    data = {
-        "success": res,
-        "username": username,
-        "error": msg,
-        "url": "https://zerospeech.com",
-        "admin_email": _settings.local.admin_email,
-        "contact_url": "https://zerospeech.com/contact"
-    }
-
-    return notify.html.generate_html_response(data=data, template_name='email_verification.html.jinja2')
-
-
 @router.post('/password/reset')
 async def password_reset_request(
         user: models.PasswordResetRequest, request: Request, background_tasks: BackgroundTasks):
@@ -117,28 +88,6 @@ async def password_reset_request(
                               template_name='password_reset.jinja2'
                               )
     return Response(status_code=200)
-
-
-@router.get('/password/update/page', response_class=HTMLResponse)
-async def password_update_page(v: str, request: Request):
-    """ An HTML page-form that allows a user to change their password """
-    try:
-        user = await queries.users.get_user(by_password_reset_session=v)
-    except ValueError as e:
-        logger.error(f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
-
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Page not found"
-        )
-
-    data = {
-        "username": user.username,
-        "submit_url": f"/auth{router.url_path_for('password_update')}?v={v}",
-        "session": v
-    }
-
-    return notify.html.generate_html_response(data=data, template_name='password_reset.html.jinja2')
 
 
 @router.post('/password/update', response_class=PlainTextResponse)

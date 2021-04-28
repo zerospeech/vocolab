@@ -11,7 +11,7 @@ from zerospeech.settings import get_settings
 from zerospeech.utils import misc
 from zerospeech.exc import ResourceRequestedNotFound, InvalidRequest, ValueNotValid
 from zerospeech.db.q import challenges as q_challenge
-
+from zerospeech.utils.submissions.log import SubmissionLogger
 
 if TYPE_CHECKING:
     from zerospeech.api.v1.models import NewSubmissionRequest
@@ -30,7 +30,6 @@ def make_submission_on_disk(submission_id: str, username: str, track: str, meta:
     """
     folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
     folder.mkdir(parents=True, exist_ok=True)
-    (folder / 'logs').mkdir(exist_ok=True)
     (folder / 'scores').mkdir(exist_ok=True)
     (folder / 'input').mkdir(exist_ok=True)
     info = {
@@ -53,21 +52,24 @@ def make_submission_on_disk(submission_id: str, username: str, track: str, meta:
         with (folder / 'archive.hash').open('w') as fp:
             fp.write(meta.hash)
 
+    sub_log = SubmissionLogger(submission_id)
+    sub_log.header(username, track, meta.multipart)
+
     (folder / 'upload.lock').touch()
 
 
 def multipart_add(submission_id: str, filename: str, data: UploadFile):
+    logger = SubmissionLogger(submission_id)
+    logger.log(f"adding a new part to upload: tmp/{filename}")
     folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
     with (folder / 'tmp' / 'upload.json').open() as fp:
         mf_data = misc.SplitManifest(**json.load(fp))
-
-    if not isinstance(mf_data.index, list):
-        raise ValueError('something went bad')
 
     # lookup hash
     file_meta = next(((val.file_hash, ind) for ind, val in enumerate(mf_data.index) if val.file_name == filename), None)
     # file not found in submission => raise exception
     if file_meta is None:
+        logger.log(f"(ERROR) file {filename} was not found in manifest, upload canceled!!")
         raise ResourceRequestedNotFound(f"Part {filename} is not part of submission {submission_id}!!")
 
     f_hash, file_index = file_meta
@@ -86,6 +88,7 @@ def multipart_add(submission_id: str, filename: str, data: UploadFile):
         data = f"failed hash comparison" \
                f"file: {folder / 'tmp' / f'{filename}'} with hash {calc_hash}" \
                f"on record found : {filename} with hash {f_hash}"
+        logger.log(f"(ERROR) {data}, upload canceled!!")
         raise ValueNotValid("Hash of part does not match given hash", data=data)
 
     # up count of received parts
@@ -96,6 +99,7 @@ def multipart_add(submission_id: str, filename: str, data: UploadFile):
         fp.write(mf_data.json())
 
     remaining = list(set(mf_data.index) - set(mf_data.received))
+    logger.log(f" --> part was added successfully", append=True)
 
     # return --> is_completed
     return len(mf_data.received) == len(mf_data.index), remaining
@@ -103,9 +107,12 @@ def multipart_add(submission_id: str, filename: str, data: UploadFile):
 
 def singlepart_add(submission_id: str, filename: str, data: UploadFile):
     folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
+    logger = SubmissionLogger(submission_id)
+    logger.log(f"adding a new part to upload: {filename}")
 
     # hash not found in submission => raise exception
     if not (folder / 'archive.hash').is_file():
+        logger.log(f"(ERROR) file {filename} was not found in manifest, upload canceled!!")
         raise ResourceRequestedNotFound(f"Part {filename} is not part of submission {submission_id}!!")
 
     with (folder / 'archive.hash').open() as fp:
@@ -121,11 +128,13 @@ def singlepart_add(submission_id: str, filename: str, data: UploadFile):
     if not misc.md5sum((folder / "input.zip")) == f_hash:
         raise ValueNotValid("Hash does not match expected!")
 
+    logger.log(f" --> file was uploaded successfully", append=True)
     # completed => True
     return True, []
 
 
 def add_part(submission_id: str, filename: str, data: UploadFile):
+    logger = SubmissionLogger(submission_id)
     folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
 
     # check existing submission
@@ -145,11 +154,19 @@ def add_part(submission_id: str, filename: str, data: UploadFile):
     # is_completed => remove lock
     if completed:
         (folder / 'upload.lock').unlink()
+        logger.log(f"Submission upload was completed.")
 
     return completed, expecting_list
 
 
 def complete_submission(submission_id: str):
+    """ Does the end of upload tasks:
+        - merge parts if the upload was multipart
+        - unzip the input archive
+        - mark upload as completed
+        - run evaluation function
+    : logs to submission logfile
+    """
     folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
 
     if (folder / 'tmp').is_dir() and (folder / 'tmp/upload.json').is_file():
@@ -161,6 +178,7 @@ def complete_submission(submission_id: str):
         archive = folder / 'input.zip'
 
     misc.unzip(archive, folder / 'input')
+    # mark task as uploaded to the database
     asyncio.run(
         q_challenge.update_submission_status(submission_id, q_challenge.schema.SubmissionStatus.uploaded)
     )

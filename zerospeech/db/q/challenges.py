@@ -16,7 +16,7 @@ async def create_new_challenge(item: NewChallenge):
             label=item.label,
             active=item.active,
             url=item.url,
-            backend=item.backend,
+            evaluator=item.evaluator,
             start_date=item.start_date,
             end_date=item.end_date
         )
@@ -152,3 +152,12 @@ async def submission_status(by_id: str) -> schema.SubmissionStatus:
         raise ValueError(f'There is no challenge with the following id: {by_id}')
     # map & return
     return schema.ChallengeSubmission(**sub).status
+
+
+async def get_evaluators():
+    """ Returns a list of the evaluators """
+    query = schema.evaluators_table.select()
+    results = await zrDB.fetch_all(query)
+    if not results:
+        return []
+    return [schema.EvaluatorItem(**i) for i in results]

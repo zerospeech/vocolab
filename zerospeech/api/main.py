@@ -4,13 +4,13 @@ import sys
 import time
 import traceback
 
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import JSONResponse
 
 from zerospeech import settings, log
-from zerospeech.api.v1 import router as v1_router
+from zerospeech.api import router as v1_router
 from zerospeech.db import zrDB, create_db
 from zerospeech.exc import ZerospeechException
 
@@ -95,5 +95,5 @@ async def shutdown():
 
 
 # sub applications
-app.include_router(v1_router.api_router, prefix=_settings.API_V1_STR)
+app.include_router(v1_router.api_router)
 app.mount("/static", StaticFiles(directory=str(_settings.STATIC_DIR)), name="static")

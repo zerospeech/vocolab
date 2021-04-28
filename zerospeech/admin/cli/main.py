@@ -46,12 +46,14 @@ def run_cli():
     from zerospeech.admin.cli.challenges import get as get_ch_cmd
     from zerospeech.admin.cli.checks import get as get_checks
     from zerospeech.admin.cli.submissions import get as get_subs
+    from zerospeech.admin.cli.evaluators import get as get_eval
 
     # add subcommands
     AdminCMD.add_cmd(get_user_cmd())
     AdminCMD.add_cmd(get_ch_cmd())
     AdminCMD.add_cmd(get_checks())
     AdminCMD.add_cmd(get_subs())
+    AdminCMD.add_cmd(get_eval())
 
     # run
     AdminCMD()

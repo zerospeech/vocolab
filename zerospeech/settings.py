@@ -4,14 +4,13 @@ from datetime import timedelta
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Set, Dict
 
 from pydantic import (
     BaseSettings, EmailStr, BaseModel,
     DirectoryPath, HttpUrl, IPvAnyNetwork,
 
 )
-
 
 class ApplicationSettings(BaseModel):
     """ Application Settings """
@@ -56,7 +55,10 @@ class _LocalBaseSettings(BaseSettings):
     RPC_HOST: Union[IPvAnyNetwork, str] = "0.0.0.0"
 
     # Remote Settings
-    SHARED_WORKER_STORAGE: bool = False
+    REMOTE_HOSTS: Set[str] = set()
+    REMOTE_STORAGE: Dict[str, Path] = dict()
+    REMOTE_BIN: Dict[str, Path] = dict()
+
     REMOTE_WORKER_HOST: Optional[Union[IPvAnyNetwork, str]] = None
     JOB_STORAGE: Optional[Path] = None
     # SUBMISSIONS

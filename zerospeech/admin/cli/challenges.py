@@ -60,9 +60,9 @@ class ListChallenges(CMD):
         table.add_column("label")
         table.add_column("active")
         table.add_column("url")
-        table.add_column("back-end")
         table.add_column("start_date")
         table.add_column("end_date")
+        table.add_column("evaluator")
 
         for ch in challenge_lst:
             if ch.end_date:
@@ -72,8 +72,8 @@ class ListChallenges(CMD):
 
             table.add_row(
                 f"{ch.id}", f"{ch.label}", f"{ch.active}", f"{ch.url}",
-                f"{ch.backend}", f"{ch.start_date.strftime('%d/%m/%Y')}",
-                f"{end_date_str}"
+                f"{ch.start_date.strftime('%d/%m/%Y')}",
+                f"{end_date_str}", f"{ch.evaluator}"
             )
         # print
         console.print(table)
@@ -123,18 +123,17 @@ class AddChallenge(CMD):
                     label=label,
                     active=False,
                     url=url,
-                    backend="",
+                    evaluator=None,
                     start_date=datetime.strptime(start_date, '%d/%m/%Y').date(),
                     end_date=end_date,
                 )
                 obj_list = [obj]
 
             if not args.dry_run:
-                with misc.get_event_loop() as loop:
-                    for item in obj_list:
-                        loop.run_until_complete(ch_queries.create_new_challenge(item))
-                        console.print(f"insertion of {item.label} was successful:white_check_mark:",
-                                      style="bold green")
+                for item in obj_list:
+                    asyncio.run(ch_queries.create_new_challenge(item))
+                    console.print(f"insertion of {item.label} was successful:white_check_mark:",
+                                  style="bold green")
             else:
                 inspect(obj_list)
 

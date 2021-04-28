@@ -5,6 +5,8 @@ from typing import Optional
 import sqlalchemy
 from pydantic import BaseModel, HttpUrl
 
+from zerospeech.task_manager import ExecutorsType
+
 challenge_metadata = sqlalchemy.MetaData()
 
 
@@ -15,7 +17,7 @@ class Challenge(BaseModel):
     end_date: Optional[date]
     active: bool
     url: HttpUrl
-    backend: str
+    evaluator: Optional[int]
 
     class Config:
         orm_mode = True
@@ -38,7 +40,7 @@ challenges_table = sqlalchemy.Table(
     sqlalchemy.Column("end_date", sqlalchemy.Date),
     sqlalchemy.Column("active", sqlalchemy.Boolean),
     sqlalchemy.Column("url", sqlalchemy.String),
-    sqlalchemy.Column("backend", sqlalchemy.String)
+    sqlalchemy.Column("evaluator", sqlalchemy.Integer, sqlalchemy.ForeignKey("evaluators.id"))
 )
 
 
@@ -70,7 +72,31 @@ submissions_table = sqlalchemy.Table(
     challenge_metadata,
     sqlalchemy.Column("id", sqlalchemy.String, primary_key=True, unique=True),
     sqlalchemy.Column("user_id", sqlalchemy.Integer),
-    sqlalchemy.Column("track_id",sqlalchemy.Integer, sqlalchemy.ForeignKey("challenges.id")),
+    sqlalchemy.Column("track_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("challenges.id")),
     sqlalchemy.Column("submit_date", sqlalchemy.DateTime),
     sqlalchemy.Column("status", sqlalchemy.String)
+)
+
+
+class EvaluatorItem(BaseModel):
+    id: int
+    label: str
+    executor: ExecutorsType
+    host: Optional[str]
+    script_path: str
+    base_arguments: str
+
+    class Config:
+        orm_mode = True
+
+
+evaluators_table = sqlalchemy.Table(
+    "evaluators",
+    challenge_metadata,
+    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, unique=True, autoincrement=True),
+    sqlalchemy.Column("label", sqlalchemy.String, unique=True),
+    sqlalchemy.Column("host", sqlalchemy.String),
+    sqlalchemy.Column("executor", sqlalchemy.String),
+    sqlalchemy.Column("script_path", sqlalchemy.String),
+    sqlalchemy.Column("base_arguments", sqlalchemy.String)
 )
