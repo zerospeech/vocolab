@@ -22,7 +22,7 @@ class ExecutorsType(str, Enum):
 
     def to_exec(self):
         """ Returns absolute path to executable or None"""
-        if self not in self.subprocess:
+        if not self.is_subprocess:
             raise ValueError('function does not execute!!')
         return which(self)
 

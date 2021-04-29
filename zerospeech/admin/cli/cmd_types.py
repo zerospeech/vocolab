@@ -1,7 +1,7 @@
 import argparse
 import sys
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Union
 
 
 def cmd_parser(cmd):

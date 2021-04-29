@@ -6,6 +6,9 @@ from pydantic import BaseModel, HttpUrl, AnyHttpUrl
 
 
 # todo maybe move this ?
+from zerospeech.task_manager import ExecutorsType
+
+
 class UserData(BaseModel):
     username: str
     affiliation: str
