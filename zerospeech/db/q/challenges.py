@@ -166,6 +166,17 @@ async def get_evaluators():
     return [schema.EvaluatorItem(**i) for i in results]
 
 
+async def get_evaluator(by_id: int):
+    """ Returns a specific evaluator """
+    query = schema.evaluators_table.select().where(
+        schema.evaluators_table.c.id == by_id
+    )
+    result = await zrDB.fetch_one(query)
+    if not result:
+        return None
+    return schema.EvaluatorItem(**result)
+
+
 async def add_evaluator(lst_eval: List[NewEvaluatorItem]):
     """ Insert a list of evaluators into the database """
     query = schema.evaluators_table.insert()

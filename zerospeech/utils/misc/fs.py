@@ -41,12 +41,12 @@ class SplitManifest(BaseModel):
     hashed_parts: bool = True
 
 
-def scp(src: Path, host: str, dest: str, recursive=True):
+def scp(src: Path, host: str, dest: Path, recursive=True):
     """ Copy files over using scp """
     if not src.is_file() and not src.is_dir():
         raise ValueError(f"Input {src} does not appear to exist as a file or directory !")
 
-    subprocess.run([which("scp"), f"{'-r' if recursive else ''}", f"{src}", f"{host}:{dest}"])
+    return subprocess.run([which("scp"), f"{'-r' if recursive else ''}", f"{src}", f"{host}:{dest}"], capture_output=True)
 
 
 def md5sum(file_path: Path, chunk_size: int = 8192):

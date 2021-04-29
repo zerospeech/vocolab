@@ -43,3 +43,4 @@ def discover_evaluators(hostname: str, bin_location) -> List[NewEvaluatorItem]:
             for key, item in evaluators.items()
             ]
 
+

@@ -14,9 +14,14 @@ from zerospeech.db.q import challenges as q_challenge
 from zerospeech.utils.submissions.log import SubmissionLogger
 
 if TYPE_CHECKING:
-    from zerospeech.api.v1.models import NewSubmissionRequest
+    from zerospeech.api.models import NewSubmissionRequest
 
 _settings = get_settings()
+
+
+def get_submission_dir(submission_id: str) -> Path:
+    """ Returns the directory containing the submission data based on the given id"""
+    return _settings.USER_DATA_DIR / 'submissions' / submission_id
 
 
 def make_submission_on_disk(submission_id: str, username: str, track: str, meta: "NewSubmissionRequest"):
@@ -28,7 +33,7 @@ def make_submission_on_disk(submission_id: str, username: str, track: str, meta:
         - tmp/ : temporary folder for multipart uploads (contains chunks & index)
         - upload.lock : lockfile used to declare the submission has not finished uploading
     """
-    folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
+    folder = get_submission_dir(submission_id)
     folder.mkdir(parents=True, exist_ok=True)
     (folder / 'scores').mkdir(exist_ok=True)
     (folder / 'input').mkdir(exist_ok=True)
@@ -61,7 +66,7 @@ def make_submission_on_disk(submission_id: str, username: str, track: str, meta:
 def multipart_add(submission_id: str, filename: str, data: UploadFile):
     logger = SubmissionLogger(submission_id)
     logger.log(f"adding a new part to upload: tmp/{filename}")
-    folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
+    folder = get_submission_dir(submission_id)
     with (folder / 'tmp' / 'upload.json').open() as fp:
         mf_data = misc.SplitManifest(**json.load(fp))
 
@@ -106,7 +111,7 @@ def multipart_add(submission_id: str, filename: str, data: UploadFile):
 
 
 def singlepart_add(submission_id: str, filename: str, data: UploadFile):
-    folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
+    folder = get_submission_dir(submission_id)
     logger = SubmissionLogger(submission_id)
     logger.log(f"adding a new part to upload: {filename}")
 
@@ -135,7 +140,7 @@ def singlepart_add(submission_id: str, filename: str, data: UploadFile):
 
 def add_part(submission_id: str, filename: str, data: UploadFile):
     logger = SubmissionLogger(submission_id)
-    folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
+    folder = get_submission_dir(submission_id)
 
     # check existing submission
     if not folder.is_dir():
@@ -167,7 +172,7 @@ def complete_submission(submission_id: str):
         - run evaluation function
     : logs to submission logfile
     """
-    folder = (_settings.USER_DATA_DIR / 'submissions' / submission_id)
+    folder = get_submission_dir(submission_id)
 
     if (folder / 'tmp').is_dir() and (folder / 'tmp/upload.json').is_file():
         with (folder / 'tmp' / 'upload.json').open() as fp:
@@ -185,9 +190,23 @@ def complete_submission(submission_id: str):
     # todo start eval task
 
 
-def transfer_submission(submission_id: str, submission_location: Path):
+def transfer_submission(host: str, submission_id: str):
     """ Transfer a submission to worker storage """
-    if _settings.SHARED_WORKER_STORAGE:
-        shutil.copytree(submission_location, (_settings.JOB_STORAGE / submission_id))
+    logger = SubmissionLogger(submission_id)
+    folder = get_submission_dir(submission_id)
+    remote_location = _settings.REMOTE_STORAGE.get(host) / submission_id / 'input'
+    # create remote folder
+    code, _ = misc.ssh_exec(host, ['mkdir', '-p', f"{remote_location}"])
+    if code != 0:
+        logger.log(f"failed to write on {host}")
+        raise ValueError(f"Failed to copy files to host {host}")
+
+    res = misc.scp((folder / 'input'), host, remote_location, recursive=True)
+    if res.returncode == 0:
+        logger.log(f"copied files from {folder/ 'input'} to {host} for processing.")
+        return remote_location
     else:
-        misc.scp(submission_location, f"{_settings.REMOTE_WORKER_HOST}", f"{_settings.JOB_STORAGE}")
+        logger.log(f"failed to copy {folder / 'input'} to {host} for processing.")
+        logger.log(res.stderr.decode())
+        raise ValueError(f"Failed to copy files to host {host}")
+
