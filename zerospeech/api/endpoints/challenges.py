@@ -32,6 +32,12 @@ async def get_challenge_info(challenge_id: int):
     return await ch_queries.get_challenge(challenge_id, allow_inactive=True)
 
 
+@router.get('/{challenge_id}/leaderboard',  responses={404: {"model": models.Message}})
+async def get_challenge_leaderboard(challenge_id: int):
+    """ Return leaderboard of a specific challenge """
+    raise NotImplemented('Leaderboard not implemented')
+
+
 # todo test submit creation
 @router.post('/{challenge_id}/submission/create', responses={404: {"model": models.Message}})
 async def create_submission(

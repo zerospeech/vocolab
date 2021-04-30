@@ -164,7 +164,7 @@ def add_part(submission_id: str, filename: str, data: UploadFile):
     return completed, expecting_list
 
 
-def complete_submission(submission_id: str):
+def complete_submission(submission_id: str, with_eval: bool = True):
     """ Does the end of upload tasks:
         - merge parts if the upload was multipart
         - unzip the input archive
@@ -188,6 +188,8 @@ def complete_submission(submission_id: str):
         q_challenge.update_submission_status(submission_id, q_challenge.schema.SubmissionStatus.uploaded)
     )
     # todo start eval task
+    if with_eval:
+        pass
 
 
 def transfer_submission(host: str, submission_id: str):

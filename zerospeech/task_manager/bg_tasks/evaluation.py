@@ -30,7 +30,7 @@ async def challenge_eval(challenge: schema.Challenge, submission_id: str):
     args.append(f"{folder}")
     script_path = Path(evaluator.script_path)
     subprocess_message = SubProcess(
-        label=f"{challenge.label}-{submission_id}",
+        label=f"{submission_id}",
         executor=evaluator.executor,
         exe_path=f"{script_path.parents[0]}",
         p_name=script_path.name,

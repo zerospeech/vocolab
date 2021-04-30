@@ -1,5 +1,6 @@
 import asyncio
 import sys
+from pathlib import Path
 
 from rich.console import Console
 from rich.prompt import Confirm
@@ -98,6 +99,7 @@ class DiscoverEvaluators(CMD):
 
     def __init__(self, cmd_path):
         super(DiscoverEvaluators, self).__init__(cmd_path)
+        self.parser.add_argument('--local', action='store_true')
         self.parser.add_argument('host')
 
     @property
@@ -106,6 +108,9 @@ class DiscoverEvaluators(CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
+
+        if args.local and Path(args.host).is_dir():
+            raise NotImplemented('import of local evaluators is not implemented yet !!')
 
         if args.host not in _settings.REMOTE_HOSTS:
             console.print(":x: Error specified host was not found", style="red")

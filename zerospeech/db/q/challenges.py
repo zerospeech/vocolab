@@ -117,7 +117,7 @@ async def list_submission(filter_user=None, filter_status=None):
     return [schema.ChallengeSubmission(**sub) for sub in sub_list]
 
 
-async def get_submission(by_id: str):
+async def get_submission(by_id: str) -> schema.ChallengeSubmission:
     """ Fetches a submission from the database """
     query = schema.submissions_table.select().where(
         schema.submissions_table.c.id == by_id

@@ -15,6 +15,10 @@ class User(BaseModel):
     hashed_pswd: bytes
     salt: bytes
 
+    @property
+    def enabled(self):
+        return self.active and self.verified == 'True'
+
     class Config:
         orm_mode = True
 

@@ -1,6 +1,5 @@
 """ Module that evaluates BrokerCMDs """
 import subprocess
-import uuid
 from importlib import import_module
 from pathlib import Path
 
@@ -43,17 +42,3 @@ def eval_cmd(cmd):
     else:
         raise ValueError('unknown message type')
     return res
-
-
-if __name__ == '__main__':
-    root_dir = Path(__file__).parents[2]
-
-    # a CMD to test eval functions
-    _cmd = Function(
-        job_id=str(uuid.uuid1()),
-        executor=ExecutorsType.function,
-        label="testing",
-        f_name="dummy_function",
-        module=f"zerospeech.task_manager.tasks",
-        args=dict(where=f"{Path.home() / 'tmp/ci-m4rAPVF16M'}", lines=5, length=25)
-    )

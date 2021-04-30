@@ -53,6 +53,7 @@ class _LocalBaseSettings(BaseSettings):
     RPC_USERNAME: str = "admin"
     RPC_PASSWORD: str = "123"
     RPC_HOST: Union[IPvAnyNetwork, str] = "0.0.0.0"
+    RPC_PORT: int = 5672
 
     # Remote Settings
     REMOTE_HOSTS: Set[str] = set()
