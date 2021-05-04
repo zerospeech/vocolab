@@ -1,9 +1,3 @@
-zerospeech-admin module Copyright (C) 2021 Nicolas Hamilakis, CoML TEAM, École Normale Supérieure Paris, Inria Paris Research
-This program comes with ABSOLUTELY NO WARRANTY;
-This is free software, and you are welcome to redistribute it under certain conditions;
-For more information on the Terms & Conditions see GPL v3 bellow
-
-
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 

@@ -118,8 +118,8 @@ For more information on tests see [docs/testing](docs/testing.md)
 zerospeech-admin module 
 
 Copyright (C) 2021 Nicolas Hamilakis, CoML TEAM, École Normale Supérieure Paris, Inria Paris Research
-
-
-Licenced under the [GPL v3](https://choosealicense.com/licenses/gpl-3.0/)
-
-  
+This program and all its files are licenced under the GNU GENERAL PUBLIC LICENSE Version 3;
+This program comes with ABSOLUTELY NO WARRANTY;
+This is free software, and you are welcome to redistribute it under certain conditions;
+For more information on the Terms & Conditions see the details in the [LICENCE.txt](LICENCE.txt) file attached to this project,
+or consult the online version of the [GPL v3](https://choosealicense.com/licenses/gpl-3.0/)
