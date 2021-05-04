@@ -29,8 +29,9 @@ ex: `export ZR_app_name=my_test_app`
 
 > **Loading from env file:** to load a set of values from an .env file you need to set the `ZR_ENV_FILE` to point to your file.
 
-for examples of .env files see `example.env` 
+For examples of .env files see `example.env` 
 
+For more information on all the variables & their usage see [docs folder](docs/settings.md)
 """
 
 

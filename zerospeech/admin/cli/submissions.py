@@ -38,8 +38,9 @@ class ListSubmissions(CMD):
 
         # custom arguments
         self.parser.add_argument('-u', '--user', type=int, help='Filter by user ID')
+        self.parser.add_argument('-t', '--track', type=int, help='Filter by track ID')
         self.parser.add_argument('-s', '--status',
-                                 choices=[str(el) for el in db_challenges.SubmissionStatus],
+                                 choices=[el.value for el in db_challenges.SubmissionStatus],
                                  help='Filter by status')
 
     @property
@@ -48,7 +49,18 @@ class ListSubmissions(CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        items = asyncio.run(ch_queries.list_submission(args.user, args.status))
+        fn_args = {}
+
+        if args.user:
+            fn_args['by_user'] = args.user
+
+        if args.track:
+            fn_args['by_track'] = args.track
+
+        if args.status:
+            fn_args['by_status'] = args.status
+
+        items = asyncio.run(ch_queries.list_submission(**fn_args))
 
         # Prepare output
         table = Table(show_header=True, header_style="bold magenta")
@@ -76,7 +88,7 @@ class SetSubmission(CMD):
         # custom arguments
         self.parser.add_argument("submission_id")
         self.parser.add_argument('status',
-                                 choices=[str(el) for el in db_challenges.SubmissionStatus]
+                                 choices=[str(el.value) for el in db_challenges.SubmissionStatus]
                                  )
 
     @property

@@ -98,17 +98,23 @@ async def add_submission(new_submission: NewSubmission):
     return submission_id
 
 
-async def list_submission(filter_user=None, filter_status=None):
+async def list_submission(by_track: int = None, by_user: int = None, by_status=None):
     """ Fetches a list of submission from the database """
     query = schema.submissions_table.select()
-    if filter_user:
+
+    if by_track:
         query = query.where(
-            schema.submissions_table.c.id == filter_user
+            schema.submissions_table.c.track_id == by_track
         )
 
-    if filter_status:
+    if by_user:
         query = query.where(
-            schema.submissions_table.c.status == filter_status
+            schema.submissions_table.c.user_id == by_user
+        )
+
+    if by_status:
+        query = query.where(
+            schema.submissions_table.c.status == by_status
         )
 
     sub_list = await zrDB.fetch_all(query)
