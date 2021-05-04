@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 from zerospeech.settings import get_settings
 
-_settings = get_settings(settings_type="queue_worker")
+_settings = get_settings()
 
 
 class ManifestIndexItem(BaseModel):

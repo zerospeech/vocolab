@@ -47,7 +47,7 @@ async def email_verification(v: str, username: str):
         "username": username,
         "error": msg,
         "url": "https://zerospeech.com",
-        "admin_email": _settings.local.admin_email,
+        "admin_email": _settings.admin_email,
         "contact_url": "https://zerospeech.com/contact"
     }
 

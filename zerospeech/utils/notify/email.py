@@ -92,12 +92,12 @@ async def notify_admin(subject: str, data: Dict[str, Any], template_name: str):
     """
     message = MessageSchema(
         subject=subject,
-        recipients=[_settings.local.admin_email],
+        recipients=[_settings.admin_email],
         body=data,
         subtype="html"
     )
     try:
         await fm.send_message(message, template_name=template_name)
-        logger.info(f'email send successfully to {_settings.local.admin_email}')
+        logger.info(f'email send successfully to {_settings.admin_email}')
     except Exception as e:
         parse_email_exceptions(e)

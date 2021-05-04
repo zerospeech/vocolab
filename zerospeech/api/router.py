@@ -15,10 +15,10 @@ api_router = APIRouter()
 def index():
     """ API Index """
     return {
-        "app": _settings.local.app_name,
+        "app": _settings.app_name,
         "version": _settings.version,
-        "maintainers": _settings.local.maintainers,
-        "contact": _settings.local.admin_email
+        "maintainers": _settings.maintainers,
+        "contact": _settings.admin_email
     }
 
 

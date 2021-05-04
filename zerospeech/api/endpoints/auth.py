@@ -60,7 +60,7 @@ async def signup(request: Request, user: queries.users.UserCreate, background_ta
     data = {
         'username': user.username,
         'url': f"{request.url_for('email_verification')}?v={verification_code}&username={user.username}",
-        'admin_email': _settings.local.admin_email
+        'admin_email': _settings.admin_email
     }
     background_tasks.add_task(notify.email.template_email,
                               emails=[user.email],
@@ -79,7 +79,7 @@ async def password_reset_request(
     data = {
         'username': user.username,
         'url': f"{request.url_for('password_update_page')}?v={session.token}",
-        'admin_email': _settings.local.admin_email
+        'admin_email': _settings.admin_email
     }
     background_tasks.add_task(notify.email.template_email,
                               emails=[user.email],

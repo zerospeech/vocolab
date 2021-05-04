@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from zerospeech import get_settings
 from zerospeech.task_manager import Messenger
 
-_settings = get_settings(settings_type="queue_worker")
+_settings = get_settings()
 
 
 def queue_connection_info():

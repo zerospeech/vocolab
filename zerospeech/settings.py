@@ -4,29 +4,18 @@ from datetime import timedelta
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Union, Optional, Set, Dict
+from typing import List, Union, Set, Dict
 
 from pydantic import (
-    BaseSettings, EmailStr, BaseModel,
-    DirectoryPath, HttpUrl, IPvAnyNetwork,
-
+    BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork,
 )
 
-class ApplicationSettings(BaseModel):
-    """ Application Settings """
+
+class _LocalBaseSettings(BaseSettings):
     # Globals
     app_name: str = "Zerospeech Challenge API"
     maintainers: str = "CoML Team, INRIA, ENS, EHESS, CNRS"
     admin_email: EmailStr = EmailStr("contact@zerospeech.com")
-
-    # Users
-    session_expiry_delay: timedelta = timedelta(days=7)
-    password_reset_expiry_delay: timedelta = timedelta(minutes=45)
-
-    # Mattermost
-    mattermost_url: HttpUrl = 'https://mattermost.cognitive-ml.fr/hooks'
-    mattermost_username: str = 'AdminBot'
-    mattermost_channel: str = 'engineering-private'  # todo change to zerospeech channel
 
     # Databases
     db_file: str = 'zerospeech.db'
@@ -37,12 +26,7 @@ class ApplicationSettings(BaseModel):
     doc_version: str = 'v0'
     doc_description: str = 'A documentation of the API for the Zerospeech Challenge back-end !'
 
-    # Relative Location
-    broker_bin: str = "bin"
-
-
-class _LocalBaseSettings(BaseSettings):
-    local: ApplicationSettings = ApplicationSettings()
+    DATA_FOLDER: DirectoryPath = Path('data/')
 
     # Logging info
     LOG_LEVEL: int = logging.INFO
@@ -52,17 +36,13 @@ class _LocalBaseSettings(BaseSettings):
     # Task Queue
     RPC_USERNAME: str = "admin"
     RPC_PASSWORD: str = "123"
-    RPC_HOST: Union[IPvAnyNetwork, str] = "0.0.0.0"
+    RPC_HOST: Union[IPvAnyNetwork, str] = "localhost"
     RPC_PORT: int = 5672
 
     # Remote Settings
     REMOTE_HOSTS: Set[str] = set()
     REMOTE_STORAGE: Dict[str, Path] = dict()
     REMOTE_BIN: Dict[str, Path] = dict()
-
-    REMOTE_WORKER_HOST: Optional[Union[IPvAnyNetwork, str]] = None
-    JOB_STORAGE: Optional[Path] = None
-    # SUBMISSIONS
 
     class Config:
         env_prefix = 'ZR_'
@@ -85,15 +65,31 @@ class _APISettings(_LocalBaseSettings):
         "http://api.zerospeech.com",
         "https://api.zerospeech.com",
     ]
-    STATIC_DIR: DirectoryPath = Path("data/_static")
-    HTML_TEMPLATE_DIR: DirectoryPath = Path('data/templates/pages')
+    # Users
+    session_expiry_delay: timedelta = timedelta(days=7)
+    password_reset_expiry_delay: timedelta = timedelta(minutes=45)
+
+    # Mattermost
+    mattermost_url: HttpUrl = 'https://mattermost.cognitive-ml.fr/hooks'
+    mattermost_username: str = 'AdminBot'
+    mattermost_channel: str = 'engineering-private'  # todo change to zerospeech channel
+    # Data
+    DATA_FOLDER: DirectoryPath = Path('data/')
+
+    STATIC_DIR: DirectoryPath = DATA_FOLDER / "/_static"
+
     # Database related settings
-    DB_HOME: DirectoryPath = Path('data/db')
-    USER_DATA_DIR: DirectoryPath = Path('data/db/user_data')
+    DB_HOME: DirectoryPath = DATA_FOLDER / 'db'
+    USER_DATA_DIR: DirectoryPath = DB_HOME / 'user_data'
+
+    # Templates Folder
+    TEMPLATES_DIR: DirectoryPath = DATA_FOLDER / 'templates'
+    HTML_TEMPLATE_DIR: DirectoryPath = TEMPLATES_DIR / 'pages'
 
     # Mattermost related settings
     MATTERMOST_API_KEY: str = 'super-secret-key'
-    MATTERMOST_TEMPLATE_DIR: Path = Path('data/templates/mattermost')
+    MATTERMOST_TEMPLATE_DIR: DirectoryPath = TEMPLATES_DIR / 'mattermost'
+
     # Email related settings
     MAIL_USERNAME: Union[EmailStr, str] = EmailStr("email@example.com")
     MAIL_PASSWORD: str = "email-password"
@@ -103,17 +99,16 @@ class _APISettings(_LocalBaseSettings):
     MAIL_SERVER: str = "0.0.0.0"
     MAIL_TLS: bool = True
     MAIL_SSL: bool = False
-    MAIL_TEMPLATE_DIR: DirectoryPath = Path('data/templates/emails')
+    MAIL_TEMPLATE_DIR: DirectoryPath = TEMPLATES_DIR / 'emails'
 
 
 class _QueueWorkerSettings(_LocalBaseSettings):
-    pass
+    DATA_FOLDER: Path = Path('data/')
 
 
 class SettingsTypes(str, Enum):
     api = "api"
     queue_worker = "queue_worker"
-    cli = "cli"
 
     def to_cls(self) -> Union[_APISettings.__class__, _QueueWorkerSettings.__class__]:
         if self == SettingsTypes.api:
@@ -127,15 +122,19 @@ class SettingsTypes(str, Enum):
 
 
 @lru_cache()
-def get_settings(settings_type: str = SettingsTypes.api) -> Union[_APISettings, _QueueWorkerSettings]:
+def get_settings() -> Union[_APISettings, _QueueWorkerSettings]:
     """ Getter for api setting
 
     :info uses cache policy for faster loading
     :returns Settings object
     """
     env_file = os.environ.get('ZR_ENV_FILE', None)
-    # load settings object
-    cls = SettingsTypes(settings_type).to_cls()
+    # ENV type overwrites given type
+    if 'ZR_INVOKE_TYPE' in os.environ:
+        # load settings object
+        cls = SettingsTypes(os.environ.get('ZR_INVOKE_TYPE')).to_cls()
+    else:
+        cls = SettingsTypes('api').to_cls()
 
     # check if env file overrides values
     if env_file:

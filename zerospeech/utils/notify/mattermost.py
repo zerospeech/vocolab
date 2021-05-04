@@ -11,10 +11,10 @@ _settings = settings.get_settings()
 
 async def notify_mattermost(text: str):
     """ Send a notification to mattermost """
-    url = f"{_settings.local.mattermost_url}/{_settings.MATTERMOST_API_KEY}"
+    url = f"{_settings.mattermost_url}/{_settings.MATTERMOST_API_KEY}"
     payload = {
-        "channel": _settings.local.mattermost_channel,
-        "username": _settings.local.mattermost_username,
+        "channel": _settings.mattermost_channel,
+        "username": _settings.mattermost_username,
         "text": text
     }
     loop = asyncio.get_event_loop()
