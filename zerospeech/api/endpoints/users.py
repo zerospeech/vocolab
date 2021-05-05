@@ -11,6 +11,7 @@ from zerospeech.db import schema, q as queries
 from zerospeech.log import LogSingleton
 from zerospeech.settings import get_settings
 from zerospeech.utils.submissions import SubmissionLogger
+from zerospeech import utils
 
 router = APIRouter()
 logger = LogSingleton.get()
@@ -28,12 +29,12 @@ def get_user(current_user: schema.User = Depends(api_utils.get_current_active_us
 
 @router.get("/profile")
 def get_profile(current_user: schema.User = Depends(api_utils.get_current_active_user)):
-    return queries.users.get_user_data(current_user.username)
+    return utils.users.get_user_data(current_user.username)
 
 
 @router.post("/profile")
 def update_profile(user_data: schema.UserData, current_user: schema.User = Depends(api_utils.get_current_active_user)):
-    queries.users.update_user_data(current_user.username, data=user_data)
+    utils.users.update_user_data(current_user.username, data=user_data)
     return Response(status_code=200)
 
 

@@ -59,3 +59,8 @@ class InvalidRequest(ZerospeechException):
 class ResourceRequestedNotFound(ZerospeechException):
     """ Error the request made was not valid """
     pass
+
+
+class SecurityError(ZerospeechException):
+    """ Error for not allowed actions """
+    pass

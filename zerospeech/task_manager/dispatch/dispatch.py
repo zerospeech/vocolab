@@ -5,26 +5,17 @@ from pathlib import Path
 
 from zerospeech.task_manager import (
     ExecutorsType,
-    Function, SubProcess
+    Function, SubProcess,
+    Messenger
 )
 
 
-def eval_function(cmd: Function):
-    """ Evaluate a function type BrokerCMD """
-    mod = import_module(cmd.module)
-    fn = getattr(mod, cmd.f_name)
-    return fn(**cmd.args)
 
 
-def eval_subprocess(cmd: SubProcess):
-    """ Evaluate a subprocess type BrokerCMD """
-    script = Path(cmd.exe_path) / cmd.p_name
-    result = subprocess.run(
-        [cmd.executor.to_exec(), str(script), *cmd.args], capture_output=True, text=True
-    )
-    if result.returncode != 0:
-        return result.returncode, result.stderr
-    return result.returncode, result.stdout
+
+
+
+
 
 
 def eval_cmd(cmd):

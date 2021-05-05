@@ -1,0 +1,34 @@
+[
+  {
+    "username": "nhamilakis",
+    "email": "nick.hamilakis562@gmail.com",
+    "password": "123",
+    "first_name": "nikos",
+    "last_name": "hamilakis",
+    "affiliation": "ENS"
+  },
+  {
+    "username": "user1",
+    "email": "user1@zerospeech.com",
+    "password": "123",
+    "first_name": "user1",
+    "last_name": "theFirst",
+    "affiliation": "ENS"
+  },
+  {
+    "username": "user2",
+    "email": "user2@zerospeech.com",
+    "password": "123",
+    "first_name": "user2",
+    "last_name": "theSecond",
+    "affiliation": "INRIA"
+  },
+  {
+    "username": "user3",
+    "email": "user3@zerospeech.com",
+    "password": "123",
+    "first_name": "user3",
+    "last_name": "theThird",
+    "affiliation": "CNRS"
+  }
+]

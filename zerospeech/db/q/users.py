@@ -308,15 +308,3 @@ async def update_users_password(user: schema.User, password: str, password_valid
     await zrDB.execute(query2)
 
 
-def get_user_data(username: str) -> schema.UserData:
-    db_file = (_settings.USER_DATA_DIR / f"{username}.json")
-    if not db_file.is_file():
-        raise exc.UserNotFound('user requested has no data entry')
-    with db_file.open() as fp:
-        raw_data = json.load(fp)
-        return schema.UserData(**raw_data)
-
-
-def update_user_data(username: str, data: schema.UserData):
-    with (_settings.USER_DATA_DIR / f"{username}.json").open('w') as fp:
-        json.dump(data.dict(), fp)

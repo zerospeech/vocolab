@@ -13,8 +13,8 @@ zrDB = databases.Database(_USERS_CONN)
 
 
 def create_db():
-    if not (_settings.DB_HOME / _settings.db_file).is_file():
-        (_settings.DB_HOME / _settings.db_file).touch()
+    if not (_settings.DATA_FOLDER / _settings.db_file).is_file():
+        (_settings.DATA_FOLDER / _settings.db_file).touch()
 
     engine = sqlalchemy.create_engine(
        _USERS_CONN, connect_args={"check_same_thread": False}

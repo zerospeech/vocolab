@@ -24,6 +24,7 @@ def get_submission_dir(submission_id: str) -> Path:
     return _settings.USER_DATA_DIR / 'submissions' / submission_id
 
 
+
 def make_submission_on_disk(submission_id: str, username: str, track: str, meta: "NewSubmissionRequest"):
     """ Creates a template folder with all the necessary folders / info to create a new submission
 

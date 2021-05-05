@@ -1,0 +1,3 @@
+include data/templates
+include data/_static
+include data/samples

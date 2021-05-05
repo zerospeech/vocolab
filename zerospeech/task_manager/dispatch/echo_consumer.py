@@ -1,25 +1,36 @@
+""" RabbitMQ Echo consumer worker
+A simple worker that reads messages from a channel in the queue.
+"""
 import argparse
 import asyncio
 
-from rich.console import Console
 import aio_pika
+from rich.console import Console
 
+from zerospeech.task_manager.model import BrokerCMD, ExecutorsType, Messenger
 from zerospeech.task_manager.pika_utils import message_dispatch
-from zerospeech.task_manager.model import BrokerCMD
 
 console = Console()
+
+
+def eval_message(cmd: Messenger):
+    """ Evaluate a message type BrokerCMD """
+    # todo: maybe should add logging
+    return cmd.message
 
 
 async def echo_processor(message: aio_pika.IncomingMessage):
     async with message.process():
         br = BrokerCMD.from_bytes(message.body)
-        console.print(br)
-        await asyncio.sleep(1)
+        if br.executor != ExecutorsType.messenger:
+            console.print("Echo Consumer cannot handle non message type packets !!", style="bold red")
+        else:
+            msg = eval_message(br)
+            console.print(msg)
 
 
 def run(channel_name):
     """ Run Echo Message Broker """
-    # todo see if this can be parallelized with multiprocess
     main_loop = asyncio.get_event_loop()
     connection = main_loop.run_until_complete(
         message_dispatch(main_loop, channel_name, echo_processor)

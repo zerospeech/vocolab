@@ -53,7 +53,6 @@ class Function(BrokerCMD):
     """ A Broker Message that contains a python function to execute """
     executor: ExecutorsType = ExecutorsType.function
     f_name: str
-    module: str
     args: Dict[str, Any]
 
 

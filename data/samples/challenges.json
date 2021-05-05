@@ -1,0 +1,42 @@
+[
+	{
+		"label": "zr2015",
+		"start_date": "2015-01-20",
+		"end_date": "2015-04-30",
+		"url": "https://zerospeech.com/track/2015",
+		"active": false,
+		"evaluator": null
+	},
+	{
+		"label": "zr2017",
+		"start_date": "2017-01-20",
+		"end_date": "2017-04-30",
+		"url": "https://zerospeech.com/track/2017",
+		"active": false,
+		"evaluator": null
+	},
+	{
+		"label": "zr2019",
+		"start_date": "2019-01-20",
+		"end_date": "2019-04-30",
+		"url": "https://zerospeech.com/track/2019",
+		"active": false,
+		"evaluator": null
+	},
+	{
+		"label": "zr2020",
+		"start_date": "2020-01-20",
+		"end_date": "2020-04-30",
+		"url": "https://zerospeech.com/track/2020",
+		"active": true,
+		"evaluator": null
+	},
+	{
+		"label": "zr2021",
+		"start_date": "2020-12-12",
+		"end_date": "2021-03-31",
+		"url": "https://zerospeech.com/track/2021",
+		"active": true,
+		"evaluator": null
+	}
+]
