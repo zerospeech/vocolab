@@ -9,14 +9,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import JSONResponse
 
-from zerospeech import settings, log
+from zerospeech import settings, out
 from zerospeech.api import router as v1_router
 from zerospeech.db import zrDB, create_db
 from zerospeech.exc import ZerospeechException
 
 _settings = settings.get_settings()
 
-logger = log.LogSingleton.get()
 app = FastAPI(swagger_static={"favicon": _settings.favicon})
 
 app.add_middleware(
@@ -31,8 +30,8 @@ app.add_middleware(
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     idem = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-    logger.info(f'[rid={idem}] {request.client.host}:{request.client.port} "{request.method} {request.url.path}"')
-    logger.debug(f"[rid={idem}] params={request.path_params}, {request.query_params}")
+    out.Console.Logger.info(f'\[rid={idem}] {request.client.host}:{request.client.port} "{request.method} {request.url.path}"')
+    out.Console.Logger.debug(f"\[rid={idem}] params={request.path_params}, {request.query_params}")
 
     start_time = time.time()
 
@@ -40,7 +39,7 @@ async def log_requests(request: Request, call_next):
 
     process_time = (time.time() - start_time) * 1000
     formatted_process_time = '{0:.2f}'.format(process_time)
-    logger.info(f"[rid={idem}] completed_in={formatted_process_time}ms status_code={response.status_code}")
+    out.Console.Logger.info(f"\[rid={idem}] completed_in={formatted_process_time}ms status_code={response.status_code}")
 
     return response
 

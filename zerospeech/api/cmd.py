@@ -10,7 +10,7 @@ def run_local():
     executable = which('uvicorn')
     exec_args = [f'{executable}']
     if len(args) == 0:
-        exec_args.extend(['zerospeech.api:app', '--reload', '--debug'])
+        exec_args.extend(['zerospeech.api:app', '--reload', '--debug', '--no-access-log'])
     else:
         exec_args.extend(args)
 

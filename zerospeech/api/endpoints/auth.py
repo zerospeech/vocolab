@@ -8,20 +8,16 @@ from fastapi import (
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from rich.console import Console
 
-from zerospeech import exc
-from zerospeech.log import LogSingleton
+from zerospeech import exc, out
 from zerospeech.settings import get_settings
 from zerospeech.api import api_utils, models
 from zerospeech.db import q as queries, schema
 from zerospeech.utils import notify
 
 router = APIRouter()
-logger = LogSingleton.get()
 
 _settings = get_settings()
-console = Console()
 
 
 @router.post('/login', response_model=models.LoggedItem)
@@ -29,7 +25,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """ Authenticate a user """
     try:
         _, token = await queries.users.login_user(form_data.username, form_data.password)
-        # inspect(form_data)
+        out.Console.inspect(form_data)
         return models.LoggedItem(access_token=token, token_type="bearer")
     except ValueError:
         raise HTTPException(
@@ -100,7 +96,7 @@ async def password_update(v: str, request: Request, password: str = Form(...),
 
         user = await queries.users.get_user(by_password_reset_session=v)
     except ValueError as e:
-        logger.error(f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
+        out.Console.Logger.error(f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

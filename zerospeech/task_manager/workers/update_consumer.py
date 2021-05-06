@@ -1,6 +1,6 @@
 import aio_pika
 
-from zerospeech import exc
+from zerospeech import exc, out
 from zerospeech.task_manager.model import BrokerCMD, Function, ExecutorsType
 from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
 from zerospeech.utils import update_tasks
@@ -26,8 +26,8 @@ class UpdateTaskWorker(AbstractWorker):
             try:
                 result = self.eval_function(br)
             except exc.ZerospeechException:
-                print(f"Command {br} returned non 0 code")
+                out.Console.Logger.error(f"Command {br} returned non 0 code")
             else:
                 # eval success
                 # 1. report back ?
-                print(result)
+                out.Console.info(result)

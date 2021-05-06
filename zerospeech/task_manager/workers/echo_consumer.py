@@ -3,17 +3,16 @@ A simple worker that reads messages from a channel in the queue.
 """
 
 import aio_pika
-from rich.console import Console
 
 from zerospeech.task_manager.model import BrokerCMD, ExecutorsType, Messenger
 from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
-
-console = Console()
+from zerospeech import out
 
 
 class EchoWorker(AbstractWorker):
 
     def __init__(self, channel_name, logs):
+        # todo figure out how logs will be gathered
         super(EchoWorker, self).__init__(channel_name, logs)
 
     def eval_message(self, cmd: Messenger):
@@ -25,10 +24,10 @@ class EchoWorker(AbstractWorker):
         async with message.process():
             br = BrokerCMD.from_bytes(message.body)
             if br.executor != ExecutorsType.messenger:
-                console.print("Echo Consumer cannot handle non message type packets !!", style="bold red")
+                out.Console.Logger.error("Echo Consumer cannot handle non message type packets !!")
             else:
                 msg = self.eval_message(br)
-                console.print(msg)
+                out.Console.info(msg)
 
 #
 # if __name__ == '__main__':

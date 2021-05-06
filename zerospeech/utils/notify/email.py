@@ -3,11 +3,9 @@ from typing import List, Any, Dict
 from fastapi_mail import FastMail, ConnectionConfig, MessageSchema
 from pydantic import EmailStr
 
-from zerospeech.settings import get_settings
-from zerospeech.log import LogSingleton
+from zerospeech import get_settings, out
 
 _settings = get_settings()
-logger = LogSingleton.get()
 
 
 email_cgf = ConnectionConfig(
@@ -29,7 +27,7 @@ def parse_email_exceptions(e: Exception):
     from fastapi_mail.errors import ConnectionErrors, WrongFile, TemplateFolderDoesNotExist
 
     if isinstance(e, ConnectionErrors):
-        logger.error("issues with connections ?")
+        out.Console.error("issues with connections ?")
     raise e
 
 
@@ -50,7 +48,7 @@ async def simple_html_email(emails: List[EmailStr], subject: str, content: str):
     )
     try:
         await fm.send_message(message)
-        logger.info(f'email send successfully to {emails}')
+        out.Console.Logger.info(f'email send successfully to {emails}')
     except Exception as e:
         parse_email_exceptions(e)
 
@@ -74,9 +72,9 @@ async def template_email(emails: List[EmailStr], subject: str, data: Dict[str, A
     )
     try:
         await fm.send_message(message, template_name=template_name)
-        logger.info(f'email send successfully to {emails}')
+        out.Console.info(f'email send successfully to {emails}')
     except Exception as e:
-        logger.exception(f"an issue occurred while sending an email to {emails}")
+        out.Console.Logger.error(f"an issue occurred while sending an email to {emails}")
         parse_email_exceptions(e)
 
 
@@ -98,6 +96,6 @@ async def notify_admin(subject: str, data: Dict[str, Any], template_name: str):
     )
     try:
         await fm.send_message(message, template_name=template_name)
-        logger.info(f'email send successfully to {_settings.admin_email}')
+        out.Console.Logger.info(f'email send successfully to {_settings.admin_email}')
     except Exception as e:
         parse_email_exceptions(e)

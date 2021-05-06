@@ -6,19 +6,15 @@ from fastapi import (
     Request
 )
 from fastapi.responses import HTMLResponse
-from rich.console import Console
 
-from zerospeech import exc
+from zerospeech import exc, out
 from zerospeech.api import api_utils
 from zerospeech.db import q as queries
-from zerospeech.log import LogSingleton
 from zerospeech.settings import get_settings
 
 router = APIRouter()
-logger = LogSingleton.get()
 
 _settings = get_settings()
-console = Console()
 
 
 @router.get('/new-user', response_class=HTMLResponse)
@@ -60,7 +56,8 @@ async def password_update_page(v: str, request: Request):
     try:
         user = await queries.users.get_user(by_password_reset_session=v)
     except ValueError as e:
-        logger.error(f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
+        out.Console.Logger.error(f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
+        out.Console.exception()
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

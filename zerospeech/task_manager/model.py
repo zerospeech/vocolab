@@ -5,6 +5,7 @@ from shutil import which
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, ValidationError, validator
+from zerospeech import out
 
 
 class QueuesNames(str, Enum):
@@ -45,8 +46,8 @@ class BrokerCMD(BaseModel):
             _cls = get_broker_cmd_type(ExecutorsType(exe))
             return _cls(**url_obj)
         except (json.JSONDecodeError, ValidationError):
-            print("error while parsing command")
-            raise ValueError("command not valid!!")
+            out.Console.Logger.error(f"error while parsing command: {str(byte_cmd.decode('utf-8'))}")
+            raise ValueError(f"command {str(byte_cmd.decode('utf-8'))} not valid!!")
 
 
 class Function(BrokerCMD):

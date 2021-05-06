@@ -4,19 +4,12 @@ import signal
 import threading
 from typing import Callable, Dict
 
-from rich.console import Console
+from zerospeech import out
 
 HANDLED_SIGNALS = (
     signal.SIGINT,  # Unix signal 2. Sent by Ctrl+C.
     signal.SIGTERM,  # Unix signal 15. Sent by `kill <pid>`.
 )
-
-
-class Log:
-    # todo move this into debug/log
-    error = Console(style="bold red")
-    info = Console(style="bold green")
-    warning = Console(style="bold orange")
 
 
 # supervisor
@@ -44,7 +37,7 @@ class Multiprocess:
         self.shutdown()
 
     def startup(self):
-        Log.info.print(f"Started parent process [{self.pid}]")
+        out.Console.Logger.info(f"Started parent process [{self.pid}]")
 
         for sig in HANDLED_SIGNALS:
             signal.signal(sig, self.signal_handler)
@@ -56,7 +49,7 @@ class Multiprocess:
             self.processes.append(process)
 
     def shutdown(self):
-        Log.info.print(f"Graceful shutdown initiated: sending SIGTERM to children")
+        out.Console.Logger.info(f"Graceful shutdown initiated: sending SIGTERM to children")
         # todo check how to handle terminate process in child
         for process in self.processes:
             process.terminate()
@@ -64,7 +57,7 @@ class Multiprocess:
         for process in self.processes:
             process.join()
 
-        Log.info.print(f"Stopping parent process [{self.pid}]")
+        out.Console.Logger.info(f"Stopping parent process [{self.pid}]")
 
 
 class SingleProcess:

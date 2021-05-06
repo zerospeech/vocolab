@@ -8,13 +8,11 @@ from fastapi import (
 
 from zerospeech.api import api_utils
 from zerospeech.db import schema, q as queries
-from zerospeech.log import LogSingleton
 from zerospeech.settings import get_settings
 from zerospeech.utils.submissions import SubmissionLogger
 from zerospeech import utils
 
 router = APIRouter()
-logger = LogSingleton.get()
 _settings = get_settings()
 
 

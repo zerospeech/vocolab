@@ -7,15 +7,13 @@ from fastapi import (
     APIRouter, Depends, UploadFile, File, BackgroundTasks
 )
 
-from zerospeech.db import schema
-from zerospeech.log import LogSingleton
-from zerospeech.settings import get_settings
 from zerospeech.api import api_utils, models
+from zerospeech.db import schema
 from zerospeech.db.q import challenges as ch_queries
+from zerospeech.settings import get_settings
 from zerospeech.utils import submissions as submission_utils
 
 router = APIRouter()
-logger = LogSingleton.get()
 _settings = get_settings()
 
 

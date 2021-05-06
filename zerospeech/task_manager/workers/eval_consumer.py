@@ -1,18 +1,13 @@
-import argparse
-import asyncio
 import subprocess
 from pathlib import Path
 
-from rich.console import Console
 import aio_pika
 
-from zerospeech import get_settings, exc
-from zerospeech.task_manager.pika_utils import message_dispatch
+from zerospeech import get_settings, exc, out
 from zerospeech.task_manager.model import BrokerCMD, SubProcess
 from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
 
 _settings = get_settings()
-console = Console()
 
 
 def verify_bin(bin_path):
@@ -45,14 +40,14 @@ class EvalTaskWorker(AbstractWorker):
             br = BrokerCMD.from_bytes(message.body)
 
             if not br.executor.is_subprocess:
-                console.print("Eval consumer cannot evaluate non subprocess packet!!!", style="bold red")
+                out.Console.Logger.error("Eval consumer cannot evaluate non subprocess packet!!!")
 
             status, result = self.eval_subprocess(br)
-            # todo create failed_stuff logfile
+            # todo create failed_stuff && success_stuff logfile
             if status != 0:
-                print(f"Command {br} returned non 0 code")
+                out.Console.error(f"Command {br} returned non 0 code")
 
             else:
                 # eval success
                 # 1. report back ?
-                print(result)
+                out.Console.info(result)

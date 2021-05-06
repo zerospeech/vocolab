@@ -14,6 +14,7 @@ from zerospeech.settings import get_settings
 
 ERROR_STYLE = Style(color='red', bold=True, underline=True)
 INFO_STYLE = Style(color='green', bold=True)
+DEBUG_STYLE = Style(color='yellow', bold=True)
 WARNING_STYLE = Style(color='orange1', bold=True)
 
 
@@ -93,6 +94,10 @@ class _Console:
         def info(self, msg):
             self._console._info_console.log(f"[INFO] {msg}")
 
+        def debug(self, msg):
+            if self.verbose:
+                self._console._debug_console(f"[DEBUG] {msg}")
+
         def warning(self, msg):
             self._console._warning_console.log(f"[WARN] {msg}")
 
@@ -117,6 +122,7 @@ class _Console:
     def __init__(self):
         self._config = self._ConfigObject()
         self._info_console = None
+        self._debug_console = None
         self._neutral_console = None
         self._error_console = None
         self._warning_console = None
@@ -136,6 +142,7 @@ class _Console:
             console_options["file"] = build_file_handler(self._config.LOG_FILE, self._config.ROTATING_LOGS)
 
         self._info_console = RichConsole(**console_options, style=INFO_STYLE)
+        self._debug_console = RichConsole(**console_options, style=DEBUG_STYLE)
         self._neutral_console = RichConsole(**console_options)
 
         if self.error_to_file:
@@ -213,6 +220,11 @@ class _Console:
         # print not allowed when logging to files
         if self.allow_prints and not self.log_to_file:
             self._info_console.print(*args, **kwargs)
+
+    def debug(self, *args, **kwargs):
+        # print not allowed when logging to files
+        if self.allow_prints and not self.log_to_file and self.verbose:
+            self._debug_console.print(*args, **kwargs)
 
     def warning(self, *args, **kwargs):
         # print not allowed when logging to files
