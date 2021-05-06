@@ -2,12 +2,10 @@ from datetime import datetime
 from typing import List, Any
 from uuid import uuid4
 
-from icecream import ic
-
 from zerospeech.admin.model import NewEvaluatorItem
 from zerospeech.db import zrDB, schema, exc as db_exc
 from zerospeech.db.schema import NewChallenge, NewSubmission
-from zerospeech.settings import get_settings
+from zerospeech import get_settings, debug
 
 _settings = get_settings()
 
@@ -186,5 +184,5 @@ async def get_evaluator(by_id: int):
 async def add_evaluator(lst_eval: List[NewEvaluatorItem]):
     """ Insert a list of evaluators into the database """
     query = schema.evaluators_table.insert()
-    ic([i.dict() for i in lst_eval])
+    debug.ic([i.dict() for i in lst_eval])
     await zrDB.execute_many(query, [i.dict() for i in lst_eval])
