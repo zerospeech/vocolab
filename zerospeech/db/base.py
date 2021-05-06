@@ -7,7 +7,7 @@ from zerospeech.settings import get_settings
 
 _settings = get_settings()
 
-_USERS_CONN = f"sqlite:///{_settings.DB_HOME}/{_settings.db_file}"
+_USERS_CONN = f"sqlite:///{_settings.DATA_FOLDER}/{_settings.db_file}"
 
 zrDB = databases.Database(_USERS_CONN)
 
