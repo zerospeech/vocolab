@@ -3,7 +3,7 @@ import os
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Union, Set, Dict
+from typing import List, Union, Set, Dict, Optional
 import platform
 
 from pydantic import (
@@ -31,9 +31,14 @@ class _ZerospeechSettings(BaseSettings):
     doc_description: str = 'A documentation of the API for the Zerospeech Challenge back-end !'
 
     # Logging info
-    LOG_LEVEL: int = logging.INFO
-    LOGGER_TYPE: str = 'console'
-    LOG_FILE: Path = Path('out.log')
+    DEBUG: bool = True
+    COLORS: bool = True
+    QUIET: bool = False
+    VERBOSE: bool = False
+    ALLOW_PRINTS: bool = True
+    ROTATING_LOGS: bool = True
+    LOG_FILE: Optional[Path] = None
+    ERROR_LOG_FILE: Optional[Path] = None
 
     # Task Queue
     RPC_USERNAME: str = "admin"
@@ -47,7 +52,6 @@ class _ZerospeechSettings(BaseSettings):
     REMOTE_BIN: Dict[str, Path] = dict()
 
     # FastAPI settings
-    DEBUG: bool = True
     favicon: str = 'http://zerospeech.com/_static/favicon.ico'
     origins: List[str] = [
         "http://localhost:1313",
