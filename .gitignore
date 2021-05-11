@@ -35,8 +35,7 @@ MANIFEST
 *.env
 !example.env
 *.log
-data/submissions
-data/user_data
+data/
 *.bin
 
 # custom shortcut files
