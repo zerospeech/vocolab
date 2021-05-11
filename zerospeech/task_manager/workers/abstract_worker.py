@@ -10,19 +10,17 @@ class AbstractWorker(abc.ABC):
     def __init__(self, channel_name, logs):
         self.channel_name = channel_name
         self.logs = logs
-        self.loop = asyncio.get_event_loop()
 
     @abc.abstractmethod
     async def _processor(self, message: aio_pika.IncomingMessage):
         raise NotImplemented("method is not implemented in abstract class")
 
-    def run(self):
+    def run(self, loop):
         """ Run Message Broker """
-        main_loop = asyncio.get_event_loop()
-        connection = main_loop.run_until_complete(
-            message_dispatch(main_loop, self.channel_name, self._processor)
+        connection = loop.run_until_complete(
+            message_dispatch(loop, self.channel_name, self._processor)
         )
         try:
-            main_loop.run_forever()
+            loop.run_forever()
         finally:
-            main_loop.run_until_complete(connection.close())
+            loop.run_until_complete(connection.close())

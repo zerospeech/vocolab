@@ -15,24 +15,10 @@ class EchoWorker(AbstractWorker):
         # todo figure out how logs will be gathered
         super(EchoWorker, self).__init__(channel_name, logs)
 
-    def eval_message(self, cmd: Messenger):
-        """ Evaluate a message type BrokerCMD """
-        self.logs.print(cmd.message)
-        return cmd.message
-
     async def _processor(self, message: aio_pika.IncomingMessage):
         async with message.process():
             br = BrokerCMD.from_bytes(message.body)
             if br.executor != ExecutorsType.messenger:
-                out.Console.Logger.error("Echo Consumer cannot handle non message type packets !!")
+                out.Console.Logger.error("EchoConsumer: cannot handle non message type packets !!")
             else:
-                msg = self.eval_message(br)
-                out.Console.info(msg)
-
-#
-# if __name__ == '__main__':
-#     # run demo server
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument('channel_name')
-#     args = parser.parse_args()
-#     run(args.channel_name)
+                out.Console.info(br.to_str())

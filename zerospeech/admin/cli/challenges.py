@@ -1,18 +1,17 @@
 import asyncio
 import json
 import sys
-from datetime import datetime, date
+from datetime import datetime
 from pathlib import Path
 
 from pydantic import ValidationError
+from rich import inspect
 from rich.console import Console
 from rich.table import Table
-from rich import inspect
 
 from zerospeech.admin.cli.cmd_types import CommandCollection, CMD
 from zerospeech.db.q import challenges as ch_queries
 from zerospeech.db.schema import challenges as db_challenges
-from zerospeech.utils import misc
 
 # Pretty Printing
 console = Console()

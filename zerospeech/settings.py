@@ -15,7 +15,7 @@ class _ZerospeechSettings(BaseSettings):
     """ Base Settings for module """
     # Globals
     app_name: str = "Zerospeech Challenge API"
-    app_home: DirectoryPath = Path().cwd()
+    app_home: DirectoryPath = Path(__file__).parent
     version: str = "v0.1"
     maintainers: str = "CoML Team, INRIA, ENS, EHESS, CNRS"
     admin_email: EmailStr = EmailStr("contact@zerospeech.com")
@@ -71,7 +71,7 @@ class _ZerospeechSettings(BaseSettings):
     SUBMISSION_DIR: Path = DATA_FOLDER / 'submissions'
 
     # Templates Locations
-    TEMPLATES_DIR: Path = DATA_FOLDER / 'templates'
+    TEMPLATES_DIR: Path = app_home / 'templates'
     HTML_TEMPLATE_DIR: Path = TEMPLATES_DIR / 'pages'
     MATTERMOST_TEMPLATE_DIR: Path = TEMPLATES_DIR / 'mattermost'
 

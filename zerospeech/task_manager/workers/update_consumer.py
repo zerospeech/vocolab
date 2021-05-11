@@ -3,17 +3,17 @@ import aio_pika
 from zerospeech import exc, out
 from zerospeech.task_manager.model import BrokerCMD, Function, ExecutorsType
 from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
-from zerospeech.utils import update_tasks
 
 
 class UpdateTaskWorker(AbstractWorker):
 
-    def __init__(self, channel_name, logs):
+    def __init__(self, channel_name, logs, exe_module):
         super(UpdateTaskWorker, self).__init__(channel_name, logs)
+        self.exe_module = exe_module
 
     def eval_function(self, _cmd: Function):
         """ Evaluate a function type BrokerCMD """
-        fn = getattr(update_tasks, _cmd.f_name)
+        fn = getattr(self.exe_module, _cmd.f_name)
         return fn(**_cmd.args)
 
     async def _processor(self, message: aio_pika.IncomingMessage):
@@ -21,13 +21,11 @@ class UpdateTaskWorker(AbstractWorker):
             br = BrokerCMD.from_bytes(message.body)
 
             if br.executor != ExecutorsType.function:
-                # console.print("Update consumer cannot evaluate non function type packets !!!", style="bold red")
-                raise ValueError()
+                out.Console.Logger.error('UpdateWorker: Cannot evaluate non function messages')
+                raise ValueError(f"")
             try:
                 result = self.eval_function(br)
             except exc.ZerospeechException:
-                out.Console.Logger.error(f"Command {br} returned non 0 code")
+                out.Console.Logger.error(f"{br.to_str()} -> returned non 0 code")
             else:
-                # eval success
-                # 1. report back ?
-                out.Console.info(result)
+                out.Console.Logger.info(result)

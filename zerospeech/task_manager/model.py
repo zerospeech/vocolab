@@ -49,12 +49,20 @@ class BrokerCMD(BaseModel):
             out.Console.Logger.error(f"error while parsing command: {str(byte_cmd.decode('utf-8'))}")
             raise ValueError(f"command {str(byte_cmd.decode('utf-8'))} not valid!!")
 
+    def to_str(self):
+        """ Stringify the message for logging"""
+        return f"{self.job_id}@{self.label}:: {self.executor} ..."
+
 
 class Function(BrokerCMD):
     """ A Broker Message that contains a python function to execute """
     executor: ExecutorsType = ExecutorsType.function
     f_name: str
     args: Dict[str, Any]
+
+    def to_str(self):
+        """ Stringify the message for logging"""
+        return f"{self.job_id}@{self.label}:: {self.f_name}({self.args}) --"
 
 
 class SubProcess(BrokerCMD):
@@ -68,11 +76,19 @@ class SubProcess(BrokerCMD):
         assert v.is_subprocess, "executor must be a subprocess"
         return v
 
+    def to_str(self):
+        """ Stringify the message for logging"""
+        return f"{self.job_id}@{self.label}:: {self.executor} {self.exe_path}/{self.p_name} {self.args} --"
+
 
 class Messenger(BrokerCMD):
     """ A Broker Message that contains a simple string message """
     executor: ExecutorsType = ExecutorsType.messenger
     message: str
+
+    def to_str(self):
+        """ Stringify the message for logging"""
+        return f"{self.job_id}@{self.label}:: <{self.message}>"
 
 
 def get_broker_cmd_type(exe: ExecutorsType):
