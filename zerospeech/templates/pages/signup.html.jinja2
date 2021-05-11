@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+
+    <!--====== Required meta tags ======-->
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!--====== Title ======-->
+    <title>Signup | Zero Resource Speech Challenge</title>
+
+    <!--====== Favicon Icon ======-->
+    <link rel="shortcut icon" href="{{ image_dir }}/favicon.ico" type="image/png">
+
+    <!--====== Bootstrap css ======-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <!--====== Fonts ======-->
+    <link rel="stylesheet" href="https://use.typekit.net/sak8vaz.css">
+
+    <style>
+        :root {
+            --text-dark: #02054A;
+            --input-background: #ffffff;
+            --accent-purple: #475CA6;
+            --accent-light: #AEB9D3;
+        }
+
+        body {
+            background-color: #ffffff;
+            opacity: 1;
+
+            background: rgb(228, 234, 246);
+            background: linear-gradient(114deg, rgba(228, 234, 246, 1) 19%, rgba(245, 247, 251, 1) 56%, rgba(255, 255, 255, 1) 100%);
+
+            color: var(--text-dark);
+            font-family: freight-sans-pro, sans-serif;
+            font-weight: 400;
+            font-style: normal;
+
+        }
+
+
+        h2 {
+            font-weight: 700;
+        }
+
+        h3 {
+            font-size: 1.3em;
+            font-weight: 300;
+        }
+
+        h3 span {
+            color: white;
+        }
+
+        h5 span {
+            color: white;
+            font-weight: 300;
+        }
+
+        h6 {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        p span {
+            color: white;
+            font-weight: 400;
+        }
+
+        a {
+            font-weight: 400;
+            color: white;
+        }
+
+        a:hover {
+            text-decoration: none;
+            color: var(--accent-light);
+        }
+
+        .loginContainer {
+            width: 100vw;
+            min-height: 100vh;
+        }
+
+        .leftSide {
+            height: calc(100vh - 30px);
+            margin-top: 15px;
+            width: 300px;
+            margin-left: 15px;
+            border-radius: 15px;
+            background: rgb(28, 46, 99);
+            background: linear-gradient(42deg, rgba(28, 46, 99, 1) 0%, rgba(71, 92, 166, 1) 100%);
+        }
+
+        .logoSpacer {
+            height: 40px;
+            width: 40px;
+        }
+
+        .logo img {
+            height: auto;
+            width: 550px;
+            max-width: 90%;
+        }
+
+        form {
+            width: 100%;
+            max-width: 600px;
+            padding: 3em;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px 5px rgba(71, 92, 166, 0.10);
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .inputField {
+            width: 100%;
+            height: 45px;
+            padding: 0 10px;
+            border: none;
+            border-bottom: 2px solid var(--accent-light);
+            border-radius: 4px;
+            outline: none;
+            background-color: var(--input-background);
+            margin-bottom: 1em;
+            box-shadow: 0px 0px 5px -2px rgba(2, 5, 74, 0.2);
+            color: var(--text-dark);
+        }
+
+        input:last-child {
+            margin-bottom: 0;
+        }
+
+        .nameInput {
+            width: calc(50% - 0.5em);
+        }
+
+        button {
+            margin-top: 2em;
+            height: 45px;
+            min-width: 110px;
+            border-radius: 4px;
+            background-color: var(--accent-purple);
+            color: white;
+            font-weight: 500;
+        }
+
+        .btn-dark {
+            background-color: var(--text-dark);
+            border: none;
+        }
+
+        .btn-dark {
+            background-color: var(--text-dark);
+            border: none;
+        }
+
+        .btn-dark:hover {
+            background-color: #1b1e5c;
+            border: none;
+        }
+
+        .btn-dark:focus {
+            background-color: #020441;
+            border: none;
+        }
+
+        .btn-dark:active {
+            background-color: #020441;
+            border: none;
+        }
+
+        .btn-dark:not(:disabled):not(.disabled):active {
+            color: white;
+            background-color: #020439;
+            border: none;
+        }
+
+
+        .header {
+            height: 60px;
+            background: rgb(28, 46, 99);
+            background: url('{{image_dir}}/audio.svg'), linear-gradient(32deg, #1b1e5c 0%, var(--text-dark) 100%);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            z-index: 100;
+            border-bottom: 2px solid var(--accent-light);
+        }
+
+        .pageBody {
+            min-height: calc(100vh - 60px);
+        }
+
+        .footerTop {
+            background-color: #1b1e5c;
+            height: 180px;
+        }
+
+        .logoFooter img {
+            width: 85px;
+            height: 85px;
+        }
+
+        .footerBottom {
+            background-color: var(--text-dark);
+            height: 45px;
+            color: var(--accent-light);
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container-fluid loginContainer">
+    <div class="row header d-flex align-items-center justify-content-center">
+        <div class="logo ml-3 col-auto"><a href="https://www.zerospeech.com"><img src="{{ image_dir }}/name.svg"
+                                                                                  alt="zero resource speech challenge"></a>
+        </div>
+    </div>
+    <div id="zr-alert-container">
+
+    </div>
+    <div class="row pageBody my-3 h-100 d-flex align-items-center justify-content-center">
+        <div class="col-12 d-flex align-items-center justify-content-center">
+            <form method="put" action="{{ new_user_url }}">
+                <div class="formHeader text-center">
+                    <h2>Create an account</h2>
+                    <p>Optional Line</p>
+                </div>
+                <div class="inputs mt-4 text-center">
+                    <div class="d-flex justify-content-center">
+                        <input id="input-first-name" class="inputField nameInput mr-3" type="text"
+                               placeholder="First Name *" required/>
+                        <input id="input-last-name" class="inputField nameInput" type="text" placeholder="Last Name *"
+                               required/>
+                    </div>
+                    <input id="input-affiliation" class="inputField" type="text" placeholder="Affiliation *" required/>
+                    <input id="input-email" class="inputField" type="text" placeholder="Email *" required/>
+                    <input id="input-username" class="inputField" type="text" placeholder="Username *" required/>
+                    <input id="input-psw" class="inputField" type="password" placeholder="Password *" required/>
+                    <div class="d-flex w-100 align-items-center text-left">
+                        <input id="input-checkbox" type="checkbox">
+                        <p class="mb-0 ml-3">Show password</p>
+                    </div>
+                    <button id="form-submit-button" type="submit" class="btn btn-dark">Sign Up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 footerTop d-flex align-items-center justify-content-between">
+            <div class="logoFooter pl-4 d-flex align-items-center h-100">
+                <img src="{{ image_dir }}/logo-red.png">
+            </div>
+            <div class="links pr-5 mr-5">
+                <div class="mb-2"><a href="https://www.zerospeech.com">ZeroSpeech.com</a></div>
+                <div class="mb-2"><a href="https://www.zerospeech.com/about">Terms & Conditions</a></div>
+                <div><a href="https://cognitive-ml.fr">Organisers</a></div>
+            </div>
+        </div>
+        <div class="col-12 footerBottom d-flex align-items-center">
+            &copy; &nbsp;
+            <span id="copyright">
+                    <script>document.getElementById('copyright').appendChild(document.createTextNode(new Date().getFullYear()))</script>
+                </span>
+            &nbsp; ZeroSpeech, CoML team - INRIA, ENS, EHESS, CNRS.
+        </div>
+    </div>
+</div>
+<script>
+    const firstNameInput = document.querySelector('#input-first-name');
+    const lastNameInput = document.querySelector('#input-last-name');
+    const affiliationInput = document.querySelector('#input-affiliation');
+    const emailInput = document.querySelector('#input-email');
+    const usernameInput = document.querySelector('#input-username');
+    const passwordInput = document.querySelector('#input-psw');
+    const checkbox = document.querySelector('#input-checkbox');
+    const submitButton = document.querySelector('#form-submit-button');
+
+    checkbox.addEventListener('click', whenChecked);
+
+    function whenChecked() {
+        console.log('checked?');
+        if (this.checked) {
+            passwordInput.type = 'text';
+        } else {
+            passwordInput.type = 'password'
+        }
+    }
+
+    function validateEmail(email) {
+        const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(String(email).toLowerCase());
+    }
+
+    function strongPassword(pwd) {
+        const strongRegex = new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})");
+        return strongRegex.test(pwd);
+    }
+
+    function createAlert(text) {
+        const alertDiv = '<div class="alert alert-danger role="alert">' + text + "</div>";
+        const old_inner = document.getElementById("zr-alert-container").innerHTML
+
+        if (old_inner) {
+            document.getElementById("zr-alert-container").innerHTML = old_inner + alertDiv;
+        } else {
+            document.getElementById("zr-alert-container").innerHTML = alertDiv;
+        }
+    }
+
+    function clearAlerts() {
+        document.getElementById("zr-alert-container").innerHTML = "";
+    }
+
+    function validInput() {
+        clearAlerts();
+        console.log('validating inputs...');
+
+        // Required fields must be filled
+        if (!firstNameInput.value) {
+            createAlert("First name cannot be empty !");
+            return false;
+        }
+
+        if (!lastNameInput.value) {
+            createAlert("Last name cannot be empty !");
+            return false;
+        }
+
+        if (!affiliationInput.value) {
+            createAlert("Affiliation cannot be empty !");
+            return false;
+        }
+
+        if (!emailInput.value) {
+            createAlert("Email cannot be empty !");
+            return false;
+        }
+
+        if (!validateEmail(emailInput.value)) {
+            createAlert("Email is not valid !");
+            return false;
+        }
+
+        if (!usernameInput.value) {
+            createAlert("Username cannot be empty !");
+            return false;
+        }
+
+        if (!passwordInput.value) {
+            createAlert("Password cannot be empty !");
+            return false;
+        }
+
+        if (!strongPassword(passwordInput.value)) {
+            createAlert("Password must be at least 8 characters long at least (one lowercase, one uppercase, one number, one special character) !");
+            return false;
+        }
+
+        return true;
+    }
+
+    submitButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        if (validInput()) {
+            document.querySelectorAll('form').submit()
+        } else {
+            console.log('bad inputs plz fix')
+        }
+    });
+
+</script>
+</body>

@@ -18,9 +18,14 @@ _settings = get_settings()
 
 
 @router.get('/new-user', response_class=HTMLResponse)
-async def new_user_page():
+async def new_user_page(request: Request):
     # todo
-    return api_utils.generate_html_response(data={}, template_name='')
+    data = dict(
+        image_dir=f"{request.base_url}static/img",
+        new_user_url=f"{request.url_for('signup')}"
+    )
+    out.Console.ic(data)
+    return api_utils.generate_html_response(data, template_name='signup.html.jinja2')
 
 
 @router.get('/email-verify', response_class=HTMLResponse)

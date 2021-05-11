@@ -41,8 +41,9 @@ async def logout(token: schema.LoggedUser = Depends(api_utils.validate_token)):
     return Response(status_code=200)
 
 
-# todo: move model
-@router.put('/signup')
+# todo transform input to html-form-data
+# todo add variable for different outputs
+@router.post('/signup')
 async def signup(request: Request, user: queries.users.UserCreate, background_tasks: BackgroundTasks):
     """ Create a new user """
     try:
