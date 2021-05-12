@@ -19,17 +19,16 @@ _settings = get_settings()
 
 @router.get('/new-user', response_class=HTMLResponse)
 async def new_user_page(request: Request):
-    # todo
+    """ Return the form used for creating a new user """
     data = dict(
         image_dir=f"{request.base_url}static/img",
-        new_user_url=f"{request.url_for('signup')}"
+        new_user_url=f"{request.url_for('post_signup')}"
     )
-    out.Console.ic(data)
     return api_utils.generate_html_response(data, template_name='signup.html.jinja2')
 
 
 @router.get('/email-verify', response_class=HTMLResponse)
-async def email_verification(v: str, username: str):
+async def email_verification(v: str, username: str, request: Request):
     """ Verify a new users email address """
     msg = 'Success'
     res = False
@@ -44,6 +43,7 @@ async def email_verification(v: str, username: str):
         msg = e.__str__()
 
     data = {
+        "image_dir": f"{request.base_url}static/img",
         "success": res,
         "username": username,
         "error": msg,

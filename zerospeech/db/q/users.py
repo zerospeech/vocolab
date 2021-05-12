@@ -1,5 +1,4 @@
 import hashlib
-import json
 import os
 import secrets
 from datetime import datetime
@@ -8,9 +7,10 @@ from typing import Optional, List
 from email_validator import validate_email, EmailSyntaxError
 from pydantic import BaseModel, EmailStr, validator
 
+from zerospeech import exc
 from zerospeech.db import zrDB, schema, exc as db_exc
 from zerospeech.settings import get_settings
-from zerospeech import exc
+from zerospeech.utils import users as user_utils
 
 _settings = get_settings()
 
@@ -79,7 +79,7 @@ async def create_user(usr: UserCreate):
         first_name=usr.first_name,
         last_name=usr.last_name
     )
-    update_user_data(usr.username, data)
+    user_utils.update_user_data(usr.username, data)
 
     return verification_code
 
@@ -306,5 +306,3 @@ async def update_users_password(user: schema.User, password: str, password_valid
 
     await zrDB.execute(query)
     await zrDB.execute(query2)
-
-

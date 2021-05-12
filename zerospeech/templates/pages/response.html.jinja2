@@ -10,14 +10,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!--====== Title ======-->
-    <title>Reset Password | Zero Resource Speech Challenge</title>
+    <title> Zero Resource Speech Challenge</title>
 
     <!--====== Favicon Icon ======-->
-    <link rel="shortcut icon" href="favicon.ico" type="image/png">
+    <link rel="shortcut icon" href="{{ image_dir }}/favicon.ico" type="image/png">
 
     <!--====== Bootstrap css ======-->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
-        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 
     <!--====== Fonts ======-->
     <link rel="stylesheet" href="https://use.typekit.net/sak8vaz.css">
@@ -68,10 +68,6 @@
             color: var(--text-dark);
         }
 
-        p{
-            font-weight: 500;
-        }
-
         p span {
             color: white;
             font-weight: 400;
@@ -79,7 +75,7 @@
 
         a {
             font-weight: 400;
-            color: white;
+            color: darkblue;
         }
 
         a:hover {
@@ -154,43 +150,10 @@
             font-weight: 500;
         }
 
-        .btn-dark {
-            background-color: var(--text-dark);
-            border: none;
-        }
-
-        .btn-dark {
-            background-color: var(--text-dark);
-            border: none;
-        }
-
-        .btn-dark:hover {
-            background-color: #1b1e5c;
-            border: none;
-        }
-
-        .btn-dark:focus {
-            background-color: #020441;
-            border: none;
-        }
-
-        .btn-dark:active {
-            background-color: #020441;
-            border: none;
-        }
-
-        .btn-dark:not(:disabled):not(.disabled):active {
-            color: white;
-            background-color: #020439;
-            border: none;
-        }
-
-
-
         .header {
             height: 60px;
             background: rgb(28, 46, 99);
-            background: url('audio.svg'), linear-gradient(32deg, #1b1e5c 0%, var(--text-dark) 100%);
+            background: url('{{image_dir}}/audio.svg'), linear-gradient(32deg, #1b1e5c 0%, var(--text-dark) 100%);
             background-size: 100% 100%;
             background-repeat: no-repeat;
             z-index: 100;
@@ -198,7 +161,7 @@
         }
 
         .pageBody {
-            min-height: calc(100vh - 60px);
+            min-height: calc(72vh - 60px);
         }
 
         .footerTop {
@@ -217,62 +180,55 @@
             color: var(--accent-light);
             font-size: 0.8em;
         }
+
+        .error-class {
+            color: #ff0006;
+        }
     </style>
 </head>
 
 <body>
 
-    <div class="container-fluid loginContainer">
-        <div class="row header d-flex align-items-center justify-content-center">
-            <div class="logo ml-3 col-auto"><a href="https://www.zerospeech.com"><img src="name.svg" alt="zero resource speech challenge"></a></div>
-        </div>
-        <div class="row pageBody my-3 h-100 d-flex align-items-center justify-content-center">
-            <div class="col-12 d-flex align-items-center justify-content-center">
-                <form>
-                    <div class="formHeader text-center">
-                        <h2>Verify your email address</h2>
-                        <p>Please enter the code you recieved by email</p>
-                    </div>
-                    <div class="inputs mt-4 text-center">
-                        <input class="inputField" type="text" placeholder="Verification Code *" required />
-                        <button type="button" class="btn btn-dark">Verify Email</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-12 footerTop d-flex align-items-center justify-content-between">
-                <div class="logoFooter pl-4 d-flex align-items-center h-100">
-                    <img src="logo-red.png">
-                </div>
-                <div class="links pr-5 mr-5">
-                    <div class="mb-2"><a href="https://www.zerospeech.com">ZeroSpeech.com</a></div>
-                    <div class="mb-2"><a href="https://www.zerospeech.com">Terms & Conditions</a></div>
-                    <div><a href="https://www.zerospeech.com">Our Team</a></div>
-                </div>
-            </div>
-            <div class="col-12 footerBottom d-flex align-items-center">
-                &copy; &nbsp;
-                <span id="copyright">
-                    <script>document.getElementById('copyright').appendChild(document.createTextNode(new Date().getFullYear()))</script>
-                </span>
-                &nbsp; ZeroSpeech, CoML team - INRIA, ENS, EHESS, CNRS.
-            </div>
+<div class="container-fluid loginContainer">
+    <div class="row header d-flex align-items-center justify-content-center">
+        <div class="logo ml-3 col-auto"><a href="https://www.zerospeech.com"><img src="{{ image_dir }}/name.svg"
+                                                                                  alt="zero resource speech challenge"></a>
         </div>
     </div>
-    <script>
-        const passwordInput = document.querySelector('#input-psw');
-        const checkbox = document.querySelector('#input-checkbox');
 
-        checkbox.addEventListener('click', whenChecked);
+    <div class="row pageBody my-3 h-100 d-flex align-items-center justify-content-center">
+        <div class="container-fluid">
+            {% if success %}
+                <h2 class="row d-flex justify-content-center"> {{ title }} </h2>
+                <p class="row d-flex justify-content-center"> {{ body }} </p>
+            {% else %}
+                <h2 class="row d-flex justify-content-center"> {{ title }} </h2>
+                <p class="row d-flex justify-content-center error-class"> {{ body }} </p>
+                <p class="row d-flex justify-content-center">
+                    <a href="{{ redirect_url }}"> {{ redirect_label }}</a>
+                </p>
+            {% endif %}
+        </div>
+    </div>
 
-        function whenChecked() {
-            if (this.checked) {
-                passwordInput.type = 'text';
-            } else {
-                passwordInput.type = 'password'
-            }
-        }
-    </script>
+    <div class="row">
+        <div class="col-12 footerTop d-flex align-items-center justify-content-between">
+            <div class="logoFooter pl-4 d-flex align-items-center h-100">
+                <img src="{{ image_dir }}/logo-red.png">
+            </div>
+            <div class="links pr-5 mr-5">
+                <div class="mb-2"><a href="https://www.zerospeech.com">ZeroSpeech.com</a></div>
+                <div class="mb-2"><a href="https://www.zerospeech.com/about">Terms & Conditions</a></div>
+                <div><a href="https://cognitive-ml.fr">Organisers</a></div>
+            </div>
+        </div>
+        <div class="col-12 footerBottom d-flex align-items-center">
+            &copy; &nbsp;
+            <span id="copyright">
+                    <script>document.getElementById('copyright').appendChild(document.createTextNode(new Date().getFullYear()))</script>
+                </span>
+            &nbsp; ZeroSpeech, CoML team - INRIA, ENS, EHESS, CNRS.
+        </div>
+    </div>
+</div>
 </body>

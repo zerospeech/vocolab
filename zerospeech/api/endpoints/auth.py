@@ -5,14 +5,14 @@ from fastapi import (
     APIRouter, Depends, Response, HTTPException, status,
     Request, BackgroundTasks, Form
 )
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
-
+from pydantic import EmailStr
 
 from zerospeech import exc, out
-from zerospeech.settings import get_settings
 from zerospeech.api import api_utils, models
 from zerospeech.db import q as queries, schema
+from zerospeech.settings import get_settings
 from zerospeech.utils import notify
 
 router = APIRouter()
@@ -41,31 +41,52 @@ async def logout(token: schema.LoggedUser = Depends(api_utils.validate_token)):
     return Response(status_code=200)
 
 
-# todo transform input to html-form-data
-# todo add variable for different outputs
-@router.post('/signup')
-async def signup(request: Request, user: queries.users.UserCreate, background_tasks: BackgroundTasks):
+@router.put('/signup')
+async def put_signup(request: Request, user: queries.users.UserCreate, background_tasks: BackgroundTasks):
     """ Create a new user """
     try:
-        verification_code = await queries.users.create_user(user)
+        await api_utils.signup(request, user, background_tasks)
     except exc.ValueNotValid as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"This {e.data} already exists !!",
         )
-
-    data = {
-        'username': user.username,
-        'url': f"{request.url_for('email_verification')}?v={verification_code}&username={user.username}",
-        'admin_email': _settings.admin_email
-    }
-    background_tasks.add_task(notify.email.template_email,
-                              emails=[user.email],
-                              subject='[Zerospeech] Account Verification',
-                              data=data,
-                              template_name='email_validation.jinja2'
-                              )
     return Response(status_code=200)
+
+
+@router.post('/signup', response_class=HTMLResponse)
+async def post_signup(request: Request, background_tasks: BackgroundTasks,
+                      first_name: str = Form(...), last_name: str = Form(...),
+                      affiliation: str = Form(...), email: EmailStr = Form(...),
+                      username: str = Form(...), password: str = Form(...)):
+    """ Create a new user via the HTML form  (returns an html page) """
+    user = queries.users.UserCreate(
+        username=username,
+        email=email,
+        pwd=password,
+        last_name=last_name,
+        first_name=first_name,
+        affiliation=affiliation
+    )
+    try:
+        await api_utils.signup(request, user, background_tasks)
+    except exc.ValueNotValid as e:
+        data = dict(
+            image_dir=f"{request.base_url}static/img",
+            title=f"{e.data} already in use",
+            redirect_url=f"javascript:history.back()",
+            redirect_label="go back to form",
+            success=False
+        )
+        out.Console.Logger.error(f'This {e.data} is already in use, cannot recreate ({user})')
+    else:
+        data = dict(
+            image_dir=f"{request.base_url}static/img",
+            title=f"Account created successfully",
+            body=f"A verification email will be sent to {email}",
+            success=True
+        )
+    return api_utils.generate_html_response(data, template_name='response.html.jinja2')
 
 
 @router.post('/password/reset')
@@ -97,7 +118,8 @@ async def password_update(v: str, request: Request, password: str = Form(...),
 
         user = await queries.users.get_user(by_password_reset_session=v)
     except ValueError as e:
-        out.Console.Logger.error(f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
+        out.Console.Logger.error(
+            f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

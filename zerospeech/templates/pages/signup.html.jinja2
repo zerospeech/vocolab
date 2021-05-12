@@ -228,22 +228,22 @@
     </div>
     <div class="row pageBody my-3 h-100 d-flex align-items-center justify-content-center">
         <div class="col-12 d-flex align-items-center justify-content-center">
-            <form method="put" action="{{ new_user_url }}">
+            <form method="post" action="{{ new_user_url }}">
                 <div class="formHeader text-center">
                     <h2>Create an account</h2>
                     <p>Optional Line</p>
                 </div>
                 <div class="inputs mt-4 text-center">
                     <div class="d-flex justify-content-center">
-                        <input id="input-first-name" class="inputField nameInput mr-3" type="text"
+                        <input id="input-first-name" name="first_name" class="inputField nameInput mr-3" type="text"
                                placeholder="First Name *" required/>
-                        <input id="input-last-name" class="inputField nameInput" type="text" placeholder="Last Name *"
+                        <input id="input-last-name" name="last_name" class="inputField nameInput" type="text" placeholder="Last Name *"
                                required/>
                     </div>
-                    <input id="input-affiliation" class="inputField" type="text" placeholder="Affiliation *" required/>
-                    <input id="input-email" class="inputField" type="text" placeholder="Email *" required/>
-                    <input id="input-username" class="inputField" type="text" placeholder="Username *" required/>
-                    <input id="input-psw" class="inputField" type="password" placeholder="Password *" required/>
+                    <input id="input-affiliation" name="affiliation" class="inputField" type="text" placeholder="Affiliation *" required/>
+                    <input id="input-email" name="email" class="inputField" type="text" placeholder="Email *" required/>
+                    <input id="input-username" name="username" class="inputField" type="text" placeholder="Username *" required/>
+                    <input id="input-psw" name="password" class="inputField" type="password" placeholder="Password *" required/>
                     <div class="d-flex w-100 align-items-center text-left">
                         <input id="input-checkbox" type="checkbox">
                         <p class="mb-0 ml-3">Show password</p>
@@ -371,7 +371,7 @@
     submitButton.addEventListener('click', function (event) {
         event.preventDefault();
         if (validInput()) {
-            document.querySelectorAll('form').submit()
+            document.querySelectorAll('form')[0].submit()
         } else {
             console.log('bad inputs plz fix')
         }
