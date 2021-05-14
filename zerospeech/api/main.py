@@ -85,6 +85,11 @@ async def startup():
 
     (_settings.USER_DATA_DIR / 'submissions').mkdir(exist_ok=True)
     (_settings.USER_DATA_DIR / 'profiles').mkdir(exist_ok=True)
+    # write location of email-verification path
+    with (_settings.DATA_FOLDER / 'email_verification.path').open('w') as fp:
+        fp.write(app.url_path_for("email_verification"))
+    with (_settings.DATA_FOLDER / 'password_reset.path').open('w') as fp:
+        fp.write(app.url_path_for("password_update_page"))
 
 
 @app.on_event("shutdown")

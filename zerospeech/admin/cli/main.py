@@ -2,7 +2,10 @@ import argparse
 import sys
 from argparse import RawTextHelpFormatter
 
+from zerospeech import out, get_settings
 from zerospeech.admin.cli import cmd_types
+
+_settings = get_settings()
 
 
 class AdminCMD:
@@ -49,11 +52,13 @@ def run_cli():
     from zerospeech.admin.cli.evaluators import get as get_eval
 
     # add subcommands
-    AdminCMD.add_cmd(get_user_cmd())
-    AdminCMD.add_cmd(get_ch_cmd())
-    AdminCMD.add_cmd(get_checks())
-    AdminCMD.add_cmd(get_subs())
-    AdminCMD.add_cmd(get_eval())
+    has_users = (_settings.DATA_FOLDER / _settings.db_file).is_file() and _settings.USER_DATA_DIR.is_dir()
 
+    if has_users:
+        AdminCMD.add_cmd(get_user_cmd())
+        AdminCMD.add_cmd(get_ch_cmd())
+        AdminCMD.add_cmd(get_checks())
+        AdminCMD.add_cmd(get_subs())
+        AdminCMD.add_cmd(get_eval())
     # run
     AdminCMD()

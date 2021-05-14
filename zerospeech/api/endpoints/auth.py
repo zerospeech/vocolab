@@ -5,7 +5,7 @@ from fastapi import (
     APIRouter, Depends, Response, HTTPException, status,
     Request, BackgroundTasks, Form
 )
-from fastapi.responses import PlainTextResponse, HTMLResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
@@ -89,7 +89,7 @@ async def post_signup(request: Request, background_tasks: BackgroundTasks,
     return api_utils.generate_html_response(data, template_name='response.html.jinja2')
 
 
-@router.post('/password/reset')
+@router.post('/password/reset', response_class=JSONResponse)
 async def password_reset_request(
         user: models.PasswordResetRequest, request: Request, background_tasks: BackgroundTasks):
     """ Request a users password to be reset """
@@ -108,9 +108,43 @@ async def password_reset_request(
     return Response(status_code=200)
 
 
-@router.post('/password/update', response_class=PlainTextResponse)
-async def password_update(v: str, request: Request, password: str = Form(...),
-                          password_validation: str = Form(...), session_code: str = Form(...)):
+@router.post('/password/update', response_class=HTMLResponse)
+async def post_password_update(v: str, request: Request, password: str = Form(...),
+                               password_validation: str = Form(...), session_code: str = Form(...)):
+    """Update a users password (requires a reset session)"""
+    try:
+        if v != session_code:
+            raise ValueError('session validation not passed !!!')
+
+        user = await queries.users.get_user(by_password_reset_session=v)
+        await queries.users.update_users_password(user, password, password_validation)
+    except ValueError as e:
+        out.Console.Logger.error(
+            f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
+
+        data = dict(
+            image_dir=f"{request.base_url}static/img",
+            title=f"Password update failed !!",
+            body=f'{e}',
+            redirect_url=f"javascript:history.back()",
+            redirect_label="go back to form",
+            success=False
+
+        )
+    else:
+        data = dict(
+            image_dir=f"{request.base_url}static/img",
+            title=f"Password of {user.username} was updated successfully",
+            body=f"",
+            success=True
+        )
+
+    return api_utils.generate_html_response(data, template_name='response.html.jinja2')
+
+
+@router.put('/password/update', response_class=JSONResponse)
+async def put_password_update(v: str, request: Request, password: str = Form(...),
+                              password_validation: str = Form(...), session_code: str = Form(...)):
     """Update a users password (requires a reset session)"""
     try:
         if v != session_code:
@@ -127,6 +161,4 @@ async def password_update(v: str, request: Request, password: str = Form(...),
         )
 
     await queries.users.update_users_password(user, password, password_validation)
-
-    # maybe return result as page ?
-    return f'password of {user.username}  successfully changed !!'
+    return Response(status_code=200)

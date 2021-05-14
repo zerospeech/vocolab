@@ -85,6 +85,11 @@ async def create_user(usr: UserCreate):
 
 
 async def verify_user(username: str, verification_code: str):
+    """ User verification using a specific code.
+        If the code is correct verification succeeds
+        If not the function raises a ValueNotValid Exception
+        If user is already verified we raise an ActionNotValid Exception
+    """
     user = await get_user(by_username=username)
     if secrets.compare_digest(user.verified, verification_code):
         query = schema.users_table.update().where(
@@ -98,6 +103,25 @@ async def verify_user(username: str, verification_code: str):
         raise exc.ActionNotValid("Email already verified")
     else:
         raise exc.ValueNotValid("validation code was not correct")
+
+
+async def admin_verification(user_id: int):
+    """ Verify a user, raises an ValueError if user does not exist.
+        To only be used for administration.
+        Users need to validate their accounts.
+
+        - bypasses code verification
+        - no exception is raised if user already active
+    """
+    query = schema.users_table.update().where(
+        schema.users_table.c.id == user_id
+    ).values(
+        verified='True'
+    )
+    res = await zrDB.execute(query)
+
+    if res == 0:
+        raise ValueError(f'user {user_id} was not found')
 
 
 def check_users_password(password: str, user: schema.User):
@@ -291,6 +315,7 @@ async def create_password_reset_session(username: str, email: str) -> schema.Pas
 
 
 async def update_users_password(user: schema.User, password: str, password_validation: str):
+    """ Change a users password """
 
     if password != password_validation:
         raise ValueError('passwords do not match')
@@ -306,3 +331,25 @@ async def update_users_password(user: schema.User, password: str, password_valid
 
     await zrDB.execute(query)
     await zrDB.execute(query2)
+
+
+async def toggle_user_status(user_id: int, active: bool = True):
+    """ Toggles a users status for active to inactive """
+    query = schema.users_table.update().where(
+        schema.users_table.c.id == user_id
+    ).values(
+        active=active
+    )
+    res = await zrDB.execute(query)
+
+    if res == 0:
+        raise ValueError(f'user {user_id} was not found')
+
+
+async def toggle_all_users_status(active: bool = True):
+    """ Toggles a users status for active to inactive """
+    query = schema.users_table.update().values(
+        active=active
+    )
+    res = await zrDB.execute(query)
+

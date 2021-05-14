@@ -69,10 +69,9 @@ async def password_update_page(v: str, request: Request):
             detail="Page not found"
         )
 
-    data = {
-        "username": user.username,
-        "submit_url": f"/auth{router.url_path_for('password_update')}?v={v}",
-        "session": v
-    }
-
-    return api_utils.generate_html_response(data=data, template_name='password_reset.html.jinja2')
+    return api_utils.generate_html_response(data=dict(
+        image_dir=f"{request.base_url}static/img",
+        username=user.username,
+        submit_url=f"{request.url_for('post_password_update')}?v={v}",
+        session=v,
+    ), template_name='reset_password2.html.jinja2')

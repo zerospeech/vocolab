@@ -21,6 +21,7 @@ class _ZerospeechSettings(BaseSettings):
     admin_email: EmailStr = EmailStr("contact@zerospeech.com")
     hostname: str = platform.node()
     DATA_FOLDER: DirectoryPath = Path('data/')
+    API_BASE_URL: str = "https://api.zerospeech.com"
 
     # Databases
     db_file: str = 'zerospeech.db'
