@@ -21,19 +21,15 @@ To run this project, you will need to add the following environment :
 ### Configuration
 
 To configure your environment a .env file is used. you need to specify an 
-environment variable named `ZR_ENV_FILE` configured so the module knows were 
+environment variable named `ZR_ENV_FILE` configured, so the module knows were 
 load variables from.
 
-**Requirements**
+For an example on the minimum setup see [example.env](example.env)
 
-1. **ZR_...**
+More information on settings and the meaning of each parameter can be found [here](docs/settings.md)
 
-A more curated list of the configurable variables with more detail can be found [here](...)
+> If some variables are not set correctly it might affect some features of the module as they are a hard dependency.
 
-
-
-
-  
 ## Run Locally
 
 Clone the project

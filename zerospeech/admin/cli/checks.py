@@ -70,7 +70,7 @@ class CheckSettings(CMD):
         if args.get:
             try:
                 v = _settings.__getattribute__(args.get)
-                console.print(f"[red][bold]{args.get}[/bold][/red] => [blue]{v}[/blue]")
+                console.print(f"[green]{v}[/green]")
             except AttributeError:
                 console.print(f":x: Key {args.get} not found", style='red bold')
 
