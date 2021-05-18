@@ -1,8 +1,12 @@
 
 # Zerospeech Admin
 
-A module containing various tools to launch and administrate Zerospeech Challenges.
+![VERSION](https://img.shields.io/badge/Zerospeech--Admin-V0.5--alpha-orange)
+![LICENCE](https://img.shields.io/badge/LICENCE-GPL%20%3E=%20V3-green)
+![BUILD](https://img.shields.io/badge/BUILD-PASS-brightgreen)
+![TESTS](https://img.shields.io/badge/TESTS-No-red)
 
+A module containing various tools to launch and administrate Zerospeech Challenges.
 
 
 ## Environment & Configuration

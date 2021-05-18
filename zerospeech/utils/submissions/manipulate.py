@@ -21,8 +21,7 @@ _settings = get_settings()
 
 def get_submission_dir(submission_id: str) -> Path:
     """ Returns the directory containing the submission data based on the given id"""
-    return _settings.USER_DATA_DIR / 'submissions' / submission_id
-
+    return _settings.SUBMISSION_DIR / submission_id
 
 
 def make_submission_on_disk(submission_id: str, username: str, track: str, meta: "NewSubmissionRequest"):
