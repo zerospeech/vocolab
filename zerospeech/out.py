@@ -64,6 +64,49 @@ def build_file_handler(file, should_rotate):
         return MyWatchedFileHandler(file, mode="a", encoding="utf-8")
 
 
+class _Log:
+    """ Internal Class that handles logging functionality """
+
+    def __init__(self, *, neutral_console, info_console, error_console, debug_console, warning_console, verbose):
+        self._neutral_console = neutral_console
+        self._info_console = info_console
+        self._debug_console = debug_console
+        self._error_console = error_console
+        self._warning_console = warning_console
+        self.verbose = verbose
+
+    def log(self, *args, **kwargs):
+        self._neutral_console.log(*args, **kwargs)
+
+    def info(self, msg):
+        self._info_console.log(f"[INFO] {msg}")
+
+    def debug(self, msg):
+        if self.verbose:
+            self._debug_console(f"[DEBUG] {msg}")
+
+    def warning(self, msg):
+        self._warning_console.log(f"[WARN] {msg}")
+
+    def error(self, msg):
+        self._error_console.log(f"[ERROR] {msg}")
+
+    def exception(self, msg=None):
+        # backup style
+        save_style = self._error_console.style
+        self._error_console.style = None
+
+        if msg:
+            self._error_console.log(f'{msg}', style="red bold")
+        else:
+            self._error_console.log('an error has interrupted the current process : ',
+                                    style="red bold")
+        self._error_console.print_exception(show_locals=self.verbose)
+
+        # restore style
+        self._error_console.style = save_style
+
+
 class _Console:
     """ Console class to handle all types of outputs """
 
@@ -81,44 +124,6 @@ class _Console:
             self.DEBUG = _settings.DEBUG
             self.COLORS = _settings.COLORS
 
-    class _Log:
-        """ Internal Class that handles logging functionality """
-
-        def __init__(self, console: '_Console'):
-            self._console = console
-            self.verbose = console.verbose
-
-        def log(self, *args, **kwargs):
-            self._console._neutral_console.log(*args, **kwargs)
-
-        def info(self, msg):
-            self._console._info_console.log(f"[INFO] {msg}")
-
-        def debug(self, msg):
-            if self.verbose:
-                self._console._debug_console(f"[DEBUG] {msg}")
-
-        def warning(self, msg):
-            self._console._warning_console.log(f"[WARN] {msg}")
-
-        def error(self, msg):
-            self._console._error_console.log(f"[ERROR] {msg}")
-
-        def exception(self, msg=None):
-            # backup style
-            save_style = self._console._error_console.style
-            self._console._error_console.style = None
-
-            if msg:
-                self._console._error_console.log(f'{msg}', style="red bold")
-            else:
-                self._console._error_console.log('an error has interrupted the current process : ',
-                                                 style="red bold")
-            self._console._error_console.print_exception(show_locals=self.verbose)
-
-            # restore style
-            self._console._error_console.style = save_style
-
     def __init__(self):
         self._config = self._ConfigObject()
         self._info_console = None
@@ -130,6 +135,14 @@ class _Console:
         self.inspect = None
         self._logger = None
         self.build_consoles()
+        self._logger = _Log(
+            neutral_console=self._neutral_console,
+            info_console=self._info_console,
+            debug_console=self._debug_console,
+            warning_console=self._warning_console,
+            error_console=self._error_console,
+            verbose=self.verbose
+        )
 
     def build_consoles(self):
         """ Build the consoles to output """
@@ -156,8 +169,6 @@ class _Console:
             self.inspect = inspect
         else:
             self.inspect = lambda *f: None
-
-        self._logger = self._Log(self)
 
     # noinspection PyPep8Naming
     @property
@@ -249,7 +260,6 @@ class _Console:
 
 # Instantiate Console
 Console = _Console()
-
 
 if __name__ == '__main__':
     Console.console.print("I am the console")

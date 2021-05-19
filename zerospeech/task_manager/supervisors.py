@@ -16,7 +16,7 @@ HANDLED_SIGNALS = (
 class Multiprocess:
     """ A class to cleanly manage multiple workers running a task """
 
-    def __init__(self, target: Callable, target_kwargs: Dict, workers: int = 4):
+    def __init__(self, *, target: Callable, target_kwargs: Dict, workers: int = 4):
         self.workers = workers
         self.target = target
         self.target_kwargs = target_kwargs
@@ -42,24 +42,14 @@ class Multiprocess:
         for sig in HANDLED_SIGNALS:
             signal.signal(sig, self.signal_handler)
 
-        # todo check if child process needs any global state (Config object or arguments)
         for _ in range(self.workers):
             process = self.spawn.Process(target=self.target, kwargs=self.target_kwargs)
             process.start()
             self.processes.append(process)
 
     def shutdown(self):
-        out.Console.Logger.info(f"Graceful shutdown initiated: sending SIGTERM to children")
-        # todo check how to handle terminate process in child
-        for process in self.processes:
-            process.terminate()
-
         for process in self.processes:
             process.join()
 
+        out.Console.Logger.info(f"Graceful shutdown completed !!")
         out.Console.Logger.info(f"Stopping parent process [{self.pid}]")
-
-
-class SingleProcess:
-    """ ... """
-    pass

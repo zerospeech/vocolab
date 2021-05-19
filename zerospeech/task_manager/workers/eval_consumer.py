@@ -19,10 +19,11 @@ def verify_bin(bin_path):
 
 class EvalTaskWorker(AbstractWorker):
 
-    def __init__(self, channel_name, logs):
-        super(EvalTaskWorker, self).__init__(channel_name, logs)
+    def __init__(self, *, config):
+        super(EvalTaskWorker, self).__init__(config=config)
 
-    def eval_subprocess(self, _cmd: SubProcess):
+    @staticmethod
+    def eval_subprocess(_cmd: SubProcess):
         """ Evaluate a subprocess type BrokerCMD """
         bin_path = Path(_cmd.exe_path)
         verify_bin(bin_path)
@@ -46,7 +47,6 @@ class EvalTaskWorker(AbstractWorker):
             # todo create failed_stuff && success_stuff logfile
             if status != 0:
                 out.Console.error(f"Command {br} returned non 0 code")
-
             else:
                 # eval success
                 # 1. report back ?
