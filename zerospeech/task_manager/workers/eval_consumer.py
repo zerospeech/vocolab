@@ -1,11 +1,15 @@
 import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import aio_pika
 
 from zerospeech import get_settings, exc, out
 from zerospeech.task_manager.model import BrokerCMD, SubProcess
 from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
+
+if TYPE_CHECKING:
+    from zerospeech.task_manager.config import ServerState
 
 _settings = get_settings()
 
@@ -17,10 +21,25 @@ def verify_bin(bin_path):
         raise exc.SecurityError(f'attempting to execute a file not in authorized directory {bin_path}')
 
 
+def verify_host_bin():
+    """ Verifies that the current host has a valid bin directory """
+    my_bin = _settings.REMOTE_BIN.get(_settings.hostname, None)
+    if my_bin is None:
+        raise exc.ServerError(f"No bin directory configured for current host {_settings.hostname}")
+
+
 class EvalTaskWorker(AbstractWorker):
 
-    def __init__(self, *, config):
+    def __init__(self, *, config, server_state: 'ServerState'):
         super(EvalTaskWorker, self).__init__(config=config)
+        verify_host_bin()
+        self.server_state = server_state
+
+    def add_process_location(self, _id, _cmd: SubProcess):
+        self.server_state.processes[_id] = _cmd
+
+    def remove_process_location(self, _id):
+        del self.server_state.processes[_id]
 
     @staticmethod
     def eval_subprocess(_cmd: SubProcess):
@@ -43,6 +62,9 @@ class EvalTaskWorker(AbstractWorker):
             if not br.executor.is_subprocess:
                 out.Console.Logger.error("Eval consumer cannot evaluate non subprocess packet!!!")
 
+            # todo maybe add submission [path/id] in message
+            self.add_process_location(br.job_id, br)
+
             status, result = self.eval_subprocess(br)
             # todo create failed_stuff && success_stuff logfile
             if status != 0:
@@ -51,3 +73,5 @@ class EvalTaskWorker(AbstractWorker):
                 # eval success
                 # 1. report back ?
                 out.Console.info(result)
+
+            self.remove_process_location(br.job_id)

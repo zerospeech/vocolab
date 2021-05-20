@@ -64,3 +64,8 @@ class ResourceRequestedNotFound(ZerospeechException):
 class SecurityError(ZerospeechException):
     """ Error for not allowed actions """
     pass
+
+
+class ServerError(ZerospeechException):
+    """ Error with the starting of a server/service """
+    pass

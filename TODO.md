@@ -1,12 +1,13 @@
-- [ ] Write the server for the worker section
+- [X] Write the server for the worker section
+- [ ] Add cli for the workers
 - [ ] Add the function that copies data over to worker server
-- [ ] maybe simplify logs
+- [X] maybe simplify logs
 - [ ] add cli to manage evaluations
 - [ ] test installation on flores/oberon
 - [ ] add more exhaustive unit/integration testing
 - [ ] update/fix dockerization
-- [ ] add database documentation
-- [ ] add settings documentation
+- [X] add database documentation
+- [X] add settings documentation
 - [ ] add testing documentation
 - [ ] add workers documentation
 - [ ] update zr users:* documentation

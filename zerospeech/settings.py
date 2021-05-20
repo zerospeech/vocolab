@@ -46,6 +46,9 @@ class _ZerospeechSettings(BaseSettings):
     RPC_PASSWORD: str = "123"
     RPC_HOST: Union[IPvAnyNetwork, str] = "localhost"
     RPC_PORT: int = 5672
+    RPC_CHANNELS: Dict[str, str] = dict(
+        eval="zerospeech-eval", update="zerospeech-update", echo="zerospeech-msg"
+    )
 
     # Remote Settings
     HOSTS: Set[str] = set()
