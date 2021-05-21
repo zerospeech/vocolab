@@ -8,7 +8,7 @@ import random
 import aio_pika
 
 from zerospeech import out
-from zerospeech.task_manager.model import BrokerCMD, ExecutorsType
+from zerospeech.task_manager.model import SimpleLogMessage, message_from_bytes
 from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
 
 
@@ -19,11 +19,11 @@ class EchoWorker(AbstractWorker):
 
     async def _processor(self, message: aio_pika.IncomingMessage):
         async with message.process():
-            br = BrokerCMD.from_bytes(message.body)
-            if br.executor != ExecutorsType.messenger:
-                out.Console.Logger.error("EchoConsumer: cannot handle non message type packets !!")
-            else:
-                out.Console.info(f"{os.getpid()} | {br.to_str()}")
+            br = message_from_bytes(message.body)
+            if not isinstance(br, SimpleLogMessage):
+                raise ValueError("Cannot process non LogMessage")
+
+            out.Console.info(f"{os.getpid()} | {br}")
 
             # add random delay
             await asyncio.sleep(random.randint(10, 100))

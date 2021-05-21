@@ -24,20 +24,14 @@ class AbstractWorker(abc.ABC):
     async def _processor(self, message: aio_pika.IncomingMessage):
         raise NotImplemented("method is not implemented in abstract class")
 
-    def save_current_job(self, obj):
-        pass
-
-    def complete_current_job(self, obj):
-        pass
-
-    async def run(self, *, server_state, loop=None,):
+    async def run(self, *, loop=None):
         """ Run Message Broker """
         if loop is None:
             loop = asyncio.get_running_loop()
 
         channel, conn = await pika_utils.connection_channel(loop)
 
-        await channel.set_qos(prefetch_count=5)
+        await channel.set_qos(prefetch_count=self.prefetch_count)
 
         # Declaring queue
         queue = await channel.declare_queue(self.channel_name)

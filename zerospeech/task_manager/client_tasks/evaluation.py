@@ -2,7 +2,7 @@ from pathlib import Path
 
 from zerospeech.db import q
 from zerospeech.db import schema
-from zerospeech.task_manager import QueuesNames, SubProcess
+from zerospeech.task_manager import QueuesNames, SumbissionEvaluationMessage
 from zerospeech.task_manager import publish_message
 from zerospeech.utils import submissions
 
@@ -29,7 +29,7 @@ async def challenge_eval(challenge: schema.Challenge, submission_id: str):
     args = evaluator.base_arguments.split(';')
     args.append(f"{folder}")
     script_path = Path(evaluator.script_path)
-    subprocess_message = SubProcess(
+    subprocess_message = SumbissionEvaluationMessage(
         label=f"{submission_id}",
         executor=evaluator.executor,
         exe_path=f"{script_path.parents[0]}",

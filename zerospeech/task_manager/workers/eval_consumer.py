@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import aio_pika
 
 from zerospeech import get_settings, exc, out
-from zerospeech.task_manager.model import BrokerCMD, SubProcess
+from zerospeech.task_manager.model import SubmissionEvaluationMessage, ExecutorsType
 from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
 
 if TYPE_CHECKING:
@@ -35,14 +35,14 @@ class EvalTaskWorker(AbstractWorker):
         verify_host_bin()
         self.server_state = server_state
 
-    def add_process_location(self, _id, _cmd: SubProcess):
-        self.server_state.processes[_id] = _cmd
+    def add_process_location(self, _id, submission_id: str):
+        self.server_state.processes[_id] = submission_id
 
     def remove_process_location(self, _id):
         del self.server_state.processes[_id]
 
     @staticmethod
-    def eval_subprocess(_cmd: SubProcess):
+    def eval_subprocess(_cmd: SubmissionEvaluationMessage):
         """ Evaluate a subprocess type BrokerCMD """
         bin_path = Path(_cmd.exe_path)
         verify_bin(bin_path)
@@ -57,7 +57,9 @@ class EvalTaskWorker(AbstractWorker):
 
     async def _processor(self, message: aio_pika.IncomingMessage):
         async with message.process():
-            br = BrokerCMD.from_bytes(message.body)
+            pass
+            # fixme repair broker messaging
+            br = ...  # BrokerCMD.from_bytes(message.body)
 
             if not br.executor.is_subprocess:
                 out.Console.Logger.error("Eval consumer cannot evaluate non subprocess packet!!!")

@@ -15,7 +15,7 @@ SING_TO_STR = dict((k, v) for v, k in reversed(sorted(signal.__dict__.items()))
 @dataclass
 class ServerState:
     pid: int
-    processes: Dict[str, Path]
+    processes: Dict[str, str]
     should_exit: bool = False
 
 

@@ -6,7 +6,6 @@ from pika.adapters.blocking_connection import BlockingChannel
 from pydantic import BaseModel
 
 from zerospeech import get_settings
-from zerospeech.task_manager import Messenger
 
 _settings = get_settings()
 
