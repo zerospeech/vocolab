@@ -1,9 +1,10 @@
 import abc
 import asyncio
+from typing import Optional
 
 import aio_pika
 
-from zerospeech.task_manager.config import Config
+from zerospeech.task_manager.config import Config, ServerState
 from zerospeech.task_manager import pika_utils
 
 
@@ -16,9 +17,10 @@ async def check_tasks():
 
 class AbstractWorker(abc.ABC):
 
-    def __init__(self, *, config: Config):
+    def __init__(self, *, config: Config, server_state: Optional[ServerState]):
         self.channel_name = config.channel
         self.prefetch_count = config.prefetch_count
+        self.server_state = server_state
 
     @abc.abstractmethod
     async def _processor(self, message: aio_pika.IncomingMessage):

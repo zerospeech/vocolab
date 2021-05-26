@@ -2,7 +2,7 @@ from pathlib import Path
 
 from zerospeech.db import q
 from zerospeech.db import schema
-from zerospeech.task_manager import QueuesNames, SumbissionEvaluationMessage
+from zerospeech.task_manager import QueuesNames, SubmissionEvaluationMessage
 from zerospeech.task_manager import publish_message
 from zerospeech.utils import submissions
 
@@ -11,7 +11,12 @@ async def send_eval_task(msg, loop=None):
     return await publish_message(msg, QueuesNames.eval_queue, loop)
 
 
-async def challenge_eval(challenge: schema.Challenge, submission_id: str):
+async def challenge_eval(submission_id: str, challenge: schema.Challenge = None):
+    submission_obj = await q.challenges.get_submission(submission_id)
+
+    if challenge is None:
+        challenge = await q.challenges.get_challenge(challenge_id=submission_obj.track_id)
+
     if challenge.evaluator is None:
         raise ValueError(f"Challenge {challenge.label} has not specified an evaluation function !!")
 
@@ -29,11 +34,12 @@ async def challenge_eval(challenge: schema.Challenge, submission_id: str):
     args = evaluator.base_arguments.split(';')
     args.append(f"{folder}")
     script_path = Path(evaluator.script_path)
-    subprocess_message = SumbissionEvaluationMessage(
-        label=f"{submission_id}",
+    subprocess_message = SubmissionEvaluationMessage(
+        label=f"...",
+        submission_id=submission_id,
         executor=evaluator.executor,
-        exe_path=f"{script_path.parents[0]}",
-        p_name=script_path.name,
+        bin_path=f"{script_path.parents[0]}",
+        script_name=f"{script_path.name}",
         args=args
     )
     # todo check why added loop

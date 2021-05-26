@@ -1,10 +1,9 @@
-import logging
 import os
+import platform
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import List, Union, Set, Dict, Optional
-import platform
 
 from pydantic import (
     BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork
@@ -64,6 +63,12 @@ class _ZerospeechSettings(BaseSettings):
         "http://api.zerospeech.com",
         "https://api.zerospeech.com",
     ]
+    # Queue Channels
+    QUEUE_CHANNELS: Dict[str, str] = {
+        "eval": 'zr-evaluation-channel',
+        'update': 'zr-update-channel',
+        'echo': 'zr-echo-channel'
+    }
 
     # Users
     session_expiry_delay: timedelta = timedelta(days=7)

@@ -1,14 +1,3 @@
-# todo Server runs the worker asynchronously
-# todo Server handles shutdown calls via signals and closes all evaluations
-
-# todo supervisor runs the server
-# todo main runs all and hadnles configs
-# todo config object should probably be outside of all
-
-
-# todo eval worker needs to log & access inside submissions
-
-# todo update worker needs to access only a specific module.
 import argparse
 import os
 import sys
@@ -24,7 +13,7 @@ def arguments(argv=None):
     parser.add_argument("worker",
                         choices=list(WORKER_TYPE.keys()), default="eval",
                         help="Worker Type")
-    parser.add_argument('-w', '--number-of-workers', dest='nb_workers', type=int,
+    parser.add_argument('-w', '--number-of-workers', dest='nb_workers', default=1, type=int,
                         help="Number of processes to allow for workers")
     parser.add_argument('--prefetch-count', default=1, type=int,
                         help="Number of simultaneous messages allowed to be pulled by one process")
@@ -56,6 +45,6 @@ def entrypoint():
     try:
         args = arguments()
         run(**args.__dict__)
-    except:
+    except Exception:
         out.Console.exception()
         sys.exit(1)

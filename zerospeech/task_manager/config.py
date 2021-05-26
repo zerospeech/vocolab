@@ -1,7 +1,10 @@
 import signal
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Dict
+
+from zerospeech import get_settings
+
+_settings = get_settings()
 
 HANDLED_SIGNALS = (
     signal.SIGINT,  # Unix signal 2. Sent by Ctrl+C.
@@ -28,7 +31,10 @@ class Config:
         worker = kwargs.get("worker", "eval")
         self.worker = WORKER_TYPE.get(worker)
         # setup channel
-        self.channel = kwargs.get('channel')
+        self.channel = kwargs.get('channel', None)
+        if self.channel is None:
+            self.channel = _settings.QUEUE_CHANNELS.get(worker)
+
         # nb workers
         self.nb_workers = kwargs.get('nb_workers', 1)
         # Prefetch count

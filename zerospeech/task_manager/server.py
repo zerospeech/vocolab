@@ -6,22 +6,23 @@ from datetime import datetime
 
 from zerospeech import out
 from zerospeech.task_manager.config import HANDLED_SIGNALS, Config, ServerState, SING_TO_STR
+from zerospeech import utils
 
 
 class Server:
 
     def __init__(self, *, config: Config):
         self.config = config
-        self.worker = config.worker(config=config)
         self.server_state = ServerState(os.getpid(), dict())
+        self.worker = config.worker(config=config, server_state=self.server_state)
 
     def run(self):
         out.Console.Logger.info(f"initiating server-{os.getpid()} components...")
         main_loop = asyncio.get_event_loop()
         self.install_signal_handlers(main_loop)
 
-        main_loop.create_task(self.worker.run(loop=main_loop, server_state=self.server_state))
-        out.Console.Logger.info(f"server-{os.getpid()} is up !!")
+        main_loop.create_task(self.worker.run(loop=main_loop))
+        out.Console.Logger.info(f"server-{os.getpid()} is up on listening on {self.config.channel} !!")
         main_loop.run_forever()
 
     def install_signal_handlers(self, loop) -> None:
@@ -36,8 +37,10 @@ class Server:
         out.Console.console.print("\n")
         out.Console.Logger.warning(f"EXIT has been requested ({SING_TO_STR.get(sig, 'SIG_XX')})")
 
-        for _id, loc in self.server_state.processes.items():
-            with (loc / 'interrupted.lock').open('w') as fp:
+        for _id, sub_id in self.server_state.processes.items():
+            sub_loc = utils.submissions.get_submission_dir(sub_id)
+
+            with (sub_loc / 'interrupted.lock').open('w') as fp:
                 fp.write(f"when: {datetime.now().isoformat()}\n")
                 fp.write(f"what: {sig}\n")
 

@@ -2,9 +2,10 @@ import json
 import uuid
 from enum import Enum
 from shutil import which
-from typing import Any, Dict, List, Union
+from typing import List, Union
 
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ValidationError
+
 from zerospeech import out
 
 
@@ -31,8 +32,6 @@ class ExecutorsType(str, Enum):
 
     def to_exec(self):
         """ Returns absolute path to executable or None"""
-        if not self.is_subprocess:
-            raise ValueError('function does not execute!!')
         return which(self)
 
 
@@ -43,11 +42,6 @@ class SubmissionEvaluationMessage(BrokerMessage):
     bin_path: str
     script_name: str
     args: List[str]
-
-    @validator('executor')
-    def executor_must_be_subprocess(cls, v):
-        assert v.is_subprocess, "executor must be a subprocess"
-        return v
 
     def __repr__(self):
         """ Stringify the message for logging"""
