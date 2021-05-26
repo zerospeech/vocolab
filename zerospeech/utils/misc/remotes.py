@@ -4,7 +4,7 @@ from typing import List
 
 import yaml
 
-from zerospeech import get_settings
+from zerospeech import get_settings, out
 from zerospeech.admin.model import NewEvaluatorItem
 
 _settings = get_settings()
@@ -20,10 +20,9 @@ def check_host(host):
 
 
 def ssh_exec(host, cmd: List[str]):
-    result = subprocess.run(
-        [shutil.which('ssh'), f"{host}", *cmd],
-        capture_output=True
-    )
+    cmd = [shutil.which('ssh'), f"{host}", *cmd]
+    out.Console.print(f"{' '.join(cmd)}")
+    result = subprocess.run(cmd, capture_output=True)
     if result.returncode == 0:
         return result.returncode, result.stdout.decode()
     return result.returncode, result.stderr.decode()

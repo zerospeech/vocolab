@@ -6,7 +6,6 @@ from shutil import which
 from typing import Union, Tuple, List, Optional
 from zipfile import ZipFile
 
-
 import numpy as np
 import pandas as pd
 from Crypto.Hash import MD5
@@ -14,6 +13,7 @@ from Crypto.Hash import MD5
 from fsplit.filesplit import Filesplit
 from pydantic import BaseModel
 
+from zerospeech import out
 from zerospeech.settings import get_settings
 
 _settings = get_settings()
@@ -46,7 +46,47 @@ def scp(src: Path, host: str, dest: Path, recursive=True):
     if not src.is_file() and not src.is_dir():
         raise ValueError(f"Input {src} does not appear to exist as a file or directory !")
 
-    return subprocess.run([which("scp"), f"{'-r' if recursive else ''}", f"{src}", f"{host}:{dest}"], capture_output=True)
+    return subprocess.run([which("scp"), f"{'-r' if recursive else ''}", f"{src}", f"{host}:{dest}"],
+                          capture_output=True)
+
+
+def rsync(*, src_host: Optional[str] = None, src: Path, dest_host: Optional[str] = None, dest: Path,
+          flags: str = 'ahbuzP'):
+    """ Synchronise two folders using the rsync tool.
+
+    uses the following options in transfer:
+        --delete   delete extraneous files from dest dirs
+        -e ssh     Use ssh for resolving remote transfers
+        --exclude=*.log Exclude log files from being transferred
+
+    :param src_host: Hostname of containing source directory, if None directory is on localhost
+    :param src: Path to source directory
+    :param dest_host: Hostname of destination directory,
+    :param dest:
+    :param flags: flags to pass to rsync process  [ default ahbuzPe ]
+        -a archive mode; sync whole directory as an archive
+        -h human readable output
+        -u makes rsync transfer skip files which are newer in dest than in src
+        -b makes rsync backup files that exist in both folders, appending ~ to the old file.
+           You can control this suffix with --suffix .suf
+        -z turns on compression, which is useful when transferring easily-compressible files over slow links
+        -P turns on --partial and --progress
+            --partial makes rsync keep partially transferred files if the transfer is interrupted
+            --progress shows a progress bar for each transfer, useful if you transfer big files
+    :raises ...
+    """
+    source_path = f"{src}"
+    if src_host:
+        source_path = f"{src_host}:{src}"
+
+    dest_path = f"{dest}"
+    if dest_host:
+        dest_path = f"{dest_host}:{dest}"
+
+    cmd2 = [which("rsync"), f"-{flags}e", "ssh", "--delete", "--exclude=*.log", f"{source_path}/", f"{dest_path}/"]
+    out.Console.info(f">{' '.join(cmd2)}")
+
+    return subprocess.run(cmd2, capture_output=True)
 
 
 def md5sum(file_path: Path, chunk_size: int = 8192):
@@ -140,7 +180,7 @@ def merge_zip_v2(manifest: SplitManifest, output_location: Path, clean: bool = T
     df = pd.DataFrame([
         (i.file_name, i.file_size)
         for i in manifest.index
-        ])
+    ])
     df.columns = ['filename', 'filesize']
     df['encoding'] = np.nan
     df['header'] = np.nan

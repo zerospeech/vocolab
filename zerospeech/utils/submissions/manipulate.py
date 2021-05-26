@@ -1,27 +1,20 @@
 import asyncio
 import json
-from pathlib import Path
-import shutil
-from typing import TYPE_CHECKING
 from hmac import compare_digest
+from typing import TYPE_CHECKING
 
 from fastapi import UploadFile
 
+from zerospeech.db.q import challenges as q_challenge
+from zerospeech.exc import ResourceRequestedNotFound, InvalidRequest, ValueNotValid
 from zerospeech.settings import get_settings
 from zerospeech.utils import misc
-from zerospeech.exc import ResourceRequestedNotFound, InvalidRequest, ValueNotValid
-from zerospeech.db.q import challenges as q_challenge
-from zerospeech.utils.submissions.log import SubmissionLogger
+from zerospeech.utils.submissions.log import SubmissionLogger, get_submission_dir
 
 if TYPE_CHECKING:
     from zerospeech.api.models import NewSubmissionRequest
 
 _settings = get_settings()
-
-
-def get_submission_dir(submission_id: str) -> Path:
-    """ Returns the directory containing the submission data based on the given id"""
-    return _settings.SUBMISSION_DIR / submission_id
 
 
 def make_submission_on_disk(submission_id: str, username: str, track: str, meta: "NewSubmissionRequest"):
@@ -185,30 +178,75 @@ def complete_submission(submission_id: str, with_eval: bool = True):
     misc.unzip(archive, folder / 'input')
     # mark task as uploaded to the database
     asyncio.run(
-        q_challenge.update_submission_status(submission_id, q_challenge.schema.SubmissionStatus.uploaded)
+        q_challenge.update_submission_status(by_id=submission_id, status=q_challenge.schema.SubmissionStatus.uploaded)
     )
     # todo start eval task
     if with_eval:
         pass
 
 
-def transfer_submission(host: str, submission_id: str):
+def fetch_submissions_log_from_remote(host, remote_submission_location, logger: SubmissionLogger):
+    return_code, result = misc.ssh_exec(host, [f'cat', f'{remote_submission_location}/{logger.log_filename()}'])
+    if return_code == 0:
+        logger.log(result, append=True)
+    else:
+        logger.log(f"Failed to fetch {host}:{remote_submission_location}/{logger.log_filename()} !!")
+
+
+def transfer_submission_to_remote(host: str, submission_id: str):
     """ Transfer a submission to worker storage """
+    # build variables
+    is_remote = host != _settings.hostname
+    transfer_location = _settings.REMOTE_STORAGE.get(host)
+    local_folder = get_submission_dir(submission_id)
+
+    if (not is_remote) and (transfer_location == _settings.SUBMISSION_DIR):
+        return local_folder
+
     logger = SubmissionLogger(submission_id)
-    folder = get_submission_dir(submission_id)
-    remote_location = _settings.REMOTE_STORAGE.get(host) / submission_id / 'input'
+    remote_submission_location = transfer_location / f"{submission_id}"
+
     # create remote folder
-    code, _ = misc.ssh_exec(host, ['mkdir', '-p', f"{remote_location}"])
+    code, _ = misc.ssh_exec(host, ['mkdir', '-p', f"{remote_submission_location}"])
     if code != 0:
         logger.log(f"failed to write on {host}")
-        raise ValueError(f"Failed to copy files to host {host}")
+        raise ValueError(f"No write permissions on {host}")
 
-    res = misc.scp((folder / 'input'), host, remote_location, recursive=True)
+    # sync files
+    res = misc.rsync(src=local_folder, dest_host=host, dest=remote_submission_location)
+
     if res.returncode == 0:
-        logger.log(f"copied files from {folder/ 'input'} to {host} for processing.")
-        return remote_location
+        logger.log(f"copied files from {local_folder} to {host} for processing.")
+        return remote_submission_location
     else:
-        logger.log(f"failed to copy {folder / 'input'} to {host} for processing.")
+        logger.log(f"failed to copy {local_folder} to {host} for processing.")
         logger.log(res.stderr.decode())
         raise ValueError(f"Failed to copy files to host {host}")
+
+
+def fetch_submission_from_remote(host: str, submission_id: str):
+    """ Download a submission from worker storage """
+    # build variables
+    is_remote = host != _settings.hostname
+    transfer_location = _settings.REMOTE_STORAGE.get(host)
+    local_folder = get_submission_dir(submission_id)
+
+    if (not is_remote) and (transfer_location == _settings.SUBMISSION_DIR):
+        return local_folder
+
+    logger = SubmissionLogger(submission_id)
+    remote_submission_location = transfer_location / f"{submission_id}"
+
+    # fetch log files
+    fetch_submissions_log_from_remote(host, remote_submission_location, logger)
+    # sync files
+    res = misc.rsync(src_host=host, src=remote_submission_location, dest=local_folder)
+
+    if res.returncode == 0:
+        logger.log(f"fetched result files from {host} to {local_folder}")
+        return local_folder
+    else:
+        logger.log(f"failed to fetch results from {host} to {local_folder}.")
+        logger.log(res.stderr.decode())
+        raise ValueError(f"Failed to copy files from host {host}")
 
