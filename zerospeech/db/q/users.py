@@ -30,7 +30,7 @@ class UserCreate(BaseModel):
         return v
 
 
-def hash_pwd(password: str, salt=None):
+def hash_pwd(*, password: str, salt=None):
     """ Creates a hash of the given password.
         If salt is None generates a random salt.
 
@@ -51,10 +51,10 @@ def hash_pwd(password: str, salt=None):
     return hash_pass, salt
 
 
-async def create_user(usr: UserCreate):
+async def create_user(*, usr: UserCreate):
     """ Create a new user entry in the users database. """
 
-    hashed_pswd, salt = hash_pwd(usr.pwd)
+    hashed_pswd, salt = hash_pwd(password=usr.pwd)
     verification_code = secrets.token_urlsafe(8)
     try:
         # insert user entry into the database
@@ -84,7 +84,7 @@ async def create_user(usr: UserCreate):
     return verification_code
 
 
-async def verify_user(username: str, verification_code: str):
+async def verify_user(*, username: str, verification_code: str):
     """ User verification using a specific code.
         If the code is correct verification succeeds
         If not the function raises a ValueNotValid Exception
@@ -105,7 +105,7 @@ async def verify_user(username: str, verification_code: str):
         raise exc.ValueNotValid("validation code was not correct")
 
 
-async def admin_verification(user_id: int):
+async def admin_verification(*, user_id: int):
     """ Verify a user, raises an ValueError if user does not exist.
         To only be used for administration.
         Users need to validate their accounts.
@@ -124,13 +124,13 @@ async def admin_verification(user_id: int):
         raise ValueError(f'user {user_id} was not found')
 
 
-def check_users_password(password: str, user: schema.User):
+def check_users_password(*, password: str, user: schema.User):
     """ Verify that a given password matches the users """
-    hashed_pwd, _ = hash_pwd(password, salt=user.salt)
+    hashed_pwd, _ = hash_pwd(password=password, salt=user.salt)
     return hashed_pwd == user.hashed_pswd
 
 
-async def validate_token(token: str):
+async def validate_token(*, token: str):
     """ Verify that a session token exists & is valid.
     :returns the logged_user entry
     :raises ValueError if entry not valid
@@ -152,7 +152,7 @@ async def validate_token(token: str):
     return logged_usr
 
 
-async def get_user(by_uid: Optional[int] = None, by_username: Optional[str] = None,
+async def get_user(*, by_uid: Optional[int] = None, by_username: Optional[str] = None,
                    by_email: Optional[str] = None, by_password_reset_session: Optional[str] = None) -> schema.User:
     """ Get a user from the database using uid, username or email as a search parameter.
 
@@ -217,7 +217,7 @@ async def get_logged_user_list() -> List[schema.User]:
     return [schema.User(**usr) for usr in logged_list]
 
 
-async def login_user(login: str, pwd: str):
+async def login_user(*, login: str, pwd: str):
     """ Create a new session for a user
     :arg login<str> argument used to identify user (can be username or email)
     :arg pwd<str> the password of the user
@@ -243,7 +243,7 @@ async def login_user(login: str, pwd: str):
     usr = schema.User(**usr)
 
     # check password
-    if not check_users_password(pwd, usr):
+    if not check_users_password(password=pwd, user=usr):
         raise ValueError('Login or password incorrect')
 
     # Log user in
@@ -259,7 +259,7 @@ async def login_user(login: str, pwd: str):
     return usr, user_token
 
 
-async def delete_session(by_token: Optional[str] = None, by_uid: Optional[str] = None,
+async def delete_session(*, by_token: Optional[str] = None, by_uid: Optional[str] = None,
                          clear_all: bool = False):
     """ Delete a specific user session """
     if by_token:
@@ -289,7 +289,7 @@ async def clear_expired_sessions():
     return await zrDB.execute(query)
 
 
-async def create_password_reset_session(username: str, email: str) -> schema.PasswordResetSession:
+async def create_password_reset_session(*, username: str, email: str) -> schema.PasswordResetSession:
     try:
         user = await get_user(by_email=email)
     except ValueError:
@@ -314,13 +314,13 @@ async def create_password_reset_session(username: str, email: str) -> schema.Pas
     )
 
 
-async def update_users_password(user: schema.User, password: str, password_validation: str):
+async def update_users_password(*, user: schema.User, password: str, password_validation: str):
     """ Change a users password """
 
     if password != password_validation:
         raise ValueError('passwords do not match')
 
-    hashed_pswd, salt = hash_pwd(password)
+    hashed_pswd, salt = hash_pwd(password=password)
     query = schema.users_table.update().where(
         schema.users_table.c.id == user.id
     ).values(hashed_pswd=hashed_pswd, salt=salt)
@@ -333,7 +333,7 @@ async def update_users_password(user: schema.User, password: str, password_valid
     await zrDB.execute(query2)
 
 
-async def toggle_user_status(user_id: int, active: bool = True):
+async def toggle_user_status(*, user_id: int, active: bool = True):
     """ Toggles a users status for active to inactive """
     query = schema.users_table.update().where(
         schema.users_table.c.id == user_id
@@ -346,10 +346,10 @@ async def toggle_user_status(user_id: int, active: bool = True):
         raise ValueError(f'user {user_id} was not found')
 
 
-async def toggle_all_users_status(active: bool = True):
+async def toggle_all_users_status(*, active: bool = True):
     """ Toggles a users status for active to inactive """
     query = schema.users_table.update().values(
         active=active
     )
-    res = await zrDB.execute(query)
+    return await zrDB.execute(query)
 

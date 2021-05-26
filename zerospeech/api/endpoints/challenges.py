@@ -27,12 +27,13 @@ async def get_challenge_list(include_inactive: bool = False):
 @router.get('/{challenge_id}', response_model=models.ChallengesResponse, responses={404: {"model": models.Message}})
 async def get_challenge_info(challenge_id: int):
     """ Return information of a specific challenge """
-    return await ch_queries.get_challenge(challenge_id, allow_inactive=True)
+    return await ch_queries.get_challenge(challenge_id=challenge_id, allow_inactive=True)
 
 
 @router.get('/{challenge_id}/leaderboard',  responses={404: {"model": models.Message}})
 async def get_challenge_leaderboard(challenge_id: int):
     """ Return leaderboard of a specific challenge """
+    # todo check into GraphQL maybe ?
     raise NotImplemented('Leaderboard not implemented')
 
 
@@ -43,12 +44,12 @@ async def create_submission(
         current_user: schema.User = Depends(api_utils.get_current_active_user)
 ):
     """ Create a new submission """
-    challenge = await ch_queries.get_challenge(challenge_id)
+    challenge = await ch_queries.get_challenge(challenge_id=challenge_id)
     if challenge is None:
         return ValueError(f'challenge {challenge_id} not found or inactive')
 
     # create db entry
-    submission_id = await ch_queries.add_submission(ch_queries.NewSubmission(
+    submission_id = await ch_queries.add_submission(new_submission=ch_queries.NewSubmission(
         user_id=current_user.id,
         track_id=challenge.id
     ))
@@ -68,7 +69,7 @@ async def upload_submission(
         file_data: UploadFile = File(...),
         current_user: schema.User = Depends(api_utils.get_current_active_user),
 ):
-    challenge = await ch_queries.get_challenge(challenge_id)
+    challenge = await ch_queries.get_challenge(challenge_id=challenge_id)
     if challenge is None:
         return ValueError(f'challenge {challenge_id} not found or inactive')
 

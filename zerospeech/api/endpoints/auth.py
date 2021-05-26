@@ -24,7 +24,7 @@ _settings = get_settings()
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """ Authenticate a user """
     try:
-        _, token = await queries.users.login_user(form_data.username, form_data.password)
+        _, token = await queries.users.login_user(login=form_data.username, pwd=form_data.password)
         out.Console.inspect(form_data)
         return models.LoggedItem(access_token=token, token_type="bearer")
     except ValueError:
@@ -37,7 +37,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @router.delete('/logout')
 async def logout(token: schema.LoggedUser = Depends(api_utils.validate_token)):
     """ Delete a user's session """
-    await queries.users.delete_session(token.token)
+    await queries.users.delete_session(by_token=token.token)
     return Response(status_code=200)
 
 
@@ -117,7 +117,7 @@ async def post_password_update(v: str, request: Request, password: str = Form(..
             raise ValueError('session validation not passed !!!')
 
         user = await queries.users.get_user(by_password_reset_session=v)
-        await queries.users.update_users_password(user, password, password_validation)
+        await queries.users.update_users_password(user=user, password=password, password_validation=password_validation)
     except ValueError as e:
         out.Console.Logger.error(
             f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
@@ -160,5 +160,5 @@ async def put_password_update(v: str, request: Request, password: str = Form(...
             detail="Page not found"
         )
 
-    await queries.users.update_users_password(user, password, password_validation)
+    await queries.users.update_users_password(user=user, password=password, password_validation=password_validation)
     return Response(status_code=200)

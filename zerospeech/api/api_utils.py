@@ -17,7 +17,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 async def validate_token(token: str = Depends(oauth2_scheme)) -> schema.LoggedUser:
     """ Dependency for validating the current users session via the token"""
     try:
-        token_item = await queries.users.validate_token(token)
+        token_item = await queries.users.validate_token(token=token)
         return token_item
     except ValueError:
         raise HTTPException(
@@ -64,7 +64,7 @@ def generate_html_response(data: Dict[str, Any], template_name: str) -> str:
 
 async def signup(request: Request, user: queries.users.UserCreate, background_tasks: BackgroundTasks):
     """ Creates a new user and schedules the registration email """
-    verification_code = await queries.users.create_user(user)
+    verification_code = await queries.users.create_user(usr=user)
     data = {
         'username': user.username,
         'url': f"{request.url_for('email_verification')}?v={verification_code}&username={user.username}",
