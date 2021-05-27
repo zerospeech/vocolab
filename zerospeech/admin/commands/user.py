@@ -10,7 +10,7 @@ from rich.progress import Progress, BarColumn
 from rich.table import Table
 
 from zerospeech import out, get_settings
-from zerospeech.admin.cli.cmd_types import CommandCollection, CMD
+from zerospeech.admin import cmd_lib
 from zerospeech.db.q import users as user_q
 from zerospeech.utils import notify
 
@@ -18,31 +18,12 @@ from zerospeech.utils import notify
 _settings = get_settings()
 
 
-class UsersCMD(CommandCollection):
-    __cmd_list__ = {}
+class UsersCMD(cmd_lib.CMD):
+    """ Command for user administration (default: list)"""
 
-    @property
-    def description(self) -> str:
-        return 'command group to administrate users'
-
-    @property
-    def name(self) -> str:
-        return 'users'
-
-
-class ListUsers(CMD):
-
-    def __init__(self, cmd_path):
-        super(ListUsers, self).__init__(cmd_path)
+    def __init__(self, root, name, cmd_path):
+        super(UsersCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument("-m", "--mail-list", action='store_true')
-
-    @property
-    def name(self) -> str:
-        return 'list'
-
-    @property
-    def short_description(self):
-        return 'lists available users'
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -72,21 +53,15 @@ class ListUsers(CMD):
         out.Console.print(table)
 
 
-class LoggedUsers(CMD):
+# todo create subcommand for various functions
+class LoggedUsersCMD(cmd_lib.CMD):
+    """ List logged users """
 
-    def __init__(self, cmd_path):
-        super(LoggedUsers, self).__init__(cmd_path)
+    def __init__(self, root, name, cmd_path):
+        super(LoggedUsersCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument("--close", type=int, help="user to close sessions of")
         self.parser.add_argument("--close-all", action='store_true',
                                  help="close all open sessions")
-
-    @property
-    def name(self) -> str:
-        return 'logged'
-
-    @property
-    def short_description(self):
-        return "list logged users"
 
     @staticmethod
     def just_print():
@@ -121,25 +96,18 @@ class LoggedUsers(CMD):
             self.just_print()
 
 
-class CreateUser(CMD):
+class CreateUserCMD(cmd_lib.CMD):
+    """ Create new users """
 
-    def __init__(self, cmd_path):
-        super(CreateUser, self).__init__(cmd_path)
+    def __init__(self, root, name, cmd_path):
+        super(CreateUserCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-f', '--from-file', type=str, help="Load users from a json file")
-
-    @property
-    def name(self) -> str:
-        return 'create'
-
-    @property
-    def short_description(self):
-        return "create a new user"
 
     @staticmethod
     def _make_usr(user: user_q.UserCreate, progress):
         task = progress.add_task(f"[red]--> Creating...{user.username}", start=False)
         time.sleep(1)
-        _ = asyncio.run(user_q.create_user(user))
+        _ = asyncio.run(user_q.create_user(usr=user))
         progress.update(task, completed=True,
                         description=f"[bold][green]:heavy_check_mark: User "
                                     f"{user.username} Created Successfully[/green][/bold]")
@@ -203,11 +171,12 @@ class CreateUser(CMD):
                 self._create_form_input(progress)
 
 
-class VerifyUser(CMD):
+# todo create subcommand for various functions
+class VerifyUserCMD(cmd_lib.CMD):
     """ User verification """
 
-    def __init__(self, cmd_path):
-        super(VerifyUser, self).__init__(cmd_path)
+    def __init__(self, root, name, cmd_path):
+        super(VerifyUserCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument("-v", "--verify", metavar="UID", type=int,
                                  help="verify a specific user")
         self.parser.add_argument("--verify-all", action='store_true', help="verify all users")
@@ -216,22 +185,18 @@ class VerifyUser(CMD):
         self.parser.add_argument("--send-all", action='store_true',
                                  help="resend verification email to all unverified users")
 
-    @property
-    def name(self) -> str:
-        return 'verify'
-
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
         if args.verify:
             # verify user
-            asyncio.run(user_q.admin_verification(args.verify))
+            asyncio.run(user_q.admin_verification(user_id=args.verify))
         elif args.verify_all:
             # verify all users
             users = asyncio.run(user_q.get_user_list())
             for u in users:
                 if u.verified != 'True':
-                    asyncio.run(user_q.admin_verification(u.id))
+                    asyncio.run(user_q.admin_verification(user_id=u.id))
         elif args.send:
             # send verification email
             try:
@@ -288,11 +253,11 @@ class VerifyUser(CMD):
             self.parser.print_help()
 
 
-class ActivationUser(CMD):
+class UserActivationCMD(cmd_lib.CMD):
     """ User activation/deactivation """
 
-    def __init__(self, cmd_path):
-        super(ActivationUser, self).__init__(cmd_path)
+    def __init__(self, root, name, cmd_path):
+        super(UserActivationCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument("-a", "--activate", metavar="UID",
                                  help="activate a specific user")
         self.parser.add_argument("-d", "--deactivate", metavar="UID",
@@ -300,44 +265,36 @@ class ActivationUser(CMD):
         self.parser.add_argument("--activate-all", action='store_true', help="activate all users")
         self.parser.add_argument("--deactivate-all", action='store_true', help="deactivate all users")
 
-    @property
-    def name(self) -> str:
-        return 'status'
-
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
         if args.activate:
             # activate user
-            asyncio.run(user_q.toggle_user_status(args.activate, True))
+            asyncio.run(user_q.toggle_user_status(user_id=args.activate, active=True))
             out.Console.info("User activated successfully")
         elif args.deactivate:
             # deactivate user
-            asyncio.run(user_q.toggle_user_status(args.deactivate, False))
+            asyncio.run(user_q.toggle_user_status(user_id=args.deactivate, active=False))
             out.Console.info("User deactivated successfully")
         elif args.activate_all:
             # activate all users
-            asyncio.run(user_q.toggle_all_users_status(True))
+            asyncio.run(user_q.toggle_all_users_status(active=True))
             out.Console.info("Users activated successfully")
         elif args.deactivate_all:
             # deactivate all users
-            asyncio.run(user_q.toggle_all_users_status(False))
+            asyncio.run(user_q.toggle_all_users_status(active=False))
             out.Console.info("Users deactivated successfully")
         else:
             self.parser.print_help()
 
 
-class PasswordUser(CMD):
+class PasswordUserCMD(cmd_lib.CMD):
     """Password reset sessions """
 
-    def __init__(self, cmd_path):
-        super(PasswordUser, self).__init__(cmd_path)
+    def __init__(self, root, name, cmd_path):
+        super(PasswordUserCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument("-r", "--reset", metavar="UID",
                                  help="reset & send a new password session to user")
-
-    @property
-    def name(self) -> str:
-        return 'password'
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -351,7 +308,7 @@ class PasswordUser(CMD):
                 sys.exit(1)
 
             user = asyncio.run(user_q.get_user(by_uid=args.reset))
-            session = asyncio.run(user_q.create_password_reset_session(user.username, user.email))
+            session = asyncio.run(user_q.create_password_reset_session(username=user.username, email=user.email))
             asyncio.run(notify.email.template_email(
                 emails=[user.email],
                 subject='[Zerospeech] Password Reset',
@@ -364,14 +321,3 @@ class PasswordUser(CMD):
             ))
         else:
             self.parser.print_help()
-
-
-def get() -> UsersCMD:
-    users = UsersCMD()
-    users.add_cmd(ListUsers(users.name))
-    users.add_cmd(LoggedUsers(users.name))
-    users.add_cmd(CreateUser(users.name))
-    users.add_cmd(VerifyUser(users.name))
-    users.add_cmd(ActivationUser(users.name))
-    users.add_cmd(PasswordUser(users.name))
-    return users

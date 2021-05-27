@@ -2,38 +2,33 @@ import asyncio
 import sys
 from pathlib import Path
 
-from rich.console import Console
 from rich.prompt import Confirm
 from rich.table import Table
 
-from zerospeech import get_settings
-from zerospeech.admin.cli.cmd_types import CommandCollection, CMD
+from zerospeech import get_settings, out
+from zerospeech.admin import cmd_lib
 from zerospeech.db.q import challenges as ch_queries
 from zerospeech.utils import misc
 
 _settings = get_settings()
-# Pretty Printing
-console = Console()
 
 
-class EvaluatorsCMD(CommandCollection):
-    """ Command to group actions on evaluator functions """
-    __cmd_list__ = {}
+class EvaluatorsCMD(cmd_lib.CMD):
+    """ Container for evaluator functions manipulation """
 
-    @property
-    def name(self) -> str:
-        return 'evaluator'
+    def __init__(self, root, name, cmd_path):
+        super(EvaluatorsCMD, self).__init__(root, name, cmd_path)
+
+    def run(self, argv):
+        self.parser.print_help()
+        sys.exit(0)
 
 
-class ListRegisteredEvaluators(CMD):
+class ListRegisteredEvaluatorsCMD(cmd_lib.CMD):
     """ Command to list all registered evaluators"""
 
-    @property
-    def name(self) -> str:
-        return 'list'
-
-    def __init__(self, cmd_path):
-        super(ListRegisteredEvaluators, self).__init__(cmd_path)
+    def __init__(self, root, name, cmd_path):
+        super(ListRegisteredEvaluatorsCMD, self).__init__(root, name, cmd_path)
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -55,18 +50,14 @@ class ListRegisteredEvaluators(CMD):
             )
 
         # print
-        console.print(table)
+        out.Console.print(table)
 
 
-class ListHostsEvaluators(CMD):
+class ListHostsEvaluatorsCMD(cmd_lib.CMD):
     """ Command to list all hosts containing evaluators """
 
-    @property
-    def name(self) -> str:
-        return 'hosts'
-
-    def __init__(self, cmd_path):
-        super(ListHostsEvaluators, self).__init__(cmd_path)
+    def __init__(self, root, name, cmd_path):
+        super(ListHostsEvaluatorsCMD, self).__init__(root, name, cmd_path)
 
     def run(self, argv):
         _ = self.parser.parse_args(argv)
@@ -77,7 +68,7 @@ class ListHostsEvaluators(CMD):
         table.add_column("BIN Dir")
         table.add_column("CONNECT")
 
-        for host in _settings.REMOTE_HOSTS:
+        for host in _settings.HOSTS:
             if host not in _settings.REMOTE_BIN:
                 continue
             try:
@@ -91,20 +82,16 @@ class ListHostsEvaluators(CMD):
             )
 
         # print
-        console.print(table)
+        out.Console.print(table)
 
 
-class DiscoverEvaluators(CMD):
+class DiscoverEvaluatorsCMD(cmd_lib.CMD):
     """ Command to list all challenges"""
 
-    def __init__(self, cmd_path):
-        super(DiscoverEvaluators, self).__init__(cmd_path)
+    def __init__(self, root, name, cmd_path):
+        super(DiscoverEvaluatorsCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('--local', action='store_true')
         self.parser.add_argument('host')
-
-    @property
-    def name(self) -> str:
-        return 'discover'
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -112,29 +99,19 @@ class DiscoverEvaluators(CMD):
         if args.local and Path(args.host).is_dir():
             raise NotImplemented('import of local evaluators is not implemented yet !!')
 
-        if args.host not in _settings.REMOTE_HOSTS:
-            console.print(":x: Error specified host was not found", style="red")
+        if args.host not in _settings.HOSTS:
+            out.Console.print(":x: Error specified host was not found", style="red")
             sys.exit(1)
 
         remote_dir = _settings.REMOTE_BIN.get(args.host, None)
         if remote_dir is None:
-            console.print(":x: Error specified host does not have a known bin dir", style="red")
+            out.Console.print(":x: Error specified host does not have a known bin dir", style="red")
             sys.exit(2)
 
         evaluators = misc.discover_evaluators(args.host, remote_dir)
         # show
-        console.print(f"Found evaluators : {[ev.label for ev in evaluators]}")
+        out.Console.print(f"Found evaluators : {[ev.label for ev in evaluators]}")
         response = Confirm.ask("Do want to import them into the database?")
         if response:
-            asyncio.run(ch_queries.add_evaluator(evaluators))
-            console.print(":heavy_check_mark: successfully inserted evaluators")
-
-
-def get() -> EvaluatorsCMD:
-    evaluator = EvaluatorsCMD()
-
-    evaluator.add_cmd(ListHostsEvaluators(evaluator.name))
-    evaluator.add_cmd(ListRegisteredEvaluators(evaluator.name))
-    evaluator.add_cmd(DiscoverEvaluators(evaluator.name))
-
-    return evaluator
+            asyncio.run(ch_queries.add_evaluator(lst_eval=evaluators))
+            out.Console.print(":heavy_check_mark: successfully inserted evaluators")

@@ -1,9 +1,10 @@
+import sys
 
 from rich.console import Console
 from rich.markdown import Markdown
 
 from zerospeech import get_settings
-from zerospeech.admin.cli.cmd_types import CommandCollection, CMD
+from zerospeech.admin import cmd_lib
 
 _settings = get_settings()
 console = Console()
@@ -35,34 +36,26 @@ For more information on all the variables & their usage see [docs folder](docs/s
 """
 
 
-class ServerChecks(CommandCollection):
-    __cmd_list__ = {}
+class ChecksCMD(cmd_lib.CMD):
+    """ A container for check commands """
+    
+    def __init__(self, root, name, cmd_path):
+        super(ChecksCMD, self).__init__(root, name, cmd_path)
 
-    @property
-    def description(self) -> str:
-        return 'check api functions'
-
-    @property
-    def name(self) -> str:
-        return 'check'
+    def run(self, argv):
+        self.parser.print_help()
+        sys.exit(0)
 
 
-class CheckSettings(CMD):
+class CheckSettingsCMD(cmd_lib.CMD):
+    """ Command allowing to verify settings """
 
-    def __init__(self, cmd_path):
-        super(CheckSettings, self).__init__(cmd_path)
+    def __init__(self, root, name, cmd_path):
+        super(CheckSettingsCMD, self).__init__(root, name, cmd_path)
         # arguments
         self.parser.add_argument('--get', help='Retrieves a specific value')
         self.parser.add_argument('--info', help='Info on how to set settings', action='store_true')
         self.parser.add_argument('--keys', help='List all available keys', action='store_true')
-
-    @property
-    def name(self) -> str:
-        return 'settings'
-
-    @property
-    def short_description(self):
-        return 'check current instance settings value'
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -92,10 +85,3 @@ class CheckSettings(CMD):
             console.print("---------------------------------------------------------",
                           style="bold italic purple")
 
-
-def get() -> ServerChecks:
-    checks = ServerChecks()
-
-    checks.add_cmd(CheckSettings(checks.name))
-
-    return checks

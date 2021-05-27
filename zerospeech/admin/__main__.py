@@ -1,3 +1,3 @@
-from zerospeech.admin.cli import main
+from zerospeech.admin import main
 
 main.run_cli()
