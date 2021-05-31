@@ -35,13 +35,13 @@ class EvalTaskWorker(AbstractWorker):
         super(EvalTaskWorker, self).__init__(config=config, server_state=server_state)
         verify_host_bin()
 
-    def add_process_location(self, _id, submission_id: str):
+    def start_process(self, _id, submission_id: str):
         self.server_state.processes[_id] = submission_id
         with utils.submissions.SubmissionLogger(submission_id) as lg:
             lg.log(f"Starting Evaluation process jb<{_id}>")
             lg.log(f"<!-----------------------------------", append=True)
 
-    def remove_process_location(self, _id):
+    def end_process(self, _id):
         submission_id = self.server_state.processes.get(_id)
         del self.server_state.processes[_id]
         with utils.submissions.SubmissionLogger(submission_id) as lg:
@@ -51,7 +51,7 @@ class EvalTaskWorker(AbstractWorker):
     @staticmethod
     def eval_subprocess(_cmd: SubmissionEvaluationMessage):
         """ Evaluate a subprocess type BrokerCMD """
-        bin_path = Path(_cmd.bin_path)
+        bin_path = Path(_cmd.bin_path).resolve()
         verify_bin(bin_path)
         script = bin_path / _cmd.script_name
         result = subprocess.run(
@@ -66,11 +66,11 @@ class EvalTaskWorker(AbstractWorker):
             br = message_from_bytes(message.body)
 
             if not isinstance(br, SubmissionEvaluationMessage):
-                raise ValueError("Cannot process non SubmissionEvaluationMessage")
+                raise ValueError("Cannot process non SubmissionEvaluationMessages")
 
             out.Console.Logger.info(f"Received evaluation request of {br.submission_id}")
             # create a log entry
-            self.add_process_location(br.job_id, br.submission_id)
+            self.start_process(br.job_id, br.submission_id)
 
             status, eval_output = self.eval_subprocess(br)
 
@@ -89,4 +89,4 @@ class EvalTaskWorker(AbstractWorker):
                 lg.append_eval(eval_output)
 
             # remove process from process logs
-            self.remove_process_location(br.job_id)
+            self.end_process(br.job_id)

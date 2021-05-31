@@ -10,4 +10,4 @@ class NewEvaluatorItem(BaseModel):
     executor: ExecutorsType
     host: Optional[str]
     script_path: str
-    base_arguments: str
+    base_arguments: Optional[str]

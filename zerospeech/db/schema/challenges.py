@@ -1,5 +1,6 @@
 from datetime import datetime, date
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 
 import sqlalchemy
@@ -100,3 +101,30 @@ evaluators_table = sqlalchemy.Table(
     sqlalchemy.Column("script_path", sqlalchemy.String),
     sqlalchemy.Column("base_arguments", sqlalchemy.String)
 )
+
+
+class LeaderBoard(BaseModel):
+    id: Optional[int]
+    challenge_id: int
+    label: str
+    path_to: Path
+    entry_file: str
+    archived: bool
+    external_entries: Path
+
+    class Config:
+        orm_mode = True
+
+
+leaderboards_table = sqlalchemy.Table(
+    "leaderboards",
+    challenge_metadata,
+    sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
+    sqlalchemy.Column('challenge_id', sqlalchemy.Integer, sqlalchemy.ForeignKey("challenges.id")),
+    sqlalchemy.Column('label', sqlalchemy.String, unique=True),
+    sqlalchemy.Column('path_to', sqlalchemy.String),
+    sqlalchemy.Column('entry_file', sqlalchemy.String),
+    sqlalchemy.Column('archived', sqlalchemy.Boolean),
+    sqlalchemy.Column('external_entries', sqlalchemy.String),
+)
+

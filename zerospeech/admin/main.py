@@ -19,7 +19,13 @@ def build_cli():
             commands.user.UsersCMD(CMD_NAME, 'users', '')
         )
         tree.add_cmd(
-            commands.user.LoggedUsersCMD(CMD_NAME, 'logged', 'users')
+            commands.user.UserSessionsCMD(CMD_NAME, 'sessions', 'users')
+        )
+        tree.add_cmd(
+            commands.user.CloseUserSessionsCMD(CMD_NAME, 'close', 'users:sessions')
+        )
+        tree.add_cmd(
+            commands.user.CreateUserSessionsCMD(CMD_NAME, 'create', 'users:sessions')
         )
         tree.add_cmd(
             commands.user.CreateUserCMD(CMD_NAME, 'create', 'users')
@@ -78,11 +84,37 @@ def build_cli():
             commands.submissions.EvalSubmissionCMD(CMD_NAME, 'eval', 'submissions')
         )
 
+        tree.add_cmd(
+            commands.task_worker.TaskWorkerCMD(CMD_NAME, 'worker', '')
+        )
+        tree.add_cmd(
+            commands.task_worker.RunTaskWorkerCMD(CMD_NAME, 'run', 'worker')
+        )
+        tree.add_cmd(
+            commands.task_worker.EchoTaskWorkerCMD(CMD_NAME, 'echo', 'worker:run')
+        )
+        tree.add_cmd(
+            commands.task_worker.EvaluationTaskWorkerCMD(CMD_NAME, 'eval', 'worker:run')
+        )
+        tree.add_cmd(
+            commands.task_worker.UpdateTaskWorkerCMD(CMD_NAME, 'update', 'worker:run')
+        )
+
     tree.add_cmd(
         commands.checks.ChecksCMD(CMD_NAME, 'check', '')
     )
     tree.add_cmd(
         commands.checks.CheckSettingsCMD(CMD_NAME, 'settings', 'check')
+    )
+
+    tree.add_cmd(
+        commands.api.APICMD(CMD_NAME, 'api', '')
+    )
+    tree.add_cmd(
+        commands.api.DebugAPICMD(CMD_NAME, 'debug', 'api')
+    )
+    tree.add_cmd(
+        commands.api.APInitEnvironmentCMD(CMD_NAME, 'init', 'api')
     )
 
     # build all epilog info

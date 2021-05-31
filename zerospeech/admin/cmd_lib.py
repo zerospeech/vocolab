@@ -9,6 +9,25 @@ from treelib import Tree, Node
 
 from zerospeech import out
 
+# a function for autocompletion in bash/zsh
+BASH_AUTOCOMPLETE_FN = """
+# Add The following to your .bashrc / .zshrc
+# ------ Zerospeech CLI autocomplete ------
+_script()
+{
+  _script_commands=$(zr __all_cmd__)
+
+  local cur
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  COMPREPLY=( $(compgen -W "${_script_commands}" -- ${cur}) )
+
+  return 0
+}
+complete -o nospace -F _script zr
+# ------ Zerospeech CLI autocomplete ------
+"""
+
 
 class CMD(ABC):
 
@@ -54,6 +73,18 @@ class CMD(ABC):
 
 class CommandTree:
     __RootNodeLabel = namedtuple('__RootNodeLabel', 'label')
+    __help_commands = ['help', 'list', 'commands', '--help', '-h']
+    __autocomplete = '__all_cmd__'
+    __autocomplete_fn = '__auto_fn__'
+
+    def is_help_cmd(self, cmd):
+        return cmd in self.__help_commands
+
+    def is_auto_fn(self, cmd):
+        return cmd == self.__autocomplete_fn
+
+    def is_autocomplete(self, cmd):
+        return cmd == self.__autocomplete
 
     def __init__(self):
         self.__cmd_tree = Tree()
@@ -100,13 +131,29 @@ class CommandTree:
                      f"{self.show(root=node.identifier)}"
             node.data.add_epilog(epilog)
 
+    def get_all_paths(self):
+        paths_as_list = []
+        paths_as_str = []
+        tree = self.__cmd_tree
+        for leaf in tree.all_nodes():
+            paths_as_list.append([tree.get_node(nid).tag for nid in tree.rsearch(leaf.identifier)][::-1])
+
+        for item in paths_as_list:
+            if '.' in item:
+                item.remove('.')
+            paths_as_str.append(':'.join(item))
+
+        if '' in paths_as_str:
+            paths_as_str.remove('')
+
+        paths_as_str.extend(self.__help_commands)
+        paths_as_str.append(self.__autocomplete)
+        paths_as_str.append(self.__autocomplete_fn)
+        return paths_as_str
+
 
 class CLI:
     """ The Command Line Interface Builder Class """
-    __help_commands = ['help', 'list', 'commands']
-
-    def is_help_cmd(self, cmd):
-        return cmd in self.__help_commands
 
     def __init__(self, cmd_tree: CommandTree, *,
                  description: str = "",
@@ -118,39 +165,51 @@ class CLI:
         :param description:
         :param usage:
         """
+        self.cmd_tree = cmd_tree
 
         # Help epilog
         epilog = "---\n" \
                  "list of available commands : \n\n" \
                  f"{cmd_tree.show()}"
 
-        parser = argparse.ArgumentParser(
+        self.parser = argparse.ArgumentParser(
             description=description,
             usage=usage,
             epilog=epilog,
             formatter_class=argparse.RawTextHelpFormatter
         )
-        parser.add_argument('command', help='Subcommand to run')
-        args = parser.parse_args(sys.argv[1:2])
+        self.parser.add_argument('command', help='Subcommand to run')
+
+    def run(self):
+        """ Run the Command Line Interface """
+        args = self.parser.parse_args(sys.argv[1:2])
 
         # check if help is asked
-        if self.is_help_cmd(args.command):
-            parser.print_help()
+        if self.cmd_tree.is_help_cmd(args.command):
+            self.parser.print_help()
             sys.exit(0)
 
-        cmd_node = cmd_tree.find_cmd(args.command)
+        # check if requesting cmd list for autocomplete
+        if self.cmd_tree.is_autocomplete(args.command):
+            out.Console.print(" ".join(self.cmd_tree.get_all_paths()))
+            sys.exit(0)
+
+        # check if requesting auto complete bash function
+        if self.cmd_tree.is_auto_fn(args.command):
+            out.Console.print(BASH_AUTOCOMPLETE_FN)
+            sys.exit(0)
+
+        cmd_node = self.cmd_tree.find_cmd(args.command)
         if cmd_node is None or cmd_node.identifier == 0:
             out.Console.error(f'Unrecognized command {args.command}\n')
-            parser.print_help()
+            self.parser.print_help()
             sys.exit(1)
 
         cmd = cmd_node.data
         if not isinstance(cmd, CMD):
             out.Console.error(f'Unrecognized command {args.command}\n')
-            parser.print_help()
+            self.parser.print_help()
             sys.exit(2)
         # set current cmd
-        self.cmd = cmd
 
-    def run(self):
-        self.cmd.run(argv=sys.argv[2:])
+        cmd.run(argv=sys.argv[2:])

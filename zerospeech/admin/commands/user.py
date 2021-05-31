@@ -53,15 +53,11 @@ class UsersCMD(cmd_lib.CMD):
         out.Console.print(table)
 
 
-# todo create subcommand for various functions
-class LoggedUsersCMD(cmd_lib.CMD):
+class UserSessionsCMD(cmd_lib.CMD):
     """ List logged users """
 
     def __init__(self, root, name, cmd_path):
-        super(LoggedUsersCMD, self).__init__(root, name, cmd_path)
-        self.parser.add_argument("--close", type=int, help="user to close sessions of")
-        self.parser.add_argument("--close-all", action='store_true',
-                                 help="close all open sessions")
+        super(UserSessionsCMD, self).__init__(root, name, cmd_path)
 
     @staticmethod
     def just_print():
@@ -84,16 +80,46 @@ class LoggedUsersCMD(cmd_lib.CMD):
         out.Console.print(table)
 
     def run(self, argv):
+        _ = self.parser.parse_args(argv)
+        self.just_print()
+
+
+class CloseUserSessionsCMD(cmd_lib.CMD):
+    """ Close user sessions users """
+
+    def __init__(self, root, name, cmd_path):
+        super(CloseUserSessionsCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument("-u", "--user-id")
+        self.parser.add_argument("-a", "--close-all", action='store_true')
+
+    def run(self, argv):
         args = self.parser.parse_args(argv)
 
-        if args.close:
-            asyncio.run(user_q.delete_session(by_uid=args.close))
-            out.Console.print(f"All sessions of user {args.close} were closed", style="bold")
+        if args.user_id:
+            asyncio.run(user_q.delete_session(by_uid=args.user_id))
+            out.Console.print(f"All sessions of user {args.user_id} were closed", style="bold")
         elif args.close_all:
             asyncio.run(user_q.delete_session(clear_all=True))
             out.Console.print(f"All sessions were closed", style="bold")
         else:
-            self.just_print()
+            self.parser.print_help()
+
+        sys.exit(0)
+
+
+class CreateUserSessionsCMD(cmd_lib.CMD):
+    """ Create a session for a user """
+
+    def __init__(self, root, name, cmd_path):
+        super(CreateUserSessionsCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument("user_id", type=int)
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+
+        usr, token = asyncio.run(user_q.admin_login(by_uid=args.user_id))
+        out.Console.print(f"{usr.username}, {usr.email}, {token}")
+        sys.exit(0)
 
 
 class CreateUserCMD(cmd_lib.CMD):

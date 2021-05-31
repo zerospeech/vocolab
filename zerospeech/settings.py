@@ -78,6 +78,7 @@ class _ZerospeechSettings(BaseSettings):
     STATIC_DIR: Path = DATA_FOLDER / "_static"
     USER_DATA_DIR: Path = DATA_FOLDER / 'user_data'
     SUBMISSION_DIR: Path = DATA_FOLDER / 'submissions'
+    LEADERBOARD_LOCATION: Path = DATA_FOLDER / 'leaderboards'
 
     # Templates Locations
     TEMPLATES_DIR: Path = app_home / 'templates'

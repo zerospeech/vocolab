@@ -219,12 +219,12 @@ async def get_logged_user_list() -> List[schema.User]:
 
 async def login_user(*, login: str, pwd: str):
     """ Create a new session for a user
-    :arg login<str> argument used to identify user (can be username or email)
-    :arg pwd<str> the password of the user
+    :param by_uid:
+    :param login<str> argument used to identify user (can be username or email)
+    :param pwd<str> the password of the user
     :returns the user object
     :raises ValueError if the login or password are not matched to a user.
     """
-
     # check username/email
     try:
         email = validate_email(email=login)
@@ -256,6 +256,31 @@ async def login_user(*, login: str, pwd: str):
     )
     await zrDB.execute(query)
 
+    return usr, user_token
+
+
+async def admin_login(*, by_uid: int = Optional[int]):
+    if by_uid:
+        query = schema.users_table.select().where(
+            schema.users_table.c.id == by_uid
+        )
+    else:
+        raise ValueError("Login Parameters do not match !!!")
+
+    usr = await zrDB.fetch_one(query)
+    if usr is None:
+        raise ValueError('Login or password incorrect')
+
+    usr = schema.User(**usr)
+    # Log user in
+    user_token = secrets.token_urlsafe(64)
+    token_best_by = datetime.now() + _settings.session_expiry_delay
+    query = schema.logged_users_table.insert().values(
+        token=user_token,
+        user_id=usr.id,
+        expiration_date=token_best_by
+    )
+    await zrDB.execute(query)
     return usr, user_token
 
 
@@ -352,4 +377,3 @@ async def toggle_all_users_status(*, active: bool = True):
         active=active
     )
     return await zrDB.execute(query)
-

@@ -1,32 +1,53 @@
+from typing import TYPE_CHECKING
+
 import aio_pika
 
-from zerospeech import exc, out
-from zerospeech.task_manager.model import SubmissionUpdateMessage, ExecutorsType
+from zerospeech import exc, out, utils
+from zerospeech.task_manager.model import SubmissionUpdateMessage, UpdateType, message_from_bytes
 from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
+from zerospeech.utils.submissions import evaluation_complete
+
+if TYPE_CHECKING:
+    from zerospeech.task_manager.config import ServerState
 
 
 class UpdateTaskWorker(AbstractWorker):
 
-    def __init__(self, channel_name, logs, exe_module):
-        super(UpdateTaskWorker, self).__init__(channel_name, logs)
-        self.exe_module = exe_module
+    def __init__(self, *, config, server_state: 'ServerState'):
+        super(UpdateTaskWorker, self).__init__(config=config, server_state=server_state)
 
-    def eval_function(self, _cmd: SubmissionUpdateMessage):
+    def start_process(self, _id, submission_id: str):
+        self.server_state.processes[_id] = submission_id
+        with utils.submissions.SubmissionLogger(submission_id) as lg:
+            lg.log(f"Updating submission <{_id}>")
+            lg.log(f"<!-----------------------------------", append=True)
+
+    def end_process(self, _id):
+        submission_id = self.server_state.processes.get(_id)
+        del self.server_state.processes[_id]
+        with utils.submissions.SubmissionLogger(submission_id) as lg:
+            lg.log(f"Submission update {_id} completed!!")
+            lg.log(f"----------------------------------/>", append=True)
+
+    @staticmethod
+    def eval_function(msg: SubmissionUpdateMessage):
         """ Evaluate a function type BrokerCMD """
-        fn = getattr(self.exe_module, _cmd.f_name)
-        return fn(**_cmd.args)
+        with utils.submissions.SubmissionLogger(msg.submission_id) as lg:
+            if msg.updateType == UpdateType.evaluation_complete:
+                evaluation_complete(submission_id=msg.submission_id, logger=lg)
+            else:
+                raise ValueError("Unknown update task !!!")
 
     async def _processor(self, message: aio_pika.IncomingMessage):
         async with message.process():
-            # fixme replace broker
-            br = ...  # BrokerCMD.from_bytes(message.body)
+            br = message_from_bytes(message.body)
 
-            if br.executor != ExecutorsType.function:
-                out.Console.Logger.error('UpdateWorker: Cannot evaluate non function messages')
-                raise ValueError(f"")
-            try:
-                result = self.eval_function(br)
-            except exc.ZerospeechException:
-                out.Console.Logger.error(f"{br.to_str()} -> returned non 0 code")
-            else:
-                out.Console.Logger.info(result)
+            if not isinstance(br, SubmissionUpdateMessage):
+                raise ValueError("Cannot process non SubmissionUpdateMessages")
+
+            out.Console.Logger.info(f"Received update request for {br.submission_id}")
+
+            self.start_process(br.job_id, br.submission_id)
+            self.eval_function(br)
+            self.end_process(br.job_id)
+
