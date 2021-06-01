@@ -3,8 +3,10 @@ from pathlib import Path
 
 from rich.table import Table
 
+from zerospeech import out
 from zerospeech.admin import cmd_lib
 from zerospeech.db.q import leaderboard as q_leaderboard
+from zerospeech.utils import submissions
 
 
 class LeaderboardCMD(cmd_lib.CMD):
@@ -82,8 +84,8 @@ class ShowLeaderboardCMD(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-
-        leaderboard = asyncio.run(q_leaderboard.get_leaderboard(leaderboard_id=args.leaderboard_id))
+        leaderboard = asyncio.run(submissions.get_leaderboard(leaderboard_id=args.leaderboard_id))
+        out.Console.console.print(leaderboard)
     
 
 class BuildLeaderboardCMD:

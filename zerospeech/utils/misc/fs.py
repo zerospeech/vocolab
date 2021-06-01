@@ -1,13 +1,15 @@
+import json
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 from shutil import which
-from typing import Union, Tuple, List, Optional
+from typing import Union, Tuple, List, Optional, Dict
 from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
+import yaml
 from Crypto.Hash import MD5
 # noinspection PyPackageRequirements
 from fsplit.filesplit import Filesplit
@@ -48,6 +50,17 @@ def scp(src: Path, host: str, dest: Path, recursive=True):
 
     return subprocess.run([which("scp"), f"{'-r' if recursive else ''}", f"{src}", f"{host}:{dest}"],
                           capture_output=True)
+
+
+def load_dict_file(location: Path) -> Union[Dict, List]:
+    """ Load a dict type file (json, yaml, toml)"""
+    with location.open() as fp:
+        if location.suffix == '.json':
+            return json.load(fp)
+        elif location.suffix in ('.yaml', 'yml'):
+            return yaml.load(fp, Loader=yaml.FullLoader)
+        else:
+            raise ValueError('Not a known file type !!!')
 
 
 def rsync(*, src_host: Optional[str] = None, src: Path, dest_host: Optional[str] = None, dest: Path,
