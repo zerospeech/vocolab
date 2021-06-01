@@ -105,12 +105,13 @@ evaluators_table = sqlalchemy.Table(
 
 class LeaderBoard(BaseModel):
     id: Optional[int]
-    challenge_id: int
-    label: str
-    path_to: Path
-    entry_file: str
-    archived: bool
-    external_entries: Path
+    challenge_id: int  # Id to linked challenge
+    label: str  # Name of leaderboard
+    path_to: Path  # Path to build result
+    entry_file: str  # filename in submission results
+    archived: bool  # is_archived
+    external_entries: Path  # Location of external entries (baselines, toplines, archived)
+    static_files: Optional[Path]  # Location to external static files
 
     class Config:
         orm_mode = True
@@ -126,5 +127,6 @@ leaderboards_table = sqlalchemy.Table(
     sqlalchemy.Column('entry_file', sqlalchemy.String),
     sqlalchemy.Column('archived', sqlalchemy.Boolean),
     sqlalchemy.Column('external_entries', sqlalchemy.String),
+    sqlalchemy.Column('static_files', sqlalchemy.String),
 )
 

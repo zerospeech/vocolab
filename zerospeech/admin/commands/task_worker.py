@@ -28,7 +28,7 @@ class RunTaskWorkerCMD(cmd_lib.CMD):
 
 
 class EchoTaskWorkerCMD(cmd_lib.CMD):
-    """ Run echo task worker """
+    """ Run echo task worker (used as debug worker)"""
 
     def __init__(self, root, name, cmd_path):
         super(EchoTaskWorkerCMD, self).__init__(root, name, cmd_path)

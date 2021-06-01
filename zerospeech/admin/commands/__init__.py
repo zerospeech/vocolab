@@ -5,3 +5,4 @@ from zerospeech.admin.commands import evaluators
 from zerospeech.admin.commands import submissions
 from zerospeech.admin.commands import api
 from zerospeech.admin.commands import task_worker
+from zerospeech.admin.commands import leaderboards

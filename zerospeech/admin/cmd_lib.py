@@ -39,16 +39,23 @@ class CMD(ABC):
         prog = f"{root} {cmd_path}:{name}"
         if cmd_path == '':
             prog = f"{root} {name}"
-
         self.parser = argparse.ArgumentParser(
             prog=prog,
-            description=self.short_description,
             formatter_class=argparse.RawTextHelpFormatter
         )
+        # load description
+        if self.long_description:
+            self.parser.description = self.long_description
+        else:
+            self.parser.description = self.short_description
 
     @property
     def short_description(self):
         return self.__doc__
+
+    @property
+    def long_description(self):
+        return self.run.__doc__
 
     @property
     def label(self):
@@ -109,6 +116,10 @@ class CommandTree:
             parent=father_node.identifier
         )
 
+    def add_cmd_tree(self, *cmd_items):
+        for cmd in cmd_items:
+            self.add_cmd(cmd)
+
     def has_children(self, _id):
         return self.__cmd_tree.children(_id)
 
@@ -127,7 +138,7 @@ class CommandTree:
                 continue
 
             epilog = "---\n" \
-                     "list of available commands : \n\n" \
+                     "list of available sub-commands : \n\n" \
                      f"{self.show(root=node.identifier)}"
             node.data.add_epilog(epilog)
 

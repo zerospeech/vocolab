@@ -85,7 +85,7 @@ class UserSessionsCMD(cmd_lib.CMD):
 
 
 class CloseUserSessionsCMD(cmd_lib.CMD):
-    """ Close user sessions users """
+    """ Close user sessions """
 
     def __init__(self, root, name, cmd_path):
         super(CloseUserSessionsCMD, self).__init__(root, name, cmd_path)
