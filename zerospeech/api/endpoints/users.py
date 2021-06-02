@@ -7,10 +7,11 @@ from fastapi import (
 )
 
 from zerospeech.api import api_utils
-from zerospeech.db import schema, q as queries
+from zerospeech.db import schema, models
+from zerospeech.db.q import userQ
 from zerospeech.settings import get_settings
 from zerospeech.utils import submissions
-from zerospeech import utils
+from zerospeech.utils import users as user_utils
 
 router = APIRouter()
 _settings = get_settings()
@@ -27,12 +28,12 @@ def get_user(current_user: schema.User = Depends(api_utils.get_current_active_us
 
 @router.get("/profile")
 def get_profile(current_user: schema.User = Depends(api_utils.get_current_active_user)):
-    return utils.users.get_user_data(current_user.username)
+    return user_utils.get_user_data(current_user.username)
 
 
 @router.post("/profile")
-def update_profile(user_data: schema.UserData, current_user: schema.User = Depends(api_utils.get_current_active_user)):
-    utils.users.update_user_data(current_user.username, data=user_data)
+def update_profile(user_data: models.UserData, current_user: schema.User = Depends(api_utils.get_current_active_user)):
+    user_utils.update_user_data(current_user.username, data=user_data)
     return Response(status_code=200)
 
 
@@ -64,7 +65,6 @@ def get_submission_status(submissions_id: int, current_user: schema.User = Depen
 def get_submission_status(submissions_id: int, current_user: schema.User = Depends(api_utils.get_current_active_user)):
     """ Return status of a submission """
     log = submissions.log.SubmissionLogger(submissions_id)
-
     return log.get_text()
 
 

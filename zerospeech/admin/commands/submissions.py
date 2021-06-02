@@ -7,7 +7,6 @@ from rich.table import Table
 
 from zerospeech import out
 from zerospeech.admin import cmd_lib
-from zerospeech.api.models import NewSubmissionRequest
 from zerospeech.db.q import challenges as ch_queries, users as usr_queries
 from zerospeech.db.schema import challenges as db_challenges
 from zerospeech.utils import submissions as sub_utils, misc

@@ -1,4 +1,3 @@
-import asyncio
 from os import execv
 from shutil import which
 

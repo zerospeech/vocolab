@@ -10,8 +10,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
 from zerospeech import exc, out
-from zerospeech.api import api_utils, models
-from zerospeech.db import q as queries, schema
+from zerospeech.api import api_utils
+from zerospeech.db import schema, models
+from zerospeech.db.q import userQ
 from zerospeech.settings import get_settings
 from zerospeech.utils import notify
 
@@ -24,7 +25,7 @@ _settings = get_settings()
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """ Authenticate a user """
     try:
-        _, token = await queries.users.login_user(login=form_data.username, pwd=form_data.password)
+        _, token = await userQ.login_user(login=form_data.username, pwd=form_data.password)
         out.Console.inspect(form_data)
         return models.LoggedItem(access_token=token, token_type="bearer")
     except ValueError:
@@ -37,12 +38,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @router.delete('/logout')
 async def logout(token: schema.LoggedUser = Depends(api_utils.validate_token)):
     """ Delete a user's session """
-    await queries.users.delete_session(by_token=token.token)
+    await userQ.delete_session(by_token=token.token)
     return Response(status_code=200)
 
 
 @router.put('/signup')
-async def put_signup(request: Request, user: queries.users.UserCreate, background_tasks: BackgroundTasks):
+async def put_signup(request: Request, user: userQ.UserCreate, background_tasks: BackgroundTasks):
     """ Create a new user """
     try:
         await api_utils.signup(request, user, background_tasks)
@@ -60,7 +61,7 @@ async def post_signup(request: Request, background_tasks: BackgroundTasks,
                       affiliation: str = Form(...), email: EmailStr = Form(...),
                       username: str = Form(...), password: str = Form(...)):
     """ Create a new user via the HTML form  (returns an html page) """
-    user = queries.users.UserCreate(
+    user = userQ.UserCreate(
         username=username,
         email=email,
         pwd=password,
@@ -93,7 +94,7 @@ async def post_signup(request: Request, background_tasks: BackgroundTasks,
 async def password_reset_request(
         user: models.PasswordResetRequest, request: Request, background_tasks: BackgroundTasks):
     """ Request a users password to be reset """
-    session = await queries.users.create_password_reset_session(username=user.username, email=user.email)
+    session = await userQ.create_password_reset_session(username=user.username, email=user.email)
     data = {
         'username': user.username,
         'url': f"{request.url_for('password_update_page')}?v={session.token}",
@@ -116,8 +117,8 @@ async def post_password_update(v: str, request: Request, password: str = Form(..
         if v != session_code:
             raise ValueError('session validation not passed !!!')
 
-        user = await queries.users.get_user(by_password_reset_session=v)
-        await queries.users.update_users_password(user=user, password=password, password_validation=password_validation)
+        user = await userQ.get_user(by_password_reset_session=v)
+        await userQ.update_users_password(user=user, password=password, password_validation=password_validation)
     except ValueError as e:
         out.Console.Logger.error(
             f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
@@ -150,7 +151,7 @@ async def put_password_update(v: str, request: Request, password: str = Form(...
         if v != session_code:
             raise ValueError('session validation not passed !!!')
 
-        user = await queries.users.get_user(by_password_reset_session=v)
+        user = await userQ.get_user(by_password_reset_session=v)
     except ValueError as e:
         out.Console.Logger.error(
             f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
@@ -160,5 +161,5 @@ async def put_password_update(v: str, request: Request, password: str = Form(...
             detail="Page not found"
         )
 
-    await queries.users.update_users_password(user=user, password=password, password_validation=password_validation)
+    await userQ.update_users_password(user=user, password=password, password_validation=password_validation)
     return Response(status_code=200)

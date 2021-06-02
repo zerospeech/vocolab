@@ -9,8 +9,8 @@ from rich.table import Table
 
 from zerospeech import out
 from zerospeech.admin import cmd_lib
-from zerospeech.db.q import challenges as ch_queries
-from zerospeech.db.schema import challenges as db_challenges
+from zerospeech.db.q import challengesQ
+from zerospeech.db import schema, models
 
 
 class ChallengesCMD(cmd_lib.CMD):
@@ -30,7 +30,7 @@ class ChallengesCMD(cmd_lib.CMD):
         # fetch data
         loop = asyncio.get_event_loop()
         challenge_lst = loop.run_until_complete(
-            ch_queries.list_challenges(include_all=args.include_all)
+            challengesQ.list_challenges(include_all=args.include_all)
         )
 
         # Prepare output
@@ -79,7 +79,7 @@ class AddChallengeCMD(cmd_lib.CMD):
                 if not (file_path.is_file() and file_path.suffix == '.json'):
                     raise ValueError(f"Input file needs to exist and be a Valid JSON file.")
                 obj = json.load(file_path.open())
-                obj_list = [ch_queries.NewChallenge(**item) for item in obj]
+                obj_list = [models.NewChallenge(**item) for item in obj]
 
             else:
                 out.Console.print("Creating a new Challenge", style="bold purple")
@@ -94,7 +94,7 @@ class AddChallengeCMD(cmd_lib.CMD):
                 else:
                     end_date = datetime.strptime(end_date, '%d/%m/%Y').date()
 
-                obj = ch_queries.NewChallenge(
+                obj = models.NewChallenge(
                     label=label,
                     active=False,
                     url=url,
@@ -106,7 +106,7 @@ class AddChallengeCMD(cmd_lib.CMD):
 
             if not args.dry_run:
                 for item in obj_list:
-                    asyncio.run(ch_queries.create_new_challenge(item))
+                    asyncio.run(challengesQ.create_new_challenge(item))
                     out.Console.print(f"insertion of {item.label} was successful:white_check_mark:",
                                       style="bold green")
             else:
@@ -129,7 +129,7 @@ class SetChallenge(cmd_lib.CMD):
         self.parser.add_argument('id', help='ID of the challenge to update')
         self.parser.add_argument('field', help='the field that will be updated')
         self.parser.add_argument('value', help='the value to add')
-        self.challenge_fields = db_challenges.Challenge.__annotations__
+        self.challenge_fields = schema.Challenge.__annotations__
         del self.challenge_fields['id']
 
     def _type_safety(self, field_name: str, value: str):
@@ -152,7 +152,7 @@ class SetChallenge(cmd_lib.CMD):
 
         type_safe_value = self._type_safety(args.field, args.value)
         asyncio.run(
-            ch_queries.set_challenge_property(
+            challengesQ.set_challenge_property(
                 ch_id=args.id, property_name=args.field, value=type_safe_value
             )
         )
