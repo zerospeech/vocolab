@@ -75,10 +75,10 @@ class _ZerospeechSettings(BaseSettings):
     password_reset_expiry_delay: timedelta = timedelta(minutes=45)
 
     # Data Locations
-    STATIC_DIR: Path = DATA_FOLDER / "_static"
-    USER_DATA_DIR: Path = DATA_FOLDER / 'user_data'
-    SUBMISSION_DIR: Path = DATA_FOLDER / 'submissions'
-    LEADERBOARD_LOCATION: Path = DATA_FOLDER / 'leaderboards'
+    STATIC_DIR: Optional[Path] = None
+    USER_DATA_DIR: Optional[Path] = None
+    SUBMISSION_DIR: Optional[Path] = None
+    LEADERBOARD_LOCATION: Optional[Path] = None
 
     # Templates Locations
     TEMPLATES_DIR: Path = app_home / 'templates'
@@ -102,6 +102,18 @@ class _ZerospeechSettings(BaseSettings):
     MAIL_SSL: bool = False
     MAIL_TEMPLATE_DIR: Path = TEMPLATES_DIR / 'emails'
 
+    def __folder_factory__(self):
+
+        def factory(key, default):
+            if not getattr(self, key):
+                setattr(self, key, self.DATA_FOLDER / default)
+
+        # self.DATA_FOLDER = self.DATA_FOLDER.resolve()
+        factory('STATIC_DIR', '_static')
+        factory('USER_DATA_DIR', 'user_data')
+        factory('SUBMISSION_DIR', 'submissions')
+        factory('LEADERBOARD_LOCATION', 'leaderboards')
+
     class Config:
         env_prefix = 'ZR_'
         env_file = '.env'
@@ -119,5 +131,11 @@ def get_settings() -> _ZerospeechSettings:
     env_file = os.environ.get('ZR_ENV_FILE', None)
 
     if env_file:
-        return _ZerospeechSettings(_env_file=env_file, _env_file_encoding='utf-8')
-    return _ZerospeechSettings()
+        st = _ZerospeechSettings(_env_file=env_file, _env_file_encoding='utf-8')
+    else:
+        st = _ZerospeechSettings()
+
+    # set dependent folders
+    st.__folder_factory__()
+
+    return st

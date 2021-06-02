@@ -66,7 +66,6 @@ async def create_user(*, usr: UserCreate):
             hashed_pswd=hashed_pswd,
             salt=salt
         )
-
         await zrDB.execute(query)
 
     except Exception as e:

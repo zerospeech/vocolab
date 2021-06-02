@@ -1,4 +1,3 @@
-from .manipulate import *
-from .log import *
-from .evaluation import *
-from .leaderboards import *
+from zerospeech.utils.submissions import (
+    evaluation, log, manipulate, leaderboards
+)

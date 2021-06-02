@@ -72,9 +72,11 @@ def build_cli():
 
     if has_leaderboard and has_submissions:
         tree.add_cmd_tree(
-            commands.leaderboards.LeaderboardCMD(CMD_NAME, 'leaderboard', ''),
-            commands.leaderboards.CreateLeaderboardCMD(CMD_NAME, 'create', 'leaderboard'),
-            commands.leaderboards.EditLeaderboardCMD(CMD_NAME, 'edit', 'leaderboard'),
+            commands.leaderboards.LeaderboardCMD(CMD_NAME, 'leaderboards', ''),
+            commands.leaderboards.CreateLeaderboardCMD(CMD_NAME, 'create', 'leaderboards'),
+            commands.leaderboards.EditLeaderboardCMD(CMD_NAME, 'edit', 'leaderboards'),
+            commands.leaderboards.BuildLeaderboardCMD(CMD_NAME, 'build', 'leaderboards'),
+            commands.leaderboards.ShowLeaderboardCMD(CMD_NAME, 'show', 'leaderboards')
             # commands.leaderboards.UpdateExternalEntriesCMD(CMD_NAME)
         )
 

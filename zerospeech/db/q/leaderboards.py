@@ -2,7 +2,6 @@
 Database functions that manipulate the leaderboard table
 """
 from typing import Any, List
-
 from zerospeech.db import schema, zrDB, exc as db_exc
 
 
@@ -15,7 +14,7 @@ async def get_leaderboard(*, leaderboard_id: int) -> schema.LeaderBoard:
     query = schema.leaderboards_table.select().where(
         schema.leaderboards_table.c.id == leaderboard_id
     )
-    ld = await zrDB.fetch_all(query)
+    ld = await zrDB.fetch_one(query)
     if ld is None:
         raise ValueError(f'Leaderboard: {leaderboard_id} not found in database !!!')
 
@@ -41,12 +40,13 @@ async def create_leaderboard(*, lead_data: schema.LeaderBoard):
 
     """
     query = schema.leaderboards_table.insert().values(
-        challenge_id=lead_data.challenge_id,
         label=lead_data.label,
-        path_to=lead_data.path_to,
+        challenge_id=lead_data.challenge_id,
+        path_to=f"{lead_data.path_to}",
         entry_file=lead_data.entry_file,
         archived=lead_data.archived,
-        external_entries=lead_data.external_entries
+        external_entries=f"{lead_data.external_entries}",
+        static_files=lead_data.static_files
     )
     try:
         await zrDB.execute(query)

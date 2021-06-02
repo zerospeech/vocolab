@@ -9,7 +9,7 @@ from zerospeech.db.q import challenges as q_challenge
 from zerospeech.exc import ResourceRequestedNotFound, InvalidRequest, ValueNotValid
 from zerospeech.settings import get_settings
 from zerospeech.utils import misc
-from zerospeech.utils.submissions.log import SubmissionLogger, get_submission_dir
+from zerospeech.utils import submissions
 
 if TYPE_CHECKING:
     from zerospeech.api.models import NewSubmissionRequest
@@ -26,7 +26,7 @@ def make_submission_on_disk(submission_id: str, username: str, track: str, meta:
         - tmp/ : temporary folder for multipart uploads (contains chunks & index)
         - upload.lock : lockfile used to declare the submission has not finished uploading
     """
-    folder = get_submission_dir(submission_id)
+    folder = submissions.log.get_submission_dir(submission_id)
     folder.mkdir(parents=True, exist_ok=True)
     (folder / 'scores').mkdir(exist_ok=True)
     (folder / 'input').mkdir(exist_ok=True)
@@ -50,16 +50,16 @@ def make_submission_on_disk(submission_id: str, username: str, track: str, meta:
         with (folder / 'archive.hash').open('w') as fp:
             fp.write(meta.hash)
 
-    sub_log = SubmissionLogger(submission_id)
+    sub_log = submissions.log.SubmissionLogger(submission_id)
     sub_log.header(username, track, meta.multipart)
 
     (folder / 'upload.lock').touch()
 
 
 def multipart_add(submission_id: str, filename: str, data: UploadFile):
-    logger = SubmissionLogger(submission_id)
+    logger = submissions.log.SubmissionLogger(submission_id)
     logger.log(f"adding a new part to upload: tmp/{filename}")
-    folder = get_submission_dir(submission_id)
+    folder = submissions.log.get_submission_dir(submission_id)
     with (folder / 'tmp' / 'upload.json').open() as fp:
         mf_data = misc.SplitManifest(**json.load(fp))
 
@@ -104,8 +104,8 @@ def multipart_add(submission_id: str, filename: str, data: UploadFile):
 
 
 def singlepart_add(submission_id: str, filename: str, data: UploadFile):
-    folder = get_submission_dir(submission_id)
-    logger = SubmissionLogger(submission_id)
+    folder = submissions.log.get_submission_dir(submission_id)
+    logger = submissions.log.SubmissionLogger(submission_id)
     logger.log(f"adding a new part to upload: {filename}")
 
     # hash not found in submission => raise exception
@@ -132,8 +132,8 @@ def singlepart_add(submission_id: str, filename: str, data: UploadFile):
 
 
 def add_part(submission_id: str, filename: str, data: UploadFile):
-    logger = SubmissionLogger(submission_id)
-    folder = get_submission_dir(submission_id)
+    logger = submissions.log.SubmissionLogger(submission_id)
+    folder = submissions.log.get_submission_dir(submission_id)
 
     # check existing submission
     if not folder.is_dir():
@@ -165,7 +165,7 @@ def complete_submission(submission_id: str, with_eval: bool = True):
         - run evaluation function
     : logs to submission logfile
     """
-    folder = get_submission_dir(submission_id)
+    folder = submissions.log.get_submission_dir(submission_id)
 
     if (folder / 'tmp').is_dir() and (folder / 'tmp/upload.json').is_file():
         with (folder / 'tmp' / 'upload.json').open() as fp:
@@ -185,7 +185,7 @@ def complete_submission(submission_id: str, with_eval: bool = True):
         pass
 
 
-def fetch_submissions_log_from_remote(host, remote_submission_location, logger: SubmissionLogger):
+def fetch_submissions_log_from_remote(host, remote_submission_location, logger: submissions.log.SubmissionLogger):
     return_code, result = misc.ssh_exec(host, [f'cat', f'{remote_submission_location}/{logger.log_filename()}'])
     if return_code == 0:
         logger.log(result, append=True)
@@ -198,12 +198,12 @@ def transfer_submission_to_remote(host: str, submission_id: str):
     # build variables
     is_remote = host != _settings.hostname
     transfer_location = _settings.REMOTE_STORAGE.get(host)
-    local_folder = get_submission_dir(submission_id)
+    local_folder = submissions.log.get_submission_dir(submission_id)
 
     if (not is_remote) and (transfer_location == _settings.SUBMISSION_DIR):
         return local_folder
 
-    logger = SubmissionLogger(submission_id)
+    logger = submissions.log.SubmissionLogger(submission_id)
     remote_submission_location = transfer_location / f"{submission_id}"
 
     # create remote folder
@@ -229,12 +229,12 @@ def fetch_submission_from_remote(host: str, submission_id: str):
     # build variables
     is_remote = host != _settings.hostname
     transfer_location = _settings.REMOTE_STORAGE.get(host)
-    local_folder = get_submission_dir(submission_id)
+    local_folder = submissions.log.get_submission_dir(submission_id)
 
     if (not is_remote) and (transfer_location == _settings.SUBMISSION_DIR):
         return local_folder
 
-    logger = SubmissionLogger(submission_id)
+    logger = submissions.log.SubmissionLogger(submission_id)
     remote_submission_location = transfer_location / f"{submission_id}"
 
     # fetch log files
@@ -249,4 +249,3 @@ def fetch_submission_from_remote(host: str, submission_id: str):
         logger.log(f"failed to fetch results from {host} to {local_folder}.")
         logger.log(res.stderr.decode())
         raise ValueError(f"Failed to copy files from host {host}")
-

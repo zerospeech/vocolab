@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import aio_pika
 
 from zerospeech import get_settings, exc, out
-from zerospeech import utils
+from zerospeech.utils import submissions
 from zerospeech.task_manager.model import SubmissionEvaluationMessage, message_from_bytes
 from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
 
@@ -37,14 +37,14 @@ class EvalTaskWorker(AbstractWorker):
 
     def start_process(self, _id, submission_id: str):
         self.server_state.processes[_id] = submission_id
-        with utils.submissions.SubmissionLogger(submission_id) as lg:
+        with submissions.log.SubmissionLogger(submission_id) as lg:
             lg.log(f"Starting Evaluation process jb<{_id}>")
             lg.log(f"<!-----------------------------------", append=True)
 
     def end_process(self, _id):
         submission_id = self.server_state.processes.get(_id)
         del self.server_state.processes[_id]
-        with utils.submissions.SubmissionLogger(submission_id) as lg:
+        with submissions.log.SubmissionLogger(submission_id) as lg:
             lg.log(f"Evaluation process jb<{_id}> completed!!")
             lg.log(f"----------------------------------/>", append=True)
 
@@ -85,7 +85,7 @@ class EvalTaskWorker(AbstractWorker):
                 pass
 
             # write output in log
-            with utils.submissions.SubmissionLogger(br.submission_id) as lg:
+            with submissions.log.SubmissionLogger(br.submission_id) as lg:
                 lg.append_eval(eval_output)
 
             # remove process from process logs

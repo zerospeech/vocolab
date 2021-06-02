@@ -1,5 +1,8 @@
 from logging.handlers import RotatingFileHandler, WatchedFileHandler
 import logging
+from pathlib import Path
+
+from rich.prompt import PromptBase
 
 try:
     import icecream
@@ -224,7 +227,7 @@ class _Console:
         self._config.COLORS = value
 
     @property
-    def console(self):
+    def console(self) -> RichConsole:
         return self._neutral_console
 
     def info(self, *args, **kwargs):
@@ -260,6 +263,17 @@ class _Console:
 
 # Instantiate Console
 Console = _Console()
+
+
+class PathPrompt(PromptBase[Path]):
+    """A prompt that returns an integer.
+    Example:
+        >>> burrito_count = PathPrompt.ask("Where did you store the treasure ?")
+    """
+
+    response_type = Path
+    validate_error_message = "[prompt.invalid]Please enter a valid path"
+
 
 if __name__ == '__main__':
     Console.console.print("I am the console")

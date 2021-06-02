@@ -1,11 +1,14 @@
 import asyncio
+import json
+import sys
 from pathlib import Path
 
+from rich.prompt import Prompt, Confirm, IntPrompt
 from rich.table import Table
 
 from zerospeech import out
 from zerospeech.admin import cmd_lib
-from zerospeech.db.q import leaderboard as q_leaderboard
+from zerospeech.db.q import leaderboardQ
 from zerospeech.utils import submissions
 
 
@@ -17,7 +20,7 @@ class LeaderboardCMD(cmd_lib.CMD):
 
     def run(self, argv):
         _ = self.parser.parse_args(argv)
-        leaderboards = asyncio.run(q_leaderboard.list_leaderboards())
+        leaderboards = asyncio.run(leaderboardQ.list_leaderboards())
 
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column('ID')
@@ -35,6 +38,8 @@ class LeaderboardCMD(cmd_lib.CMD):
                 f"{entry.external_entries}", f"{entry.static_files}", f"{entry.challenge_id}",
                 f"{entry.entry_file}", f"{entry.path_to}"
             )
+        # print table
+        out.Console.console.print(table)
 
 
 class CreateLeaderboardCMD(cmd_lib.CMD):
@@ -42,9 +47,68 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
 
     def __init__(self, root, name, cmd_path):
         super(CreateLeaderboardCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('-f', '--from-file', type=str, help="Load leaderboards from a json file")
+
+    @staticmethod
+    def ask_input():
+        label = out.Console.console.input("Label: ")
+        challenge_id = IntPrompt.ask("Challenge ID")
+
+        path_to = Prompt.ask(f"Leaderboard Compiled filename (default: {label}.json)")
+        if not path_to:
+            path_to = f"{label}.json"
+
+        entry_file = out.Console.console.input(
+            f"Leaderboard individual entry filename (default: {label}-entry.json ): ")
+
+        while True:
+            external_entries = out.Console.console.input("Location of external entries: ")
+            external_entries = Path(external_entries)
+            if external_entries.is_dir():
+                break
+            else:
+                out.Console.error(f"External entries must be a valid directory")
+
+        add_static_files = Confirm.ask("Does this leaderboard include static files", default=True)
+
+        return dict(
+            label=label,
+            challenge_id=challenge_id,
+            path_to=path_to,
+            entry_file=entry_file,
+            external_entries=external_entries,
+            static_files=add_static_files,
+        )
 
     def run(self, argv):
-        _ = self.parser.parse_args(argv)
+        args = self.parser.parse_args(argv)
+
+        if args.from_file:
+            input_file = Path(args.from_file)
+            if not input_file.is_file():
+                out.Console.error(f"File given ({input_file}) does not exist")
+                sys.exit(1)
+
+            if input_file.suffix != ".json":
+                out.Console.error(f"File given ({input_file}) does not appear to be a json file")
+                sys.exit(1)
+
+            with input_file.open() as fp:
+                lds = json.load(fp)
+
+        else:
+            lds = [self.ask_input()]
+
+        for item in lds:
+            asyncio.run(submissions.leaderboards.create(
+                challenge_id=item.get("challenge_id"),
+                label=item.get("label"),
+                entry_file=item.get("entry_file"),
+                external_entries=item.get("external_entries"),
+                static_files=item.get("static_files"),
+                path_to=item.get("path_to")
+            ))
+            out.Console.info(f"Successfully created leaderboard : {item.get('label')}")
 
 
 class EditLeaderboardCMD(cmd_lib.CMD):
@@ -57,9 +121,13 @@ class EditLeaderboardCMD(cmd_lib.CMD):
         self.parser.add_argument('field_value', help="The new value of the field")
 
     def run(self, argv):
-        """Edit a field of a leaderboard entry.    """
-        _ = self.parser.parse_args(argv)
-        self.parser.print_help()
+        args = self.parser.parse_args(argv)
+        asyncio.run(leaderboardQ.update_leaderboard_value(
+            leaderboard_id=args.leaderboard_id,
+            variable_name=args.field_name,
+            value=args.field_value
+        ))
+        out.Console.info(f"Field {args.field_name}={args.field_value} :heavy_check_mark:")
 
 
 class UpdateExternalEntriesCMD(cmd_lib.CMD):
@@ -71,8 +139,9 @@ class UpdateExternalEntriesCMD(cmd_lib.CMD):
         self.parser.add_argument("location", type=Path)
 
     def run(self, argv):
-        args = self.parser.parse_args(argv)
-        ...
+        _ = self.parser.parse_args(argv)
+        # todo add update entries
+        raise NotImplementedError()
 
 
 class ShowLeaderboardCMD(cmd_lib.CMD):
@@ -81,12 +150,26 @@ class ShowLeaderboardCMD(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(ShowLeaderboardCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('leaderboard_id', type=int)
+        self.parser.add_argument('--raw-output', action="store_true",
+                                 help="Print in raw json without formatting")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        leaderboard = asyncio.run(submissions.get_leaderboard(leaderboard_id=args.leaderboard_id))
-        out.Console.console.print(leaderboard)
+        leaderboard = asyncio.run(submissions.leaderboards.get_leaderboard(leaderboard_id=args.leaderboard_id))
+        if args.raw_output:
+            out.Console.console.out(json.dumps(leaderboard))
+        else:
+            out.Console.print(leaderboard)
     
 
-class BuildLeaderboardCMD:
-    pass
+class BuildLeaderboardCMD(cmd_lib.CMD):
+    """ Compile entries into the leaderboard """
+    
+    def __init__(self, root, name, cmd_path):
+        super(BuildLeaderboardCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('leaderboard_id', type=int, help='The id of the leaderboard')
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        ld_file = asyncio.run(submissions.leaderboards.build_leaderboard(leaderboard_id=args.leaderboard_id))
+        out.Console.info(f"Successfully build {ld_file}")

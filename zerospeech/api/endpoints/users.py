@@ -9,7 +9,7 @@ from fastapi import (
 from zerospeech.api import api_utils
 from zerospeech.db import schema, q as queries
 from zerospeech.settings import get_settings
-from zerospeech.utils.submissions import SubmissionLogger
+from zerospeech.utils import submissions
 from zerospeech import utils
 
 router = APIRouter()
@@ -63,7 +63,7 @@ def get_submission_status(submissions_id: int, current_user: schema.User = Depen
 @router.get('/submissions/{submissions_id}/log')
 def get_submission_status(submissions_id: int, current_user: schema.User = Depends(api_utils.get_current_active_user)):
     """ Return status of a submission """
-    log = SubmissionLogger(submissions_id)
+    log = submissions.log.SubmissionLogger(submissions_id)
 
     return log.get_text()
 

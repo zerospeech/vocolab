@@ -111,7 +111,7 @@ class LeaderBoard(BaseModel):
     entry_file: str  # filename in submission results
     archived: bool  # is_archived
     external_entries: Path  # Location of external entries (baselines, toplines, archived)
-    static_files: Optional[Path]  # Location to external static files
+    static_files: bool  # has static files
 
     class Config:
         orm_mode = True
@@ -127,6 +127,6 @@ leaderboards_table = sqlalchemy.Table(
     sqlalchemy.Column('entry_file', sqlalchemy.String),
     sqlalchemy.Column('archived', sqlalchemy.Boolean),
     sqlalchemy.Column('external_entries', sqlalchemy.String),
-    sqlalchemy.Column('static_files', sqlalchemy.String),
+    sqlalchemy.Column('static_files', sqlalchemy.Boolean),
 )
 
