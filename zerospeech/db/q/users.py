@@ -1,60 +1,22 @@
-import hashlib
-import os
+
 import secrets
 from datetime import datetime
 from typing import Optional, List
 
 from email_validator import validate_email, EmailSyntaxError
-from pydantic import BaseModel, EmailStr, validator
 
 from zerospeech import exc
-from zerospeech.db import zrDB, schema, exc as db_exc
+from zerospeech.db import zrDB, models, schema, exc as db_exc
 from zerospeech.settings import get_settings
-from zerospeech.utils import users as user_utils
+from zerospeech.lib import users_lib
 
 _settings = get_settings()
 
 
-class UserCreate(BaseModel):
-    """ Dataclass for user creation """
-    username: str
-    email: EmailStr
-    pwd: str
-    first_name: str
-    last_name: str
-    affiliation: str
-
-    @validator('username', 'pwd', 'first_name', 'last_name', 'affiliation')
-    def non_empty_string(cls, v):
-        assert v, "UserCreate does not accept empty fields"
-        return v
-
-
-def hash_pwd(*, password: str, salt=None):
-    """ Creates a hash of the given password.
-        If salt is None generates a random salt.
-
-        :arg password<str> the password to hash
-        :arg salt<bytes> a value to salt the hashing
-        :returns hashed_password, salt
-    """
-
-    if salt is None:
-        salt = os.urandom(32)  # make random salt
-
-    hash_pass = hashlib.pbkdf2_hmac(
-        'sha256',  # The hash digest algorithm for HMAC
-        password.encode('utf-8'),  # Convert the password to bytes
-        salt,  # Provide the salt
-        100000  # It is recommended to use at least 100,000 iterations of SHA-256
-    )
-    return hash_pass, salt
-
-
-async def create_user(*, usr: UserCreate):
+async def create_user(*, usr: models.misc.UserCreate):
     """ Create a new user entry in the users database. """
 
-    hashed_pswd, salt = hash_pwd(password=usr.pwd)
+    hashed_pswd, salt = users_lib.hash_pwd(password=usr.pwd)
     verification_code = secrets.token_urlsafe(8)
     try:
         # insert user entry into the database
@@ -72,13 +34,13 @@ async def create_user(*, usr: UserCreate):
         db_exc.parse_user_insertion(e)
 
     # create user profile data
-    data = schema.UserData(
+    data = models.api.UserData(
         username=usr.username,
         affiliation=usr.affiliation,
         first_name=usr.first_name,
         last_name=usr.last_name
     )
-    user_utils.update_user_data(usr.username, data)
+    users_lib.update_user_data(usr.username, data)
 
     return verification_code
 
@@ -125,7 +87,7 @@ async def admin_verification(*, user_id: int):
 
 def check_users_password(*, password: str, user: schema.User):
     """ Verify that a given password matches the users """
-    hashed_pwd, _ = hash_pwd(password=password, salt=user.salt)
+    hashed_pwd, _ = users_lib.hash_pwd(password=password, salt=user.salt)
     return hashed_pwd == user.hashed_pswd
 
 
@@ -218,7 +180,6 @@ async def get_logged_user_list() -> List[schema.User]:
 
 async def login_user(*, login: str, pwd: str):
     """ Create a new session for a user
-    :param by_uid:
     :param login<str> argument used to identify user (can be username or email)
     :param pwd<str> the password of the user
     :returns the user object
@@ -344,7 +305,7 @@ async def update_users_password(*, user: schema.User, password: str, password_va
     if password != password_validation:
         raise ValueError('passwords do not match')
 
-    hashed_pswd, salt = hash_pwd(password=password)
+    hashed_pswd, salt = users_lib.hash_pwd(password=password)
     query = schema.users_table.update().where(
         schema.users_table.c.id == user.id
     ).values(hashed_pswd=hashed_pswd, salt=salt)

@@ -1,3 +1,6 @@
+# Proposed new name for the module 
+
+voco : call in latin (call --> challenge)
 
 # Zerospeech Admin
 

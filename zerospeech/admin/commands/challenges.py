@@ -79,7 +79,7 @@ class AddChallengeCMD(cmd_lib.CMD):
                 if not (file_path.is_file() and file_path.suffix == '.json'):
                     raise ValueError(f"Input file needs to exist and be a Valid JSON file.")
                 obj = json.load(file_path.open())
-                obj_list = [models.NewChallenge(**item) for item in obj]
+                obj_list = [models.cli.NewChallenge(**item) for item in obj]
 
             else:
                 out.Console.print("Creating a new Challenge", style="bold purple")
@@ -94,7 +94,7 @@ class AddChallengeCMD(cmd_lib.CMD):
                 else:
                     end_date = datetime.strptime(end_date, '%d/%m/%Y').date()
 
-                obj = models.NewChallenge(
+                obj = models.cli.NewChallenge(
                     label=label,
                     active=False,
                     url=url,

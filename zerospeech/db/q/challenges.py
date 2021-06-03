@@ -2,15 +2,13 @@ from datetime import datetime
 from typing import List, Any
 from uuid import uuid4
 
-from zerospeech.admin.model import NewEvaluatorItem
-from zerospeech.db import zrDB, schema, exc as db_exc
-from zerospeech.db.schema import NewChallenge, NewSubmission
+from zerospeech.db import models, zrDB, schema, exc as db_exc
 from zerospeech import get_settings, out
 
 _settings = get_settings()
 
 
-async def create_new_challenge(item: NewChallenge):
+async def create_new_challenge(item: models.cli.NewChallenge):
     """ Creates a new challenge entry in the database """
     try:
         query = schema.challenges_table.insert().values(
@@ -82,7 +80,7 @@ async def delete_challenge(*, ch_id: int):
     return await zrDB.execute(query)
 
 
-async def add_submission(*, new_submission: NewSubmission):
+async def add_submission(*, new_submission: models.api.NewSubmission):
     """ Creates a database entry to a new submission """
     submission_id = datetime.now().strftime('%Y%m-%d%H-%M%S-') + str(uuid4())
     query = schema.submissions_table.insert()
@@ -179,7 +177,7 @@ async def get_evaluator(*, by_id: int):
     return schema.EvaluatorItem(**result)
 
 
-async def add_evaluator(*, lst_eval: List[NewEvaluatorItem]):
+async def add_evaluator(*, lst_eval: List[models.cli.NewEvaluatorItem]):
     """ Insert a list of evaluators into the database """
     query = schema.evaluators_table.insert()
     out.Console.ic([i.dict() for i in lst_eval])

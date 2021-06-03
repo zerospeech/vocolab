@@ -9,6 +9,7 @@ Jinja2==2.11.3
 pika==1.2.0
 numpy==1.20.2
 filesplit==3.0.2
+treelib==1.6.1
 uvicorn
 python-multipart
 email-validator

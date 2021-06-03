@@ -8,7 +8,7 @@ from fastapi import (
 from fastapi.responses import HTMLResponse
 
 from zerospeech import exc, out
-from zerospeech.api import api_utils
+from zerospeech.lib import api_utils
 from zerospeech.db import q as queries
 from zerospeech.settings import get_settings
 

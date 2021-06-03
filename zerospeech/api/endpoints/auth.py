@@ -5,29 +5,28 @@ from fastapi import (
     APIRouter, Depends, Response, HTTPException, status,
     Request, BackgroundTasks, Form
 )
-from fastapi.responses import PlainTextResponse, HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
 from zerospeech import exc, out
-from zerospeech.api import api_utils
 from zerospeech.db import schema, models
 from zerospeech.db.q import userQ
+from zerospeech.lib import api_lib, notify
 from zerospeech.settings import get_settings
-from zerospeech.utils import notify
 
 router = APIRouter()
 
 _settings = get_settings()
 
 
-@router.post('/login', response_model=models.LoggedItem)
+@router.post('/login', response_model=models.api.LoggedItem)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """ Authenticate a user """
     try:
         _, token = await userQ.login_user(login=form_data.username, pwd=form_data.password)
         out.Console.inspect(form_data)
-        return models.LoggedItem(access_token=token, token_type="bearer")
+        return models.api.LoggedItem(access_token=token, token_type="bearer")
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -36,17 +35,17 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @router.delete('/logout')
-async def logout(token: schema.LoggedUser = Depends(api_utils.validate_token)):
+async def logout(token: schema.LoggedUser = Depends(api_lib.validate_token)):
     """ Delete a user's session """
     await userQ.delete_session(by_token=token.token)
     return Response(status_code=200)
 
 
 @router.put('/signup')
-async def put_signup(request: Request, user: userQ.UserCreate, background_tasks: BackgroundTasks):
+async def put_signup(request: Request, user: models.misc.UserCreate, background_tasks: BackgroundTasks):
     """ Create a new user """
     try:
-        await api_utils.signup(request, user, background_tasks)
+        await api_lib.signup(request, user, background_tasks)
     except exc.ValueNotValid as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -61,7 +60,7 @@ async def post_signup(request: Request, background_tasks: BackgroundTasks,
                       affiliation: str = Form(...), email: EmailStr = Form(...),
                       username: str = Form(...), password: str = Form(...)):
     """ Create a new user via the HTML form  (returns an html page) """
-    user = userQ.UserCreate(
+    user = models.misc.UserCreate(
         username=username,
         email=email,
         pwd=password,
@@ -70,7 +69,7 @@ async def post_signup(request: Request, background_tasks: BackgroundTasks,
         affiliation=affiliation
     )
     try:
-        await api_utils.signup(request, user, background_tasks)
+        await api_lib.signup(request, user, background_tasks)
     except exc.ValueNotValid as e:
         data = dict(
             image_dir=f"{request.base_url}static/img",
@@ -87,12 +86,12 @@ async def post_signup(request: Request, background_tasks: BackgroundTasks,
             body=f"A verification email will be sent to {email}",
             success=True
         )
-    return api_utils.generate_html_response(data, template_name='response.html.jinja2')
+    return api_lib.generate_html_response(data, template_name='response.html.jinja2')
 
 
 @router.post('/password/reset', response_class=JSONResponse)
 async def password_reset_request(
-        user: models.PasswordResetRequest, request: Request, background_tasks: BackgroundTasks):
+        user: models.api.PasswordResetRequest, request: Request, background_tasks: BackgroundTasks):
     """ Request a users password to be reset """
     session = await userQ.create_password_reset_session(username=user.username, email=user.email)
     data = {
@@ -140,7 +139,7 @@ async def post_password_update(v: str, request: Request, password: str = Form(..
             success=True
         )
 
-    return api_utils.generate_html_response(data, template_name='response.html.jinja2')
+    return api_lib.generate_html_response(data, template_name='response.html.jinja2')
 
 
 @router.put('/password/update', response_class=JSONResponse)

@@ -6,19 +6,17 @@ from fastapi import (
     APIRouter, Depends, Response
 )
 
-from zerospeech.api import api_utils
+from zerospeech.lib import api_lib, users_lib
 from zerospeech.db import schema, models
-from zerospeech.db.q import userQ
 from zerospeech.settings import get_settings
-from zerospeech.utils import submissions
-from zerospeech.utils import users as user_utils
+
 
 router = APIRouter()
 _settings = get_settings()
 
 
 @router.get("/")
-def get_user(current_user: schema.User = Depends(api_utils.get_current_active_user)):
+def get_user(current_user: schema.User = Depends(api_lib.get_current_active_user)):
     return {
         "username": current_user.username,
         "email": current_user.email,
@@ -27,13 +25,14 @@ def get_user(current_user: schema.User = Depends(api_utils.get_current_active_us
 
 
 @router.get("/profile")
-def get_profile(current_user: schema.User = Depends(api_utils.get_current_active_user)):
-    return user_utils.get_user_data(current_user.username)
+def get_profile(current_user: schema.User = Depends(api_lib.get_current_active_user)):
+    return users_lib.get_user_data(current_user.username)
 
 
 @router.post("/profile")
-def update_profile(user_data: models.UserData, current_user: schema.User = Depends(api_utils.get_current_active_user)):
-    user_utils.update_user_data(current_user.username, data=user_data)
+def update_profile(
+        user_data: models.api.UserData, current_user: schema.User = Depends(api_lib.get_current_active_user)):
+    users_lib.update_user_data(current_user.username, data=user_data)
     return Response(status_code=200)
 
 
