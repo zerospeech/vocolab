@@ -7,12 +7,15 @@ from jinja2 import FileSystemLoader, Environment
 from zerospeech import settings
 from zerospeech.db import schema, models
 from zerospeech.db.q import userQ
-from zerospeech.lib import notify
+from zerospeech.lib import notify, _fs
 
 _settings = settings.get_settings()
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+# export
+file2dict = _fs.commons.load_dict_file
 
 
 async def validate_token(token: str = Depends(oauth2_scheme)) -> schema.LoggedUser:

@@ -58,8 +58,7 @@ async def build_leaderboard(*, leaderboard_id: int):
             leaderboard_entries.append(_fs.leaderboards.load_entry_from_sub(sub.id, leaderboard.entry_file))
             # grab all static files
             if leaderboard.static_files and (sub_location / 'static').is_dir():
-                _fs.commons.copy_all_contents(sub_location / 'static', static_location,
-                                              prefix=f"{sub.user_id}_{sub.track_id}")
+                _fs.commons.copy_all_contents(sub_location / 'static', static_location)
 
     # Export to file
     with (_settings.LEADERBOARD_LOCATION / leaderboard.path_to).open('w') as fp:

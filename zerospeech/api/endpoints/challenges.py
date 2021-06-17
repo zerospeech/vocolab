@@ -1,15 +1,16 @@
 """ Routing for /challenges section of the API
 This section handles challenge data
 """
+from datetime import datetime
 from typing import List
 
 from fastapi import (
     APIRouter, Depends, UploadFile, File, BackgroundTasks
 )
 
-from zerospeech import out
+from zerospeech import out, exc
 from zerospeech.db import schema, models
-from zerospeech.db.q import challengesQ
+from zerospeech.db.q import challengesQ, leaderboardQ
 from zerospeech.lib import api_lib, submissions_lib
 from zerospeech.settings import get_settings
 
@@ -28,14 +29,31 @@ async def get_challenge_list(include_inactive: bool = False):
             responses={404: {"model": models.api.Message}})
 async def get_challenge_info(challenge_id: int):
     """ Return information of a specific challenge """
+    # todo add leaderboards to challenge info
     return await challengesQ.get_challenge(challenge_id=challenge_id, allow_inactive=True)
 
 
-@router.get('/{challenge_id}/leaderboard',  responses={404: {"model": models.api.Message}})
-async def get_challenge_leaderboard(challenge_id: int):
+@router.get('/{challenge_id}/{leaderboard_id}',  responses={404: {"model": models.api.Message}})
+async def get_challenge_leaderboard(challenge_id: int, leaderboard_id: int):
     """ Return leaderboard of a specific challenge """
-    # todo check into GraphQL maybe ?
-    raise NotImplemented('Leaderboard not implemented')
+    try:
+        leaderboard = await leaderboardQ.get_leaderboard(leaderboard_id=leaderboard_id)
+
+        out.Console.ic(leaderboard)
+
+        if leaderboard.challenge_id != challenge_id:
+            raise ValueError('bad challenge id')
+
+    except ValueError:
+        raise exc.ResourceRequestedNotFound(f'No leaderboard with id {leaderboard_id} in challenge {challenge_id}')
+
+    if leaderboard.path_to.is_file():
+        return api_lib.file2dict(leaderboard.path_to)
+    else:
+        return dict(
+            updatedOn=datetime.now().isoformat(),
+            data=[]
+        )
 
 
 # todo test submit creation
