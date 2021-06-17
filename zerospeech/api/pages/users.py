@@ -8,8 +8,8 @@ from fastapi import (
 from fastapi.responses import HTMLResponse
 
 from zerospeech import exc, out
-from zerospeech.lib import api_utils
-from zerospeech.db import q as queries
+from zerospeech.lib import api_lib
+from zerospeech.db.q import userQ
 from zerospeech.settings import get_settings
 
 router = APIRouter()
@@ -24,7 +24,7 @@ async def new_user_page(request: Request):
         image_dir=f"{request.base_url}static/img",
         new_user_url=f"{request.url_for('post_signup')}"
     )
-    return api_utils.generate_html_response(data, template_name='signup.html.jinja2')
+    return api_lib.generate_html_response(data, template_name='signup.html.jinja2')
 
 
 @router.get('/email-verify', response_class=HTMLResponse)
@@ -34,7 +34,7 @@ async def email_verification(v: str, username: str, request: Request):
     res = False
 
     try:
-        res = await queries.users.verify_user(username, v)
+        res = await userQ.verify_user(username=username, verification_code=v)
     except ValueError:
         msg = 'Username does not exist'
     except exc.ActionNotValid as e:
@@ -52,16 +52,17 @@ async def email_verification(v: str, username: str, request: Request):
         "contact_url": "https://zerospeech.com/contact"
     }
 
-    return api_utils.generate_html_response(data=data, template_name='email_verification.html.jinja2')
+    return api_lib.generate_html_response(data=data, template_name='email_verification.html.jinja2')
 
 
 @router.get('/password-update', response_class=HTMLResponse)
 async def password_update_page(v: str, request: Request):
     """ An HTML page-form that allows a user to change their password """
     try:
-        user = await queries.users.get_user(by_password_reset_session=v)
+        user = await userQ.get_user(by_password_reset_session=v)
     except ValueError as e:
-        out.Console.Logger.error(f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
+        out.Console.Logger.error(
+            f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
         out.Console.exception()
 
         raise HTTPException(
@@ -69,7 +70,7 @@ async def password_update_page(v: str, request: Request):
             detail="Page not found"
         )
 
-    return api_utils.generate_html_response(data=dict(
+    return api_lib.generate_html_response(data=dict(
         image_dir=f"{request.base_url}static/img",
         username=user.username,
         submit_url=f"{request.url_for('post_password_update')}?v={v}",

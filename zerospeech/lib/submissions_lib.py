@@ -13,6 +13,10 @@ _settings = get_settings()
 
 # export function
 make_submission_on_disk = _fs.submissions.make_submission_on_disk
+md5sum = _fs.commons.md5sum
+get_submission_dir = _fs.submissions.get_submission_dir
+unzip = _fs.commons.unzip
+SubmissionLogger = _fs.submissions.SubmissionLogger
 
 
 def add_part(submission_id: str, filename: str, data: UploadFile):

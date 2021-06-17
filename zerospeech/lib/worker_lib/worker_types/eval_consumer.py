@@ -1,16 +1,12 @@
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import aio_pika
 
 from zerospeech import get_settings, exc, out
-from zerospeech.utils import submissions
-from zerospeech.db.models.model import SubmissionEvaluationMessage, message_from_bytes
-from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
-
-if TYPE_CHECKING:
-    from zerospeech.task_manager.config import ServerState
+from zerospeech.db.models.tasks import SubmissionEvaluationMessage, message_from_bytes
+from zerospeech.lib import submissions_lib
+from .abstract_worker import AbstractWorker, ServerState
 
 _settings = get_settings()
 
@@ -31,20 +27,20 @@ def verify_host_bin():
 
 class EvalTaskWorker(AbstractWorker):
 
-    def __init__(self, *, config, server_state: 'ServerState'):
+    def __init__(self, *, config, server_state: ServerState):
         super(EvalTaskWorker, self).__init__(config=config, server_state=server_state)
         verify_host_bin()
 
     def start_process(self, _id, submission_id: str):
         self.server_state.processes[_id] = submission_id
-        with submissions.log.SubmissionLogger(submission_id) as lg:
+        with submissions_lib.SubmissionLogger(submission_id) as lg:
             lg.log(f"Starting Evaluation process jb<{_id}>")
             lg.log(f"<!-----------------------------------", append=True)
 
     def end_process(self, _id):
         submission_id = self.server_state.processes.get(_id)
         del self.server_state.processes[_id]
-        with submissions.log.SubmissionLogger(submission_id) as lg:
+        with submissions_lib.SubmissionLogger(submission_id) as lg:
             lg.log(f"Evaluation process jb<{_id}> completed!!")
             lg.log(f"----------------------------------/>", append=True)
 
@@ -85,7 +81,7 @@ class EvalTaskWorker(AbstractWorker):
                 pass
 
             # write output in log
-            with submissions.log.SubmissionLogger(br.submission_id) as lg:
+            with submissions_lib.SubmissionLogger(br.submission_id) as lg:
                 lg.append_eval(eval_output)
 
             # remove process from process logs

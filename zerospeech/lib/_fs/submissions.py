@@ -8,8 +8,7 @@ from fastapi import UploadFile
 from zerospeech import get_settings, exc
 from zerospeech.db import models
 
-from ..network import ssh_exec
-from .commons import md5sum, rsync
+from .commons import md5sum, rsync, ssh_exec
 
 _settings = get_settings()
 

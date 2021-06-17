@@ -7,9 +7,10 @@ from rich.table import Table
 
 from zerospeech import out
 from zerospeech.admin import cmd_lib
+from zerospeech.db.models.api import NewSubmissionRequest, NewSubmission
 from zerospeech.db.q import challenges as ch_queries, users as usr_queries
 from zerospeech.db.schema import challenges as db_challenges
-from zerospeech.utils import submissions as sub_utils, misc
+from zerospeech.lib import submissions_lib
 
 
 class SubmissionCMD(cmd_lib.CMD):
@@ -117,7 +118,7 @@ class CreateSubmissionCMD(cmd_lib.CMD):
                     out.Console.error(f'User {_user.username} is not allowed to perform this action')
                     sys.exit(1)
 
-                _submission_id = await ch_queries.add_submission(new_submission=ch_queries.NewSubmission(
+                _submission_id = await ch_queries.add_submission(new_submission=NewSubmission(
                     user_id=_user.id,
                     track_id=_challenge.id
                 ))
@@ -130,18 +131,18 @@ class CreateSubmissionCMD(cmd_lib.CMD):
         challenge, user, submission_id = asyncio.run(create_submission(args.challenge_id, args.user_id))
 
         # create entry on disk
-        sub_utils.make_submission_on_disk(
+        submissions_lib.make_submission_on_disk(
             submission_id, user.username, challenge.label,
             NewSubmissionRequest(
-                filename=archive.name, hash=misc.md5sum(archive),
+                filename=archive.name, hash=submissions_lib.md5sum(archive),
                 multipart=False
             )
         )
         # fetch folder
-        folder = sub_utils.get_submission_dir(submission_id)
+        folder = submissions_lib.get_submission_dir(submission_id)
         # copy file
         shutil.copy(archive, folder / 'archive.zip')
-        misc.unzip(folder / 'archive.zip', folder / 'input')
+        submissions_lib.unzip(folder / 'archive.zip', folder / 'input')
 
         # set status
         (folder / 'upload.lock').unlink()

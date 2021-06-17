@@ -2,7 +2,7 @@ import sys
 
 from zerospeech import out
 from zerospeech.admin import cmd_lib
-from zerospeech.task_manager.main import run as tasks_run
+from zerospeech.worker.run_server import run as tasks_run
 
 
 class TaskWorkerCMD(cmd_lib.CMD):

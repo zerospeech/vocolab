@@ -11,8 +11,9 @@ from rich.table import Table
 
 from zerospeech import out, get_settings
 from zerospeech.admin import cmd_lib
-from zerospeech.db.q import users as user_q
-from zerospeech.utils import notify
+from zerospeech.db.models.misc import UserCreate
+from zerospeech.db.q import userQ
+from zerospeech.lib import notify
 
 
 _settings = get_settings()
@@ -29,7 +30,7 @@ class UsersCMD(cmd_lib.CMD):
         args = self.parser.parse_args(argv)
 
         # fetch data
-        user_lst = asyncio.run(user_q.get_user_list())
+        user_lst = asyncio.run(userQ.get_user_list())
 
         if args.mail_list:
             for u in user_lst:
@@ -62,7 +63,7 @@ class UserSessionsCMD(cmd_lib.CMD):
     @staticmethod
     def just_print():
         """ Prints a list of logged users """
-        user_lst = asyncio.run(user_q.get_logged_user_list())
+        user_lst = asyncio.run(userQ.get_logged_user_list())
 
         # Prepare output
         table = Table(show_header=True, header_style="bold magenta")
@@ -96,10 +97,10 @@ class CloseUserSessionsCMD(cmd_lib.CMD):
         args = self.parser.parse_args(argv)
 
         if args.user_id:
-            asyncio.run(user_q.delete_session(by_uid=args.user_id))
+            asyncio.run(userQ.delete_session(by_uid=args.user_id))
             out.Console.print(f"All sessions of user {args.user_id} were closed", style="bold")
         elif args.close_all:
-            asyncio.run(user_q.delete_session(clear_all=True))
+            asyncio.run(userQ.delete_session(clear_all=True))
             out.Console.print(f"All sessions were closed", style="bold")
         else:
             self.parser.print_help()
@@ -117,7 +118,7 @@ class CreateUserSessionsCMD(cmd_lib.CMD):
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
-        usr, token = asyncio.run(user_q.admin_login(by_uid=args.user_id))
+        usr, token = asyncio.run(userQ.admin_login(by_uid=args.user_id))
         out.Console.print(f"{usr.username}, {usr.email}, {token}")
         sys.exit(0)
 
@@ -130,10 +131,10 @@ class CreateUserCMD(cmd_lib.CMD):
         self.parser.add_argument('-f', '--from-file', type=str, help="Load users from a json file")
 
     @staticmethod
-    def _make_usr(user: user_q.UserCreate, progress):
+    def _make_usr(user: UserCreate, progress):
         task = progress.add_task(f"[red]--> Creating...{user.username}", start=False)
         time.sleep(1)
-        _ = asyncio.run(user_q.create_user(usr=user))
+        _ = asyncio.run(userQ.create_user(usr=user))
         progress.update(task, completed=True,
                         description=f"[bold][green]:heavy_check_mark: User "
                                     f"{user.username} Created Successfully[/green][/bold]")
@@ -145,7 +146,7 @@ class CreateUserCMD(cmd_lib.CMD):
 
             for data in user_list:
                 progress.update(task1, advance=0.5)
-                user = user_q.UserCreate(
+                user = UserCreate(
                     username=data.get("username"),
                     email=EmailStr(data.get('email')),
                     pwd=data.get("password"),
@@ -171,7 +172,7 @@ class CreateUserCMD(cmd_lib.CMD):
 
         password = out.Console.console.input("Password: ", password=True)
 
-        user = user_q.UserCreate(
+        user = UserCreate(
             username=username,
             email=EmailStr(email),
             pwd=password,
@@ -216,13 +217,13 @@ class VerifyUserCMD(cmd_lib.CMD):
 
         if args.verify:
             # verify user
-            asyncio.run(user_q.admin_verification(user_id=args.verify))
+            asyncio.run(userQ.admin_verification(user_id=args.verify))
         elif args.verify_all:
             # verify all users
-            users = asyncio.run(user_q.get_user_list())
+            users = asyncio.run(userQ.get_user_list())
             for u in users:
                 if u.verified != 'True':
-                    asyncio.run(user_q.admin_verification(user_id=u.id))
+                    asyncio.run(userQ.admin_verification(user_id=u.id))
         elif args.send:
             # send verification email
             try:
@@ -233,7 +234,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                 sys.exit(1)
 
             try:
-                user = asyncio.run(user_q.get_user(by_uid=args.send))
+                user = asyncio.run(userQ.get_user(by_uid=args.send))
             except ValueError:
                 out.Console.error(f"User with id: {args.send} does not exist !!")
                 sys.exit(1)
@@ -262,7 +263,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                 out.Console.error("Path file not found in settings")
                 sys.exit(1)
 
-            users = asyncio.run(user_q.get_user_list())
+            users = asyncio.run(userQ.get_user_list())
             for u in users:
                 if u.verified != 'True':
                     asyncio.run(notify.email.template_email(
@@ -296,19 +297,19 @@ class UserActivationCMD(cmd_lib.CMD):
 
         if args.activate:
             # activate user
-            asyncio.run(user_q.toggle_user_status(user_id=args.activate, active=True))
+            asyncio.run(userQ.toggle_user_status(user_id=args.activate, active=True))
             out.Console.info("User activated successfully")
         elif args.deactivate:
             # deactivate user
-            asyncio.run(user_q.toggle_user_status(user_id=args.deactivate, active=False))
+            asyncio.run(userQ.toggle_user_status(user_id=args.deactivate, active=False))
             out.Console.info("User deactivated successfully")
         elif args.activate_all:
             # activate all users
-            asyncio.run(user_q.toggle_all_users_status(active=True))
+            asyncio.run(userQ.toggle_all_users_status(active=True))
             out.Console.info("Users activated successfully")
         elif args.deactivate_all:
             # deactivate all users
-            asyncio.run(user_q.toggle_all_users_status(active=False))
+            asyncio.run(userQ.toggle_all_users_status(active=False))
             out.Console.info("Users deactivated successfully")
         else:
             self.parser.print_help()
@@ -333,8 +334,8 @@ class PasswordUserCMD(cmd_lib.CMD):
                 out.Console.error("Path file not found in settings")
                 sys.exit(1)
 
-            user = asyncio.run(user_q.get_user(by_uid=args.reset))
-            session = asyncio.run(user_q.create_password_reset_session(username=user.username, email=user.email))
+            user = asyncio.run(userQ.get_user(by_uid=args.reset))
+            session = asyncio.run(userQ.create_password_reset_session(username=user.username, email=user.email))
             asyncio.run(notify.email.template_email(
                 emails=[user.email],
                 subject='[Zerospeech] Password Reset',

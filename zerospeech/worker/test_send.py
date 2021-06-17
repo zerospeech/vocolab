@@ -3,13 +3,13 @@ import asyncio
 from datetime import datetime
 
 from zerospeech import get_settings
-from zerospeech.task_manager import (
-    publish_message,
+from zerospeech.db.models.tasks import (
     SimpleLogMessage,
     SubmissionEvaluationMessage,
     SubmissionUpdateMessage
 )
-from zerospeech.task_manager.workers import WORKER_TYPE
+from zerospeech.lib.worker_lib.pika_utils import publish_message
+from zerospeech.lib.worker_lib.worker_types import WORKER_TYPE
 
 _settings = get_settings()
 

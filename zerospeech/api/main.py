@@ -30,7 +30,8 @@ app.add_middleware(
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     idem = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-    out.Console.Logger.info(f'\[rid={idem}] {request.client.host}:{request.client.port} "{request.method} {request.url.path}"')
+    out.Console.Logger.info(
+        f'\[rid={idem}] {request.client.host}:{request.client.port} "{request.method} {request.url.path}"')
     out.Console.Logger.debug(f"\[rid={idem}] params={request.path_params}, {request.query_params}")
 
     start_time = time.time()
@@ -39,7 +40,8 @@ async def log_requests(request: Request, call_next):
 
     process_time = (time.time() - start_time) * 1000
     formatted_process_time = '{0:.2f}'.format(process_time)
-    out.Console.Logger.info(f"\[rid={idem}] completed_in={formatted_process_time}ms status_code={response.status_code}")
+    out.Console.Logger.info(
+        f"\[rid={idem}] completed_in={formatted_process_time}ms status_code={response.status_code}")
 
     return response
 

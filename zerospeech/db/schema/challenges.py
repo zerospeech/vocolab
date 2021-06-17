@@ -6,7 +6,7 @@ from typing import Optional
 import sqlalchemy
 from pydantic import BaseModel, HttpUrl
 
-from zerospeech.task_manager import ExecutorsType
+from zerospeech.db.models.tasks import ExecutorsType
 
 challenge_metadata = sqlalchemy.MetaData()
 

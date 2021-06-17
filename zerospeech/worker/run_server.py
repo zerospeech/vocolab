@@ -1,8 +1,7 @@
 import os
 
 from zerospeech import out
-from zerospeech.task_manager.server import Config, Server
-from zerospeech.task_manager.supervisors import Multiprocess
+from zerospeech.lib.worker_lib import Config, Server, Multiprocess
 
 
 def run(**kwargs):

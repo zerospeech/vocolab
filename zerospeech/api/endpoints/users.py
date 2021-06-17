@@ -6,7 +6,7 @@ from fastapi import (
     APIRouter, Depends, Response
 )
 
-from zerospeech.lib import api_lib, users_lib
+from zerospeech.lib import api_lib, users_lib, submissions_lib
 from zerospeech.db import schema, models
 from zerospeech.settings import get_settings
 
@@ -37,37 +37,37 @@ def update_profile(
 
 
 @router.get('/submissions')
-def submissions_list(current_user: schema.User = Depends(api_utils.get_current_active_user)):
+def submissions_list(current_user: schema.User = Depends(api_lib.get_current_active_user)):
     """ Return a list of all user submissions """
     raise NotImplemented()
 
 
 @router.get('/submissions/{track_id}')
-def submissions_list_by_track(current_user: schema.User = Depends(api_utils.get_current_active_user)):
+def submissions_list_by_track(current_user: schema.User = Depends(api_lib.get_current_active_user)):
     """ Return a list of all user submissions """
     raise NotImplemented()
 
 
 @router.get('/submissions/{submissions_id}')
-def get_submission(submissions_id: int, current_user: schema.User = Depends(api_utils.get_current_active_user)):
+def get_submission(submissions_id: int, current_user: schema.User = Depends(api_lib.get_current_active_user)):
     """ Return information on a submission """
     raise NotImplemented()
 
 
 @router.get('/submissions/{submissions_id}/status')
-def get_submission_status(submissions_id: int, current_user: schema.User = Depends(api_utils.get_current_active_user)):
+def get_submission_status(submissions_id: int, current_user: schema.User = Depends(api_lib.get_current_active_user)):
     """ Return status of a submission """
     raise NotImplemented()
 
 
 @router.get('/submissions/{submissions_id}/log')
-def get_submission_status(submissions_id: int, current_user: schema.User = Depends(api_utils.get_current_active_user)):
+def get_submission_status(submissions_id: int, current_user: schema.User = Depends(api_lib.get_current_active_user)):
     """ Return status of a submission """
-    log = submissions.log.SubmissionLogger(submissions_id)
+    log = submissions_lib.SubmissionLogger(submissions_id)
     return log.get_text()
 
 
 @router.get('/submissions/{submissions_id}/scores')
-def get_user_results(track_id: int, current_user: schema.User = Depends(api_utils.get_current_active_user)):
+def get_user_results(track_id: int, current_user: schema.User = Depends(api_lib.get_current_active_user)):
     """ Return status of a submission """
     raise NotImplemented()

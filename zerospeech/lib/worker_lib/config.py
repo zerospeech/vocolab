@@ -1,8 +1,7 @@
 import signal
-from dataclasses import dataclass
-from typing import Dict
 
 from zerospeech import get_settings
+from .worker_types import WORKER_TYPE, ServerState
 
 _settings = get_settings()
 
@@ -15,18 +14,9 @@ SING_TO_STR = dict((k, v) for v, k in reversed(sorted(signal.__dict__.items()))
                    if v.startswith('SIG') and not v.startswith('SIG_'))
 
 
-@dataclass
-class ServerState:
-    pid: int
-    processes: Dict[str, str]
-    should_exit: bool = False
-
-
 class Config:
 
     def __init__(self, **kwargs):
-        from .workers import WORKER_TYPE
-
         # Worker class
         worker = kwargs.get("worker", "eval")
         self.worker = WORKER_TYPE.get(worker)

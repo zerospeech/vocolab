@@ -6,8 +6,8 @@ import os
 import aio_pika
 
 from zerospeech import out
-from zerospeech.db.models.model import SimpleLogMessage, message_from_bytes
-from zerospeech.task_manager.workers.abstract_worker import AbstractWorker
+from zerospeech.db.models.tasks import SimpleLogMessage, message_from_bytes
+from .abstract_worker import AbstractWorker
 
 
 class EchoWorker(AbstractWorker):

@@ -3,7 +3,12 @@ from typing import List
 import yaml
 
 from zerospeech.db import models
-from zerospeech.lib import _fs
+from zerospeech.lib import (
+    _fs
+)
+
+# export
+check_host = _fs.commons.check_host
 
 
 def discover_evaluators(hostname: str, bin_location) -> List[models.cli.NewEvaluatorItem]:

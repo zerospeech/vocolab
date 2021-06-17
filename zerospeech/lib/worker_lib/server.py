@@ -5,8 +5,8 @@ import threading
 from datetime import datetime
 
 from zerospeech import out
-from zerospeech.task_manager.config import HANDLED_SIGNALS, Config, ServerState, SING_TO_STR
-from zerospeech import utils
+from zerospeech.lib import submissions_lib
+from .config import HANDLED_SIGNALS, Config, ServerState, SING_TO_STR
 
 
 class Server:
@@ -38,7 +38,7 @@ class Server:
         out.Console.Logger.warning(f"EXIT has been requested ({SING_TO_STR.get(sig, 'SIG_XX')})")
 
         for _id, sub_id in self.server_state.processes.items():
-            sub_loc = utils.submissions.get_submission_dir(sub_id)
+            sub_loc = submissions_lib.get_submission_dir(sub_id)
 
             with (sub_loc / 'interrupted.lock').open('w') as fp:
                 fp.write(f"when: {datetime.now().isoformat()}\n")

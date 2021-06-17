@@ -38,7 +38,7 @@ For more information on all the variables & their usage see [docs folder](docs/s
 
 class ChecksCMD(cmd_lib.CMD):
     """ A container for check commands """
-    
+
     def __init__(self, root, name, cmd_path):
         super(ChecksCMD, self).__init__(root, name, cmd_path)
 
@@ -84,4 +84,3 @@ class CheckSettingsCMD(cmd_lib.CMD):
 
             console.print("---------------------------------------------------------",
                           style="bold italic purple")
-

@@ -1,9 +1,8 @@
 """ Dataclasses representing API/challenge input output data types """
+from datetime import date
 from typing import Optional, List
 
-from pydantic import BaseModel
-
-from zerospeech.db.schema.challenges import Challenge
+from pydantic import BaseModel, HttpUrl
 
 
 class ChallengePreview(BaseModel):
@@ -13,9 +12,15 @@ class ChallengePreview(BaseModel):
     active: bool
 
 
-class ChallengesResponse(Challenge):
+class ChallengesResponse(BaseModel):
     """ Used as response type for preview of a challenge """
-    pass
+    id: int
+    label: str
+    start_date: date
+    end_date: Optional[date]
+    active: bool
+    url: HttpUrl
+    evaluator: Optional[int]
 
 
 class SubmissionRequestFileIndexItem(BaseModel):

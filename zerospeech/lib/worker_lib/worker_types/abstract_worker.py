@@ -1,11 +1,21 @@
 import abc
 import asyncio
-from typing import Optional
+from dataclasses import dataclass
+from typing import Optional, Dict, TYPE_CHECKING
 
 import aio_pika
+from zerospeech.lib.worker_lib import pika_utils
 
-from zerospeech.task_manager.config import Config, ServerState
-from zerospeech.task_manager import pika_utils
+
+if TYPE_CHECKING:
+    from ..config import Config
+
+
+@dataclass
+class ServerState:
+    pid: int
+    processes: Dict[str, str]
+    should_exit: bool = False
 
 
 async def check_tasks():
@@ -17,7 +27,7 @@ async def check_tasks():
 
 class AbstractWorker(abc.ABC):
 
-    def __init__(self, *, config: Config, server_state: Optional[ServerState]):
+    def __init__(self, *, config: 'Config', server_state: Optional[ServerState]):
         self.channel_name = config.channel
         self.prefetch_count = config.prefetch_count
         self.server_state = server_state

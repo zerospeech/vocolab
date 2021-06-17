@@ -1,5 +1,3 @@
-import argparse
-
 import aio_pika
 import pika
 from pika.adapters.blocking_connection import BlockingChannel

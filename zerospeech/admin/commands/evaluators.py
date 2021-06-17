@@ -8,7 +8,7 @@ from rich.table import Table
 from zerospeech import get_settings, out
 from zerospeech.admin import cmd_lib
 from zerospeech.db.q import challenges as ch_queries
-from zerospeech.utils import misc
+from zerospeech.lib import evaluators_lib
 
 _settings = get_settings()
 
@@ -31,7 +31,7 @@ class ListRegisteredEvaluatorsCMD(cmd_lib.CMD):
         super(ListRegisteredEvaluatorsCMD, self).__init__(root, name, cmd_path)
 
     def run(self, argv):
-        args = self.parser.parse_args(argv)
+        _ = self.parser.parse_args(argv)
         evaluators = asyncio.run(ch_queries.get_evaluators())
 
         # Prepare output
@@ -73,7 +73,7 @@ class ListHostsEvaluatorsCMD(cmd_lib.CMD):
                 continue
             try:
                 status = "[green]:heavy_check_mark:[/green]"
-                misc.check_host(host)
+                evaluators_lib.check_host(host)
             except ConnectionError:
                 status = "[red]:x:[/red]"
 
@@ -108,7 +108,7 @@ class DiscoverEvaluatorsCMD(cmd_lib.CMD):
             out.Console.print(":x: Error specified host does not have a known bin dir", style="red")
             sys.exit(2)
 
-        evaluators = misc.discover_evaluators(args.host, remote_dir)
+        evaluators = evaluators_lib.discover_evaluators(args.host, remote_dir)
         # show
         out.Console.print(f"Found evaluators : {[ev.label for ev in evaluators]}")
         response = Confirm.ask("Do want to import them into the database?")
