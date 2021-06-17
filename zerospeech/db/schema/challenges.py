@@ -113,6 +113,10 @@ class LeaderBoard(BaseModel):
     external_entries: Path  # Location of external entries (baselines, toplines, archived)
     static_files: bool  # has static files
 
+    @classmethod
+    def get_field_names(cls):
+        return list(cls.__fields__.keys())
+
     class Config:
         orm_mode = True
 

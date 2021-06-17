@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 from pathlib import Path
 from shutil import which
@@ -120,3 +121,24 @@ def check_host(host):
     )
     if res.returncode != 0:
         raise ConnectionError(f'Service was unable to connect to Host({host})')
+
+
+def copy_all_contents(source: Path, target: Path, *, prefix: Optional[str] = None):
+    """ Copy all files included in source directory
+
+    :param source: directory from which to copy files
+    :param target: directory to copy files to
+    :param prefix: prefix to add to all copied files
+    """
+    if not source.is_dir():
+        raise ValueError(f'Source {source} must be a directory')
+
+    if not target.is_dir():
+        raise ValueError(f'Target {target} must be a directory')
+
+    for file in [f for f in source.rglob("*") if f.is_file()]:
+        if prefix is not None:
+            shutil.copyfile(file, target / f"{prefix}_{file.name}")
+        else:
+            shutil.copyfile(file, target / file.name)
+

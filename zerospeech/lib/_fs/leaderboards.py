@@ -15,4 +15,4 @@ def load_entry_from_sub(submission_id: str, leaderboard_entry: str):
     location = get_submission_dir(submission_id)
     if (location / leaderboard_entry).is_file():
         return load_dict_file(location / leaderboard_entry)
-    return None
+    return {}

@@ -8,6 +8,7 @@ from rich.table import Table
 
 from zerospeech import out
 from zerospeech.admin import cmd_lib
+from zerospeech.db import schema
 from zerospeech.db.q import leaderboardQ
 from zerospeech.lib import leaderboards_lib
 
@@ -26,11 +27,11 @@ class LeaderboardCMD(cmd_lib.CMD):
         table.add_column('ID')
         table.add_column('Label')
         table.add_column('Archived')
-        table.add_column('External Entries')
+        table.add_column('External Entries', no_wrap=False, overflow='fold')
         table.add_column('Static Files')
         table.add_column('Challenge ID')
-        table.add_column('EntryFile')
-        table.add_column('LeaderboardFile')
+        table.add_column('EntryFile', no_wrap=False, overflow='fold')
+        table.add_column('LeaderboardFile', no_wrap=False, overflow='fold')
 
         for entry in leaderboards:
             table.add_row(
@@ -39,7 +40,7 @@ class LeaderboardCMD(cmd_lib.CMD):
                 f"{entry.entry_file}", f"{entry.path_to}"
             )
         # print table
-        out.Console.console.print(table)
+        out.Console.console.print(table, no_wrap=False)
 
 
 class CreateLeaderboardCMD(cmd_lib.CMD):
@@ -51,7 +52,7 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
 
     @staticmethod
     def ask_input():
-        label = out.Console.console.input("Label: ")
+        label = Prompt.ask("Label: ")
         challenge_id = IntPrompt.ask("Challenge ID")
 
         path_to = Prompt.ask(f"Leaderboard Compiled filename (default: {label}.json)")
@@ -117,31 +118,19 @@ class EditLeaderboardCMD(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(EditLeaderboardCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument("leaderboard_id", type=int, help='The id of the entry')
-        self.parser.add_argument("field_name", type=str, help="The name of the field")
+        self.parser.add_argument("field_name", type=str, choices=schema.LeaderBoard.get_field_names(),
+                                 help="The name of the field")
         self.parser.add_argument('field_value', help="The new value of the field")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        asyncio.run(leaderboardQ.update_leaderboard_value(
+        res = asyncio.run(leaderboardQ.update_leaderboard_value(
             leaderboard_id=args.leaderboard_id,
             variable_name=args.field_name,
-            value=args.field_value
+            value=args.field_value,
+            allow_parsing=True
         ))
-        out.Console.info(f"Field {args.field_name}={args.field_value} :heavy_check_mark:")
-
-
-class UpdateExternalEntriesCMD(cmd_lib.CMD):
-    """ Update external entries location """
-
-    def __init__(self, root, name, cmd_path):
-        super(UpdateExternalEntriesCMD, self).__init__(root, name, cmd_path)
-        self.parser.add_argument("leaderboard_id", type=int)
-        self.parser.add_argument("location", type=Path)
-
-    def run(self, argv):
-        _ = self.parser.parse_args(argv)
-        # todo add update entries
-        raise NotImplementedError()
+        out.Console.info(f"Field {args.field_name}={res} :heavy_check_mark:")
 
 
 class ShowLeaderboardCMD(cmd_lib.CMD):

@@ -10,6 +10,10 @@ from zerospeech.lib import _fs
 _settings = get_settings()
 
 
+def get_static_location(label: str):
+    return _settings.LEADERBOARD_LOCATION / 'static' / label
+
+
 async def create(*, challenge_id, label, entry_file, external_entries, static_files, path_to):
     """ Create a new leaderboard """
     ld = schema.LeaderBoard(
@@ -40,7 +44,9 @@ async def build_leaderboard(*, leaderboard_id: int):
         leaderboard_entries.append(_fs.commons.load_dict_file(item))
 
     if not leaderboard.archived:
-        # TODO move static items from submission to central location
+        static_location = get_static_location(leaderboard.label)
+        if leaderboard.static_files:
+            (static_location / 'static').mkdir(exist_ok=True, parents=True)
 
         submission_list = await challengesQ.list_submission(by_track=leaderboard.challenge_id)
         for sub in submission_list:
@@ -48,7 +54,12 @@ async def build_leaderboard(*, leaderboard_id: int):
             if sub.status != schema.SubmissionStatus.completed:
                 continue
             # append submission to leaderboard
+            sub_location = _fs.submissions.get_submission_dir(sub.id)
             leaderboard_entries.append(_fs.leaderboards.load_entry_from_sub(sub.id, leaderboard.entry_file))
+            # grab all static files
+            if leaderboard.static_files and (sub_location / 'static').is_dir():
+                _fs.commons.copy_all_contents(sub_location / 'static', static_location,
+                                              prefix=f"{sub.user_id}_{sub.track_id}")
 
     # Export to file
     with (_settings.LEADERBOARD_LOCATION / leaderboard.path_to).open('w') as fp:

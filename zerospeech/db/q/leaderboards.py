@@ -3,6 +3,7 @@ Database functions that manipulate the leaderboard table
 """
 from typing import Any, List
 from zerospeech.db import schema, zrDB, exc as db_exc
+from zerospeech.lib import misc
 
 
 async def get_leaderboard(*, leaderboard_id: int) -> schema.LeaderBoard:
@@ -54,7 +55,7 @@ async def create_leaderboard(*, lead_data: schema.LeaderBoard):
         db_exc.parse_user_insertion(e)
 
 
-async def update_leaderboard_value(*, leaderboard_id, variable_name: str, value: Any):
+async def update_leaderboard_value(*, leaderboard_id, variable_name: str, value: Any, allow_parsing: bool = False):
     """ Update a value in the leaderboard corresponding to the given id
 
     :raise ValueError if given variable does not exist or does not match corresponding type
@@ -62,6 +63,9 @@ async def update_leaderboard_value(*, leaderboard_id, variable_name: str, value:
     field = schema.LeaderBoard.__fields__.get(variable_name, None)
     if field is None:
         raise ValueError(f'Class Leaderboard does not have a member called ! {variable_name}')
+
+    if allow_parsing:
+        value = misc.str2type(value, field.type_)
 
     if not isinstance(value, field.type_):
         raise ValueError(f"Leaderboard.{variable_name} should be of type {field.type_}")
@@ -73,3 +77,5 @@ async def update_leaderboard_value(*, leaderboard_id, variable_name: str, value:
         await zrDB.execute(query)
     except Exception as e:
         db_exc.parse_user_insertion(e)
+
+    return value

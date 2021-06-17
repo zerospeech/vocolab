@@ -77,7 +77,6 @@ def build_cli():
             commands.leaderboards.EditLeaderboardCMD(CMD_NAME, 'edit', 'leaderboards'),
             commands.leaderboards.BuildLeaderboardCMD(CMD_NAME, 'build', 'leaderboards'),
             commands.leaderboards.ShowLeaderboardCMD(CMD_NAME, 'show', 'leaderboards')
-            # commands.leaderboards.UpdateExternalEntriesCMD(CMD_NAME)
         )
 
     # build all epilog info
