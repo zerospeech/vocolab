@@ -117,8 +117,12 @@ class EditLeaderboardCMD(cmd_lib.CMD):
 
     def __init__(self, root, name, cmd_path):
         super(EditLeaderboardCMD, self).__init__(root, name, cmd_path)
+        self.leaderboard_fields = schema.LeaderBoard.get_field_names()
+        self.leaderboard_fields.remove('id')
+
+        # arguments
         self.parser.add_argument("leaderboard_id", type=int, help='The id of the entry')
-        self.parser.add_argument("field_name", type=str, choices=schema.LeaderBoard.get_field_names(),
+        self.parser.add_argument("field_name", type=str, choices=self.leaderboard_fields,
                                  help="The name of the field")
         self.parser.add_argument('field_value', help="The new value of the field")
 
@@ -130,7 +134,7 @@ class EditLeaderboardCMD(cmd_lib.CMD):
             value=args.field_value,
             allow_parsing=True
         ))
-        out.Console.info(f"Field {args.field_name}={res} :heavy_check_mark:")
+        out.Console.info(f"Field {args.field_name}={res} :white_check_mark:")
 
 
 class ShowLeaderboardCMD(cmd_lib.CMD):

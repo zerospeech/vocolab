@@ -1,14 +1,7 @@
-- [X] Write the server for the worker section
-- [ ] Add cli for the workers
-- [ ] Add the function that copies data over to worker server
-- [X] maybe simplify logs
-- [ ] add cli to manage evaluations
-- [ ] test installation on flores/oberon
-- [ ] add more exhaustive unit/integration testing
-- [ ] update/fix dockerization
-- [X] add database documentation
-- [X] add settings documentation
-- [ ] add testing documentation
-- [ ] add workers documentation
-- [ ] update zr users:* documentation
-- [ ] import leaderboard & finalize leaderboard format
+- [ ] add event handling for evaluation_completed task
+- [ ] add & test integration of upload & evaluate
+- [ ] add serve leaderboard static files
+- [ ] add entries for all older leaderboards (test site migration)
+- [ ] add integration for upload on zr2021-package
+- [ ] (??) add alternative upload method
+- [ ] try & setup zr2021 experiment installation

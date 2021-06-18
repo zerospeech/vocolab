@@ -20,17 +20,6 @@ class EvaluatorsCMD(cmd_lib.CMD):
         super(EvaluatorsCMD, self).__init__(root, name, cmd_path)
 
     def run(self, argv):
-        self.parser.print_help()
-        sys.exit(0)
-
-
-class ListRegisteredEvaluatorsCMD(cmd_lib.CMD):
-    """ Command to list all registered evaluators"""
-
-    def __init__(self, root, name, cmd_path):
-        super(ListRegisteredEvaluatorsCMD, self).__init__(root, name, cmd_path)
-
-    def run(self, argv):
         _ = self.parser.parse_args(argv)
         evaluators = asyncio.run(ch_queries.get_evaluators())
 
@@ -72,8 +61,11 @@ class ListHostsEvaluatorsCMD(cmd_lib.CMD):
             if host not in _settings.REMOTE_BIN:
                 continue
             try:
-                status = "[green]:heavy_check_mark:[/green]"
-                evaluators_lib.check_host(host)
+                if _settings.hostname == host:
+                    status = "[blue]:house:[/blue]"
+                else:
+                    status = "[green]:heavy_check_mark:[/green]"
+                    evaluators_lib.check_host(host)
             except ConnectionError:
                 status = "[red]:x:[/red]"
 
@@ -115,3 +107,25 @@ class DiscoverEvaluatorsCMD(cmd_lib.CMD):
         if response:
             asyncio.run(ch_queries.add_evaluator(lst_eval=evaluators))
             out.Console.print(":heavy_check_mark: successfully inserted evaluators")
+
+
+class UpdateBaseArguments(cmd_lib.CMD):
+    """Update base arguments of an evaluator """
+    
+    def __init__(self, root, name, cmd_path):
+        super(UpdateBaseArguments, self).__init__(root, name, cmd_path)
+
+        # arguments
+        self.parser.add_argument("evaluator_id", type=int, help='The id of the entry')
+
+    def run(self, argv):
+        """ Update base arguments of an evaluator
+
+            Pass a list of arguments to give to the evaluator
+        """
+        args, rest = self.parser.parse_known_args(argv)
+
+        asyncio.run(
+            ch_queries.edit_evaluator_args(eval_id=args.evaluator_id, arg_list=rest)
+        )
+        out.Console.info(":heavy_check_mark: successfully updated evaluator")

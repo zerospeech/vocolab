@@ -125,36 +125,21 @@ class SetChallenge(cmd_lib.CMD):
 
     def __init__(self, root, name, cmd_path):
         super(SetChallenge, self).__init__(root, name, cmd_path)
+        self.challenge_fields = schema.Challenge.get_field_names()
+        self.challenge_fields.remove('id')
+
         # arguments
         self.parser.add_argument('id', help='ID of the challenge to update')
-        self.parser.add_argument('field', help='the field that will be updated')
-        self.parser.add_argument('value', help='the value to add')
-        self.challenge_fields = schema.Challenge.__annotations__
-        del self.challenge_fields['id']
-
-    def _type_safety(self, field_name: str, value: str):
-        print(field_name)
-        if field_name in ('start_date', 'end_date'):
-            return datetime.strptime(value, "%d/%m/%Y").date()
-        else:
-            p_type = self.challenge_fields[field_name]
-            return p_type(value)
+        self.parser.add_argument('field_name', type=str, choices=self.challenge_fields,
+                                 help='The name of the field')
+        self.parser.add_argument('value', help='The new value of the field')
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-
-        if args.field not in self.challenge_fields.keys():
-            out.Console.print(f":x: field : {args.field} is not a valid field!", style="bold red")
-            out.Console.print(f":right_arrow: please use one of the following fields : "
-                              f"{list(self.challenge_fields.keys())}",
-                              style="bold green")
-            sys.exit(1)
-
-        type_safe_value = self._type_safety(args.field, args.value)
-        asyncio.run(
-            challengesQ.set_challenge_property(
-                ch_id=args.id, property_name=args.field, value=type_safe_value
+        res = asyncio.run(
+            challengesQ.update_challenge_property(
+                challenge_id=args.id, variable_name=args.field_name, value=args.value,
+                allow_parsing=True
             )
         )
-        out.Console.print(f"challenge:white_check_mark:",
-                          style="bold green")
+        out.Console.info(f"Field {args.field_name}={res} :white_check_mark:")

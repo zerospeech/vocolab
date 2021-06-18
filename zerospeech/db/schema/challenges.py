@@ -31,6 +31,10 @@ class Challenge(BaseModel):
         else:
             return self.start_date <= present and self.active
 
+    @classmethod
+    def get_field_names(cls):
+        return list(cls.__fields__.keys())
+
 
 challenges_table = sqlalchemy.Table(
     "challenges",

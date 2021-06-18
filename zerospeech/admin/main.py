@@ -38,9 +38,9 @@ def build_cli():
     if has_db:
         tree.add_cmd_tree(
             commands.evaluators.EvaluatorsCMD(CMD_NAME, 'evaluators', ''),
-            commands.evaluators.ListRegisteredEvaluatorsCMD(CMD_NAME, 'list', 'evaluators'),
             commands.evaluators.ListHostsEvaluatorsCMD(CMD_NAME, 'hosts', 'evaluators'),
-            commands.evaluators.DiscoverEvaluatorsCMD(CMD_NAME, 'discover', 'evaluators')
+            commands.evaluators.DiscoverEvaluatorsCMD(CMD_NAME, 'discover', 'evaluators'),
+            commands.evaluators.UpdateBaseArguments(CMD_NAME, 'args', 'evaluators')
         )
 
     if has_db and has_submissions:
@@ -78,6 +78,12 @@ def build_cli():
             commands.leaderboards.BuildLeaderboardCMD(CMD_NAME, 'build', 'leaderboards'),
             commands.leaderboards.ShowLeaderboardCMD(CMD_NAME, 'show', 'leaderboards')
         )
+
+    tree.add_cmd_tree(
+        commands.test.TestCMD(CMD_NAME, 'test', ''),
+        commands.test.TestEchoWorker(CMD_NAME, 'echo', 'test'),
+        commands.test.TestEmail(CMD_NAME, 'email', 'test')
+    )
 
     # build all epilog info
     tree.build_epilogs()
