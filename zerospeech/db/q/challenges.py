@@ -185,18 +185,11 @@ async def get_evaluators():
     return [schema.EvaluatorItem(**i) for i in results]
 
 
-async def get_evaluator(*, by_id: Optional[int] = None, by_submission_id: Optional[str]):
+async def get_evaluator(*, by_id: Optional[int] = None) -> Optional[schema.EvaluatorItem]:
     """ Returns a specific evaluator """
     if by_id:
         query = schema.evaluators_table.select().where(
             schema.evaluators_table.c.id == by_id
-        )
-    elif by_submission_id:
-        """
-            TODO
-        """
-        query = schema.evaluators_table.select().where(
-
         )
     else:
         raise ValueError('No filter given')

@@ -1,12 +1,14 @@
 import asyncio
 import json
+from pathlib import Path
+from typing import List, Optional
 
 from fastapi import UploadFile
 
 from zerospeech import exc
 from zerospeech.db import models, schema
 from zerospeech.db.q import challengesQ
-from zerospeech.lib import _fs, leaderboards_lib
+from zerospeech.lib import _fs, leaderboards_lib, worker_lib
 from zerospeech.settings import get_settings
 
 _settings = get_settings()
@@ -75,14 +77,30 @@ def complete_submission(submission_id: str, with_eval: bool = True):
         )
 
 
-async def evaluate(submission_id: str):
+async def evaluate(submission_id: str, extra_args: Optional[List[str]] = None):
     """ ... """
-    ## get evaluator
     submission = await challengesQ.get_submission(by_id=submission_id)
-    challenge = await ch
-    await challengesQ.get_evaluator()
+    evaluator = await challengesQ.get_evaluator(by_id=submission.evaluator_id)
+    extra_args = extra_args if extra_args is not None else []
 
-    _fs.submissions.transfer_submission_to_remote()
+    if evaluator is None:
+        # todo What to do when no eval ?
+        raise ValueError('No Evaluator Found')
+
+    # Transfer submission to host if remote
+    if evaluator.host != _settings.hostname:
+        location = _fs.submissions.transfer_submission_to_remote(host=evaluator.host, submission_id=submission_id)
+    else:
+        location = get_submission_dir(submission_id)
+
+    # send message to worker to launch evaluation
+    await worker_lib.send_eval_message(
+        submission_id=submission_id,
+        executor=evaluator.executor,
+        bin_path=str(Path(evaluator.script_path).parent),
+        script_name=str(Path(evaluator.script_path).name),
+        args=[*evaluator.base_arguments, *extra_args, str(location)]
+    )
 
 
 async def cancel_evaluation(submission_id: str, hostname: str, logger: SubmissionLogger):
