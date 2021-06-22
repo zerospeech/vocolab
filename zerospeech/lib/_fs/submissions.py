@@ -284,3 +284,5 @@ def fetch_submission_from_remote(host: str, submission_id: str):
         logger.log(f"failed to fetch results from {host} to {local_folder}.")
         logger.log(res.stderr.decode())
         raise ValueError(f"Failed to copy files from host {host}")
+
+

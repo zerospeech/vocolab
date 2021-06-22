@@ -70,8 +70,8 @@ async def create_submission(
     # create db entry
     submission_id = await challengesQ.add_submission(new_submission=models.api.NewSubmission(
         user_id=current_user.id,
-        track_id=challenge.id
-    ))
+        track_id=challenge.id,
+    ), evaluator_id=challenge.evaluator)
     # create disk entry
     submissions_lib.make_submission_on_disk(
         submission_id, current_user.username, challenge.label, meta=data

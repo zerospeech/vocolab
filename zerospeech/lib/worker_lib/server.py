@@ -4,9 +4,13 @@ import sys
 import threading
 from datetime import datetime
 
-from zerospeech import out
+from zerospeech import out, get_settings
+from zerospeech.db.models.tasks import UpdateType
 from zerospeech.lib import submissions_lib
 from .config import HANDLED_SIGNALS, Config, ServerState, SING_TO_STR
+from .msg import send_update_message
+
+_settings = get_settings()
 
 
 class Server:
@@ -43,6 +47,12 @@ class Server:
             with (sub_loc / 'interrupted.lock').open('w') as fp:
                 fp.write(f"when: {datetime.now().isoformat()}\n")
                 fp.write(f"what: {sig}\n")
+
+            asyncio.run(send_update_message(
+                submission_id=sub_id, hostname=_settings.hostname,
+                update_type=UpdateType.evaluation_canceled,
+                label=f"{_settings.hostname}-canceled-{sub_id}"
+            ))
 
         # cancel all active tasks
         for task in asyncio.Task.all_tasks():

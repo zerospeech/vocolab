@@ -1,7 +1,7 @@
 """
 Database functions that manipulate the leaderboard table
 """
-from typing import Any, List
+from typing import Any, List, Optional
 from zerospeech.db import schema, zrDB, exc as db_exc
 from zerospeech.lib import misc
 
@@ -22,6 +22,24 @@ async def get_leaderboard(*, leaderboard_id: int) -> schema.LeaderBoard:
     return schema.LeaderBoard(**ld)
 
 
+async def get_leaderboards(*, by_challenge_id: Optional[int] = None) -> List[schema.LeaderBoard]:
+    """ A list of leaderboards
+
+    :param by_challenge_id: filter leaderboards by challenge id
+    :raise ValueError if the item is not is the database
+    :raise SQLAlchemy exceptions if database connection or condition fails
+    """
+    if by_challenge_id:
+        query = schema.leaderboards_table.select().where(
+            schema.leaderboards_table.c.challenge_id == by_challenge_id
+        )
+    else:
+        raise ValueError("No parameter given")
+
+    lst_ld = await zrDB.fetch_all(query)
+    return [ schema.LeaderBoard(**ld) for ld in lst_ld]
+
+
 async def list_leaderboards() -> List[schema.LeaderBoard]:
     """ Fetch a list of all the leaderboards present in the database
 
@@ -36,9 +54,10 @@ async def list_leaderboards() -> List[schema.LeaderBoard]:
     return [schema.LeaderBoard(**ld) for ld in leaderboards]
 
 
-async def create_leaderboard(*, lead_data: schema.LeaderBoard):
+async def create_leaderboard(*, lead_data: schema.LeaderBoard) -> int:
     """ Create an new leaderboard entry in database from item object
 
+    :returns the id of the leaderboard created
     """
     query = schema.leaderboards_table.insert().values(
         label=lead_data.label,
@@ -50,7 +69,8 @@ async def create_leaderboard(*, lead_data: schema.LeaderBoard):
         static_files=lead_data.static_files
     )
     try:
-        await zrDB.execute(query)
+        result = await zrDB.execute(query)
+        return result
     except Exception as e:
         db_exc.parse_user_insertion(e)
 

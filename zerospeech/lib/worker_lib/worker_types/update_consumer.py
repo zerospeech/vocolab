@@ -25,12 +25,21 @@ class UpdateTaskWorker(AbstractWorker):
             lg.log(f"----------------------------------/>", append=True)
 
     @staticmethod
-    def eval_function(msg: SubmissionUpdateMessage):
+    async def eval_function(msg: SubmissionUpdateMessage):
         """ Evaluate a function type BrokerCMD """
         with submissions_lib.SubmissionLogger(msg.submission_id) as lg:
             if msg.updateType == UpdateType.evaluation_complete:
-                # submissions_lib.evaluation_complete(submission_id=msg.submission_id, logger=lg)
-                raise NotImplementedError("Need to implement a evaluation complete worker task")
+                await submissions_lib.complete_evaluation(
+                    submission_id=msg.submission_id, hostname=msg.hostname,
+                    logger=lg)
+            elif msg.updateType == UpdateType.evaluation_failed:
+                await submissions_lib.fail_evaluation(
+                    submission_id=msg.submission_id, hostname=msg.hostname,
+                    logger=lg)
+            elif msg.updateType == UpdateType.evaluation_canceled:
+                await submissions_lib.cancel_evaluation(
+                    submission_id=msg.submission_id, hostname=msg.hostname,
+                    logger=lg)
             else:
                 raise ValueError("Unknown update task !!!")
 
@@ -44,5 +53,5 @@ class UpdateTaskWorker(AbstractWorker):
             out.Console.Logger.info(f"Received update request for {br.submission_id}")
 
             self.start_process(br.job_id, br.submission_id)
-            self.eval_function(br)
+            await self.eval_function(br)
             self.end_process(br.job_id)

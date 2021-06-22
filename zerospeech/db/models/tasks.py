@@ -52,19 +52,21 @@ class SubmissionEvaluationMessage(BrokerMessage):
 
 class UpdateType(str, Enum):
     evaluation_complete = "evaluation_complete"
+    evaluation_failed = "evaluation_failed"
+    evaluation_canceled = "evaluation_canceled"
 
 
 class SubmissionUpdateMessage(BrokerMessage):
     """ A Broker Message that contains a python function to execute """
     submission_id: str
     updateType: UpdateType
-    success: bool
+    hostname: str
 
     def __repr__(self):
         """ Stringify the message for logging"""
         return f"{self.job_id} >> " \
                f"{self.submission_id}@{self.label}:: " \
-               f"{self.updateType}(success: {self.success}) --"
+               f"{self.updateType}@{self.hostname}--"
 
 
 class SimpleLogMessage(BrokerMessage):

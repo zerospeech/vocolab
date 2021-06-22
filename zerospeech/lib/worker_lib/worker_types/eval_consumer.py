@@ -4,9 +4,10 @@ from pathlib import Path
 import aio_pika
 
 from zerospeech import get_settings, exc, out
-from zerospeech.db.models.tasks import SubmissionEvaluationMessage, message_from_bytes
+from zerospeech.db.models.tasks import SubmissionEvaluationMessage, message_from_bytes, UpdateType
 from zerospeech.lib import submissions_lib
 from .abstract_worker import AbstractWorker, ServerState
+from ..msg import send_update_message
 
 _settings = get_settings()
 
@@ -69,20 +70,29 @@ class EvalTaskWorker(AbstractWorker):
             self.start_process(br.job_id, br.submission_id)
 
             status, eval_output = self.eval_subprocess(br)
-
             if status == 0:
                 out.Console.Logger.info(f"Evaluation of {br.submission_id} was completed successfully")
-                # todo notify updateWorker of success
-                pass
             else:
                 out.Console.Logger.warning(f"Evaluation of {br.submission_id} was completed "
                                            f"with a non zero return code. see logs for details!!")
-                # todo notify updateWorker of failure
-                pass
 
             # write output in log
             with submissions_lib.SubmissionLogger(br.submission_id) as lg:
                 lg.append_eval(eval_output)
+
+            # Notify updater
+            if status == 0:
+                await send_update_message(
+                    submission_id=br.submission_id, hostname=_settings.hostname,
+                    update_type=UpdateType.evaluation_complete,
+                    label=f"{_settings.hostname}-completed-{br.submission_id}"
+                )
+            else:
+                await send_update_message(
+                    submission_id=br.submission_id, hostname=_settings.hostname,
+                    update_type=UpdateType.evaluation_failed,
+                    label=f"{_settings.hostname}-failed-{br.submission_id}"
+                )
 
             # remove process from process logs
             self.end_process(br.job_id)

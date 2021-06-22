@@ -6,7 +6,7 @@ from fastapi import UploadFile
 from zerospeech import exc
 from zerospeech.db import models, schema
 from zerospeech.db.q import challengesQ
-from zerospeech.lib import _fs
+from zerospeech.lib import _fs, leaderboards_lib
 from zerospeech.settings import get_settings
 
 _settings = get_settings()
@@ -68,11 +68,62 @@ def complete_submission(submission_id: str, with_eval: bool = True):
     asyncio.run(
         challengesQ.update_submission_status(by_id=submission_id, status=schema.SubmissionStatus.uploaded)
     )
-    # todo start eval task
+    # start eval task
     if with_eval:
-        pass
+        asyncio.run(
+            evaluate(submission_id)
+        )
 
 
-def evaluate(submission_id: str, logger):
+async def evaluate(submission_id: str):
     """ ... """
-    return None
+    ## get evaluator
+    submission = await challengesQ.get_submission(by_id=submission_id)
+    challenge = await ch
+    await challengesQ.get_evaluator()
+
+    _fs.submissions.transfer_submission_to_remote()
+
+
+async def cancel_evaluation(submission_id: str, hostname: str, logger: SubmissionLogger):
+    is_remote = hostname != _settings.hostname
+
+    if is_remote:
+        transfer_location = _settings.REMOTE_STORAGE.get(hostname)
+        remote_submission_location = transfer_location / f"{submission_id}"
+        logger.fetch_remote(hostname, remote_submission_location)
+
+    await challengesQ.update_submission_status(by_id=submission_id,
+                                               status=schema.SubmissionStatus.canceled)
+
+
+async def fail_evaluation(submission_id: str, hostname: str, logger: SubmissionLogger):
+    is_remote = hostname != _settings.hostname
+
+    # fetch results
+    if is_remote:
+        transfer_location = _settings.REMOTE_STORAGE.get(hostname)
+        remote_submission_location = transfer_location / f"{submission_id}"
+        logger.fetch_remote(hostname, remote_submission_location)
+
+    # mark failed
+    await challengesQ.update_submission_status(by_id=submission_id,
+                                               status=schema.SubmissionStatus.failed)
+
+
+async def complete_evaluation(submission_id: str, hostname: str, logger: SubmissionLogger):
+    is_remote = hostname != _settings.hostname
+
+    # fetch results
+    if is_remote:
+        _fs.submissions.fetch_submission_from_remote(hostname, submission_id)
+
+    # mark completed
+    await challengesQ.update_submission_status(by_id=submission_id,
+                                               status=schema.SubmissionStatus.completed)
+
+    submission = await challengesQ.get_submission(by_id=submission_id)
+
+    # build relevant leaderboards
+    await leaderboards_lib.build_all_challenge(submission.track_id)
+    logger.log("api extracted all relevant information for leaderboard")

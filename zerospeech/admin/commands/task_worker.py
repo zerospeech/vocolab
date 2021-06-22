@@ -1,8 +1,13 @@
+import asyncio
 import sys
 
-from zerospeech import out
+from zerospeech import out, get_settings
 from zerospeech.admin import cmd_lib
+from zerospeech.db.models.tasks import SimpleLogMessage
+from zerospeech.lib import worker_lib
 from zerospeech.worker.run_server import run as tasks_run
+
+_settings = get_settings()
 
 
 class TaskWorkerCMD(cmd_lib.CMD):
@@ -85,3 +90,34 @@ class UpdateTaskWorkerCMD(cmd_lib.CMD):
         except Exception:
             out.Console.exception()
             sys.exit(1)
+
+
+class TestTaskWorkerCMD(cmd_lib.CMD):
+    """ Send test Messages to task workers """
+
+    def __init__(self, root, name, cmd_path):
+        super(TestTaskWorkerCMD, self).__init__(root, name, cmd_path)
+
+    def run(self, argv):
+        _ = self.parser.parse_args(argv)
+        self.parser.print_help()
+
+
+class TestEchoWorker(cmd_lib.CMD):
+    """ Send a test message to the echo worker server """
+
+    def __init__(self, root, name, cmd_path):
+        super(TestEchoWorker, self).__init__(root, name, cmd_path)
+        self.parser.add_argument("message", type=str)
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        asyncio.run(
+            worker_lib.send_echo_message(
+                message=f"{args.message}",
+                label="cli-echo-testing"
+            )
+        )
+        out.Console.info('Message delivered successfully !!')
+
+

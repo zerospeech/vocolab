@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Any
+from typing import List, Any, Optional
 from uuid import uuid4
 
 from zerospeech.db import models, zrDB, schema, exc as db_exc
@@ -98,7 +98,7 @@ async def delete_challenge(*, ch_id: int):
     return await zrDB.execute(query)
 
 
-async def add_submission(*, new_submission: models.api.NewSubmission):
+async def add_submission(*, new_submission: models.api.NewSubmission, evaluator_id: int):
     """ Creates a database entry to a new submission """
     submission_id = datetime.now().strftime('%Y%m-%d%H-%M%S-') + str(uuid4())
     query = schema.submissions_table.insert()
@@ -106,6 +106,7 @@ async def add_submission(*, new_submission: models.api.NewSubmission):
     values["id"] = submission_id
     values["submit_date"] = datetime.now()
     values["status"] = schema.SubmissionStatus.uploading
+    values["evaluator_id"] = evaluator_id
     await zrDB.execute(query=query, values=values)
     return submission_id
 
@@ -184,11 +185,22 @@ async def get_evaluators():
     return [schema.EvaluatorItem(**i) for i in results]
 
 
-async def get_evaluator(*, by_id: int):
+async def get_evaluator(*, by_id: Optional[int] = None, by_submission_id: Optional[str]):
     """ Returns a specific evaluator """
-    query = schema.evaluators_table.select().where(
-        schema.evaluators_table.c.id == by_id
-    )
+    if by_id:
+        query = schema.evaluators_table.select().where(
+            schema.evaluators_table.c.id == by_id
+        )
+    elif by_submission_id:
+        """
+            TODO
+        """
+        query = schema.evaluators_table.select().where(
+
+        )
+    else:
+        raise ValueError('No filter given')
+
     result = await zrDB.fetch_one(query)
     if not result:
         return None

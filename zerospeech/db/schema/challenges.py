@@ -60,6 +60,10 @@ class SubmissionStatus(str, Enum):
     canceled = 'canceled'
     failed = 'failed'
 
+    @classmethod
+    def get_values(cls):
+        return [el.value for el in cls]
+
 
 class ChallengeSubmission(BaseModel):
     id: str
@@ -67,6 +71,7 @@ class ChallengeSubmission(BaseModel):
     track_id: int
     submit_date: datetime
     status: SubmissionStatus
+    evaluator_id: int
 
     class Config:
         orm_mode = True
@@ -79,7 +84,9 @@ submissions_table = sqlalchemy.Table(
     sqlalchemy.Column("user_id", sqlalchemy.Integer),
     sqlalchemy.Column("track_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("challenges.id")),
     sqlalchemy.Column("submit_date", sqlalchemy.DateTime),
-    sqlalchemy.Column("status", sqlalchemy.String)
+    sqlalchemy.Column("status", sqlalchemy.String),
+    sqlalchemy.Column("evaluator_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("evaluators.id"))
+
 )
 
 

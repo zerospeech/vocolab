@@ -23,7 +23,7 @@ class SubmissionCMD(cmd_lib.CMD):
         self.parser.add_argument('-u', '--user', type=int, help='Filter by user ID')
         self.parser.add_argument('-t', '--track', type=int, help='Filter by track ID')
         self.parser.add_argument('-s', '--status',
-                                 choices=[el.value for el in db_challenges.SubmissionStatus],
+                                 choices=db_challenges.SubmissionStatus.get_values(),
                                  help='Filter by status')
 
     def run(self, argv):
@@ -121,7 +121,7 @@ class CreateSubmissionCMD(cmd_lib.CMD):
                 _submission_id = await ch_queries.add_submission(new_submission=NewSubmission(
                     user_id=_user.id,
                     track_id=_challenge.id
-                ))
+                ), evaluator_id=challenge.evaluator)
                 return _challenge, _user, _submission_id
             except ValueError:
                 out.Console.exception()

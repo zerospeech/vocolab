@@ -59,7 +59,9 @@ def build_cli():
             commands.task_worker.RunTaskWorkerCMD(CMD_NAME, 'run', 'worker'),
             commands.task_worker.EchoTaskWorkerCMD(CMD_NAME, 'echo', 'worker:run'),
             commands.task_worker.EvaluationTaskWorkerCMD(CMD_NAME, 'eval', 'worker:run'),
-            commands.task_worker.UpdateTaskWorkerCMD(CMD_NAME, 'update', 'worker:run')
+            commands.task_worker.UpdateTaskWorkerCMD(CMD_NAME, 'update', 'worker:run'),
+            commands.task_worker.TestTaskWorkerCMD(CMD_NAME, 'test', 'worker'),
+            commands.task_worker.TestEchoWorker(CMD_NAME, 'echo', 'worker:test')
         )
 
     tree.add_cmd_tree(
@@ -81,7 +83,6 @@ def build_cli():
 
     tree.add_cmd_tree(
         commands.test.TestCMD(CMD_NAME, 'test', ''),
-        commands.test.TestEchoWorker(CMD_NAME, 'echo', 'test'),
         commands.test.TestEmail(CMD_NAME, 'email', 'test')
     )
 
