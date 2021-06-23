@@ -78,13 +78,15 @@ def complete_submission(submission_id: str, with_eval: bool = True):
 
 
 async def evaluate(submission_id: str, extra_args: Optional[List[str]] = None):
-    """ ... """
+    """ Setup a submission to be evaluated by a worker """
     submission = await challengesQ.get_submission(by_id=submission_id)
     evaluator = await challengesQ.get_evaluator(by_id=submission.evaluator_id)
     extra_args = extra_args if extra_args is not None else []
 
+    # set status to evaluating
+    await challengesQ.update_submission_status(by_id=submission_id, status=schema.SubmissionStatus.evaluating)
+
     if evaluator is None:
-        # todo What to do when no eval ?
         raise ValueError('No Evaluator Found')
 
     # Transfer submission to host if remote

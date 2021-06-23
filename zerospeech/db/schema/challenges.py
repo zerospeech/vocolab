@@ -71,7 +71,7 @@ class ChallengeSubmission(BaseModel):
     track_id: int
     submit_date: datetime
     status: SubmissionStatus
-    evaluator_id: int
+    evaluator_id: Optional[int]
 
     class Config:
         orm_mode = True

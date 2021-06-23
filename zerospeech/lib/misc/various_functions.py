@@ -1,6 +1,9 @@
 import asyncio
+from collections import Callable
 from contextlib import contextmanager
 from datetime import datetime, date, time
+from typing import List
+
 from dateutil import parser
 
 __FALSE_VALUES__ = ['false', '0', 'f', 'n', 'no', 'nope', 'none', 'nan', 'not']
@@ -45,3 +48,16 @@ def get_event_loop():
         yield loop
     finally:
         loop.close()
+
+
+def run_with_loop(fn: Callable, *args, **kwargs):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:  # if cleanup: 'RuntimeError: There is no current event loop..'
+        loop = None
+
+    if loop and loop.is_running():
+        # loop.create_task()
+        loop.run_until_complete(fn(*args, **kwargs))
+    else:
+        asyncio.run(fn(*args, **kwargs))

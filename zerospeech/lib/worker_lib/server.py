@@ -6,7 +6,7 @@ from datetime import datetime
 
 from zerospeech import out, get_settings
 from zerospeech.db.models.tasks import UpdateType
-from zerospeech.lib import submissions_lib
+from zerospeech.lib import submissions_lib, misc
 from .config import HANDLED_SIGNALS, Config, ServerState, SING_TO_STR
 from .msg import send_update_message
 
@@ -48,11 +48,11 @@ class Server:
                 fp.write(f"when: {datetime.now().isoformat()}\n")
                 fp.write(f"what: {sig}\n")
 
-            asyncio.run(send_update_message(
-                submission_id=sub_id, hostname=_settings.hostname,
-                update_type=UpdateType.evaluation_canceled,
-                label=f"{_settings.hostname}-canceled-{sub_id}"
-            ))
+            misc.run_with_loop(send_update_message,
+                               submission_id=sub_id, hostname=_settings.hostname,
+                               update_type=UpdateType.evaluation_canceled,
+                               label=f"{_settings.hostname}-canceled-{sub_id}"
+                               )
 
         # cancel all active tasks
         for task in asyncio.Task.all_tasks():
@@ -60,4 +60,3 @@ class Server:
 
         out.Console.Logger.info("exiting...")
         sys.exit(0)
-

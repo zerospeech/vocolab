@@ -48,11 +48,12 @@ class SubmissionCMD(cmd_lib.CMD):
         table.add_column("Challenge")
         table.add_column("Date")
         table.add_column("Status")
+        table.add_column("Evaluator ID")
 
         for i in items:
             table.add_row(
                 f"{i.id}", f"{i.user_id}", f"{i.track_id}", f"{i.submit_date.strftime('%d/%m/%Y')}",
-                f"{i.status}"
+                f"{i.status}", f"{i.evaluator_id}"
             )
         # print
         out.Console.print(table)
@@ -163,12 +164,23 @@ class EvalSubmissionCMD(cmd_lib.CMD):
         super(EvalSubmissionCMD, self).__init__(root, name, cmd_path)
         # parameters
         self.parser.add_argument("submission_id")
+        self.parser.add_argument('-e', '--extra-args', action='store_true')
 
     def run(self, argv):
-        args = self.parser.parse_args(argv)
+        args, extras = self.parser.parse_known_args(argv)
+
+        if args.extra_args:
+            extra_arguments = list(extras)
+        else:
+            extra_arguments = []
 
         submission: db_challenges.ChallengeSubmission = asyncio.run(ch_queries.get_submission(by_id=args.submission_id))
 
         if submission.status in self.no_eval:
             out.Console.print(f"Cannot evaluate a submission that has status : {submission.status}")
             sys.exit(1)
+
+        asyncio.run(
+            # todo check if status is correctly set.
+            submissions_lib.evaluate(submission_id=submission.id, extra_args=extra_arguments)
+        )

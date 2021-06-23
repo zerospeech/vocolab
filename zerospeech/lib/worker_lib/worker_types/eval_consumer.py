@@ -15,7 +15,8 @@ _settings = get_settings()
 def verify_bin(bin_path):
     """ Verifies that bin_path is in the registered bin folder of the current host """
     my_bin = _settings.REMOTE_BIN.get(_settings.hostname, None)
-    if my_bin not in [bin_path, *bin_path.parents]:
+    all_parents = [p.resolve() for p in bin_path.parents]
+    if my_bin.resolve() not in [bin_path.resolve(), *all_parents]:
         raise exc.SecurityError(f'attempting to execute a file not in authorized directory {bin_path}')
 
 
