@@ -1,0 +1,91 @@
+ [
+   {
+     "label": "zr2015-track1",
+     "challenge_id": 2,
+     "path_to": "zr2015-track1.json",
+     "entry_file": "leaderboard-t1.json",
+     "external_entries": "zr2015/entries/track1",
+     "archived": true,
+     "static_files": false
+   },
+   {
+     "label": "zr2015-track2",
+     "challenge_id": 2,
+     "path_to": "zr2015-track2.json",
+     "entry_file": "leaderboard-t1.json",
+     "external_entries": "zr2015/entries/track2",
+     "archived": true,
+     "static_files": false
+   },
+   {
+     "label": "zr2017-track1-across",
+     "challenge_id": 3,
+     "path_to": "zr2017-track1-across.json",
+     "entry_file": "leaderboard-t1-across.json",
+     "external_entries": "zr2017/entries/track1/across_speakers",
+     "archived": true,
+     "static_files": false
+   },
+   {
+     "label": "zr2017-track1-within",
+     "challenge_id": 3,
+     "path_to": "zr2017-track1-within.json",
+     "entry_file": "leaderboard-t1-within.json",
+     "external_entries": "zr2017/entries/track1/within_speakers",
+     "archived": true,
+     "static_files": false
+   },
+   {
+     "label": "zr2017-track2",
+     "challenge_id": 3,
+     "path_to": "zr2017-track2.json",
+     "entry_file": "leaderboard-t2.json",
+     "external_entries": "zr2017/entries/track2",
+     "archived": true,
+     "static_files": false
+   },
+   {
+     "label": "zr2019",
+     "challenge_id": 4,
+     "path_to": "zr2019.json",
+     "entry_file": "leaderboard.json",
+     "external_entries": "zr2019/entries",
+     "archived": true,
+     "static_files": true
+   },
+   {
+     "label": "zr2020-task2019",
+     "challenge_id": 5,
+     "path_to": "zr2020-task2019.json",
+     "entry_file": "leaderboard-t2019.json",
+     "external_entries": "zr2020/entries/2019_task",
+     "static_files": true
+   },
+   {
+     "label": "zr2020-task2017-track2",
+     "challenge_id": 5,
+     "path_to": "zr2020-task2017-track2.json",
+     "entry_file": "leaderboard-t2017-2.json",
+     "external_entries": "zr2020/entries/2017_task_track2",
+     "archived": true,
+     "static_files": false
+   },
+   {
+     "label": "zr2021",
+     "challenge_id": 6,
+     "path_to": "zr2021.json",
+     "entry_file": "leaderboard.json",
+     "external_entries": "",
+     "archived": false,
+     "static_files": false
+   },
+   {
+     "label": "test",
+     "challenge_id": 1,
+     "path_to": "test-leaderboard.json",
+     "entry_file": "test.json",
+     "external_entries": "zr2021-no-external",
+     "archived": false,
+     "static_files": true
+   }
+ ]
