@@ -106,7 +106,8 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
                 label=item.get("label"),
                 entry_file=item.get("entry_file"),
                 external_entries=item.get("external_entries"),
-                static_files=item.get("static_files"),
+                static_files=item.get("static_files", False),
+                archived=item.get("archived", False),
                 path_to=item.get("path_to")
             ))
             out.Console.info(f"Successfully created leaderboard : {item.get('label')}")

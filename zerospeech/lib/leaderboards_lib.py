@@ -61,19 +61,21 @@ async def get_leaderboard(*, leaderboard_id) -> Dict:
     return _fs.commons.load_dict_file(_settings.LEADERBOARD_LOCATION / leaderboard.path_to)
 
 
-async def create(*, challenge_id, label, entry_file, external_entries, static_files, path_to):
+async def create(*, challenge_id, label, entry_file, external_entries, static_files, path_to, archived):
     """ Create a new leaderboard """
     ld = schema.LeaderBoard(
         challenge_id=challenge_id,
         label=label,
         entry_file=entry_file,
-        archived=False,
-        external_entries=external_entries,
+        archived=archived,
+        external_entries=(_fs.leaderboards.get_leaderboard_archive_location() / external_entries),
         path_to=(_fs.leaderboards.get_leaderboard_location() / path_to),
         static_files=static_files
     )
     lead_id = await leaderboardQ.create_leaderboard(lead_data=ld)
+    # fixme do we want auto-build on creation ?
     await build_leaderboard(leaderboard_id=lead_id)
+    return lead_id
 
 
 async def build_all_challenge(challenge_id: int):

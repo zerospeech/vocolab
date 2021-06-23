@@ -24,7 +24,7 @@ _script()
 
   return 0
 }
-complete -o nospace -F _script zr
+complete -o default -F _script zr
 # ------ Zerospeech CLI autocomplete ------
 """
 
@@ -202,6 +202,7 @@ class CLI:
 
         # check if requesting cmd list for autocomplete
         if self.cmd_tree.is_autocomplete(args.command):
+            # todo add 2 argument for subcommand autocompletion
             out.Console.print(" ".join(self.cmd_tree.get_all_paths()))
             sys.exit(0)
 
@@ -221,6 +222,6 @@ class CLI:
             out.Console.error(f'Unrecognized command {args.command}\n')
             self.parser.print_help()
             sys.exit(2)
-        # set current cmd
 
+        # call sub-command
         cmd.run(argv=sys.argv[2:])

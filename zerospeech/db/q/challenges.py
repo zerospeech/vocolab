@@ -13,12 +13,7 @@ async def create_new_challenge(item: models.cli.NewChallenge):
     """ Creates a new challenge entry in the database """
     try:
         query = schema.challenges_table.insert().values(
-            label=item.label,
-            active=item.active,
-            url=item.url,
-            evaluator=item.evaluator,
-            start_date=item.start_date,
-            end_date=item.end_date
+            **item.dict()
         )
         await zrDB.execute(query)
     except Exception as e:
