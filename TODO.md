@@ -1,7 +1,7 @@
-- [ ] add event handling for evaluation_completed task
-- [ ] add & test integration of upload & evaluate
+- [X] add event handling for evaluation_completed task
+- [X] add & test integration of upload & evaluate
 - [ ] add serve leaderboard static files
-- [ ] add entries for all older leaderboards (test site migration)
+- [X] add entries for all older leaderboards (test site migration)
 - [ ] add integration for upload on zr2021-package
 - [ ] (??) add alternative upload method
 - [ ] try & setup zr2021 experiment installation

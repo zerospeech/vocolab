@@ -24,13 +24,9 @@ FROM install
 COPY zerospeech /app/zerospeech
 COPY setup.py /app/
 COPY README.md /app/
-COPY pyproject.toml /app/
-COPY data/templates /templates
 
 # install project
 WORKDIR /app
 RUN pip install .
-
-# todo fix entrypoint & CMD
-# ENTRYPOINT
-# CMD [ celery something .... ]
+ENTRYPOINT ["python", "zr"]
+CMD [ "worker:run:eval", "--number_of-workers", "4", "--prefetch-count", "3"]

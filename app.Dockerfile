@@ -18,9 +18,9 @@ FROM install
 COPY zerospeech /app/zerospeech
 COPY setup.py /app/
 COPY README.md /app/
-COPY pyproject.toml /app/
-COPY data/templates /templates
 COPY scripts/prestart.sh /app/
 
 # install project
-RUN pip install /app/
+WORKDIR /app
+RUN pip install .
+RUN bash /app/prestart.sh

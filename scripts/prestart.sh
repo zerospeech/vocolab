@@ -1,4 +1,4 @@
 #! /usr/bin/env bash
 
 # create data folders if they don't exist
-mkdir -p /data/_static /data/db /data/db/user_data
+mkdir -p /app-data/_static /app-data/db /app-data/db/user_data
