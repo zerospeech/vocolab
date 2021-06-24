@@ -21,12 +21,12 @@ class Server:
         self.worker = config.worker(config=config, server_state=self.server_state)
 
     def run(self):
-        out.Console.Logger.info(f"initiating server-{os.getpid()} components...")
+        out.Logger.info(f"initiating server-{os.getpid()} components...")
         main_loop = asyncio.get_event_loop()
         self.install_signal_handlers(main_loop)
 
         main_loop.create_task(self.worker.run(loop=main_loop))
-        out.Console.Logger.info(f"server-{os.getpid()} is up on listening on {self.config.channel} !!")
+        out.Logger.info(f"server-{os.getpid()} is up on listening on {self.config.channel} !!")
         main_loop.run_forever()
 
     def install_signal_handlers(self, loop) -> None:
@@ -38,8 +38,8 @@ class Server:
             loop.add_signal_handler(sig, self.handle_exit, sig, None)
 
     def handle_exit(self, sig, frame):
-        out.Console.console.print("\n")
-        out.Console.Logger.warning(f"EXIT has been requested ({SING_TO_STR.get(sig, 'SIG_XX')})")
+        out.console.print("\n")
+        out.Logger.warning(f"EXIT has been requested ({SING_TO_STR.get(sig, 'SIG_XX')})")
 
         for _id, sub_id in self.server_state.processes.items():
             sub_loc = submissions_lib.get_submission_dir(sub_id)
@@ -58,5 +58,5 @@ class Server:
         for task in asyncio.Task.all_tasks():
             task.cancel()
 
-        out.Console.Logger.info("exiting...")
+        out.Logger.info("exiting...")
         sys.exit(0)

@@ -40,7 +40,7 @@ class LeaderboardCMD(cmd_lib.CMD):
                 f"{entry.entry_file}", f"{entry.path_to}"
             )
         # print table
-        out.Console.console.print(table, no_wrap=False)
+        out.print(table, no_wrap=False)
 
 
 class CreateLeaderboardCMD(cmd_lib.CMD):
@@ -59,16 +59,16 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
         if not path_to:
             path_to = f"{label}.json"
 
-        entry_file = out.Console.console.input(
+        entry_file = out.input(
             f"Leaderboard individual entry filename (default: {label}-entry.json ): ")
 
         while True:
-            external_entries = out.Console.console.input("Location of external entries: ")
+            external_entries = out.input("Location of external entries: ")
             external_entries = Path(external_entries)
             if external_entries.is_dir():
                 break
             else:
-                out.Console.error(f"External entries must be a valid directory")
+                out.error(f"External entries must be a valid directory")
 
         add_static_files = Confirm.ask("Does this leaderboard include static files", default=True)
 
@@ -87,11 +87,11 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
         if args.from_file:
             input_file = Path(args.from_file)
             if not input_file.is_file():
-                out.Console.error(f"File given ({input_file}) does not exist")
+                out.error(f"File given ({input_file}) does not exist")
                 sys.exit(1)
 
             if input_file.suffix != ".json":
-                out.Console.error(f"File given ({input_file}) does not appear to be a json file")
+                out.error(f"File given ({input_file}) does not appear to be a json file")
                 sys.exit(1)
 
             with input_file.open() as fp:
@@ -110,7 +110,7 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
                 archived=item.get("archived", False),
                 path_to=item.get("path_to")
             ))
-            out.Console.info(f"Successfully created leaderboard : {item.get('label')}")
+            out.info(f"Successfully created leaderboard : {item.get('label')}")
 
 
 class EditLeaderboardCMD(cmd_lib.CMD):
@@ -135,7 +135,7 @@ class EditLeaderboardCMD(cmd_lib.CMD):
             value=args.field_value,
             allow_parsing=True
         ))
-        out.Console.info(f"Field {args.field_name}={res} :white_check_mark:")
+        out.info(f"Field {args.field_name}={res} :white_check_mark:")
 
 
 class ShowLeaderboardCMD(cmd_lib.CMD):
@@ -151,9 +151,9 @@ class ShowLeaderboardCMD(cmd_lib.CMD):
         args = self.parser.parse_args(argv)
         leaderboard = asyncio.run(leaderboards_lib.get_leaderboard(leaderboard_id=args.leaderboard_id))
         if args.raw_output:
-            out.Console.console.out(json.dumps(leaderboard))
+            out.out(json.dumps(leaderboard))
         else:
-            out.Console.print(leaderboard)
+            out.print(leaderboard)
     
 
 class BuildLeaderboardCMD(cmd_lib.CMD):
@@ -166,4 +166,4 @@ class BuildLeaderboardCMD(cmd_lib.CMD):
     def run(self, argv):
         args = self.parser.parse_args(argv)
         ld_file = asyncio.run(leaderboards_lib.build_leaderboard(leaderboard_id=args.leaderboard_id))
-        out.Console.info(f"Successfully build {ld_file}")
+        out.info(f"Successfully build {ld_file}")

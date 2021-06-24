@@ -1,3 +1,4 @@
+import os
 import shutil
 from os import execv
 from pathlib import Path
@@ -18,6 +19,17 @@ class APICMD(cmd_lib.CMD):
     
     def __init__(self, root, name, cmd_path):
         super(APICMD, self).__init__(root, name, cmd_path)
+
+    def run(self, argv):
+        _ = self.parser.parse_args(argv)
+        self.parser.print_help()
+
+
+class RunAPICMD(cmd_lib.CMD):
+    """ Commands to run the api daemon """
+
+    def __init__(self, root, name, cmd_path):
+        super(RunAPICMD, self).__init__(root, name, cmd_path)
 
     def run(self, argv):
         _ = self.parser.parse_args(argv)
@@ -51,6 +63,39 @@ class DebugAPICMD(cmd_lib.CMD):
             exec_args.extend(['zerospeech.api:app', '--reload', '--debug', '--no-access-log'])
 
         execv(executable, exec_args)
+
+
+class ProdAPICMD(cmd_lib.CMD):
+    """ Run production instance of API using gunicorn """
+
+    def __init__(self, root, name, cmd_path):
+        super(ProdAPICMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument("configuration_file", help="Path to the config file")
+        self.parser.add_argument("-g", "--gunicorn-args", action='store_true',
+                                 help="Pass custom arguments to gunicorn")
+        self.parser.add_argument("-o", "--gunicorn-options", action='store_true',
+                                 help="Print gunicorn command options")
+
+    def run(self, argv):
+        args, extra_args = self.parser.parse_known_args(argv)
+        conf_file = Path(args.configuration_file)
+        if not conf_file.is_file():
+            out.error("Fail")
+
+        executable = which('gunicorn')
+        exec_args = [f'{executable}']
+
+        if args.uvicorn_options:
+            # run help on the uvicorn command
+            exec_args.extend(['--help'])
+        elif args.uvicorn:
+            # run with custom uvicorn options
+            exec_args.extend([*extra_args, '-c', ])
+        else:
+            # run default debug version
+            exec_args.extend(['zerospeech.api:app', '--reload', '--debug', '--no-access-log'])
+
+        execv(executable, exec_args)
         
         
 class APInitEnvironmentCMD(cmd_lib.CMD):
@@ -63,17 +108,17 @@ class APInitEnvironmentCMD(cmd_lib.CMD):
         _ = self.parser.parse_args(argv)
 
         # create data_folders
-        out.Console.info(f"creating : {_settings.USER_DATA_DIR}")
+        out.info(f"creating : {_settings.USER_DATA_DIR}")
         _settings.USER_DATA_DIR.mkdir(exist_ok=True, parents=True)
-        out.Console.info(f"creating : {_settings.USER_DATA_DIR / 'submissions'}")
+        out.info(f"creating : {_settings.USER_DATA_DIR / 'submissions'}")
         (_settings.USER_DATA_DIR / 'submissions').mkdir(exist_ok=True)
-        out.Console.info(f"creating : {_settings.USER_DATA_DIR / 'profiles'}")
+        out.info(f"creating : {_settings.USER_DATA_DIR / 'profiles'}")
         (_settings.USER_DATA_DIR / 'profiles').mkdir(exist_ok=True)
-        out.Console.info(f"creating : {_settings.LEADERBOARD_LOCATION}")
+        out.info(f"creating : {_settings.LEADERBOARD_LOCATION}")
         _settings.LEADERBOARD_LOCATION.mkdir(exist_ok=True)
 
         # create tables
-        out.Console.info(f"creating : tables in database ...")
+        out.info(f"creating : tables in database ...")
         create_db()
 
 
@@ -99,13 +144,21 @@ class GunicornConfigGeneration(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        data = dict()
+        args_dict = vars(args)
+
+        data = dict(
+            wsgi_app=args_dict.get('wsgi_app', 'zerospeech.api:app'),
+            zr_env_file=os.environ.get('ZR_ENV_FILE', ''),
+            worker_class="uvicorn.workers.UvicornWorker",
+            nb_workers=4,
+            bind_point="127.0.1:5933"  # "unix:gunicorn.sock"
+        )
         # export
         if args.out_file:
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
         else:
-            out.Console.console.out(self.template.render(**data))
+            out.console.out(self.template.render(**data))
 
 
 class SystemDSocketFileGeneration(cmd_lib.CMD):
@@ -129,7 +182,7 @@ class SystemDSocketFileGeneration(cmd_lib.CMD):
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
         else:
-            out.Console.console.out(self.template.render(**data))
+            out.console.out(self.template.render(**data))
 
 
 class SystemDUnitGeneration(cmd_lib.CMD):
@@ -156,7 +209,7 @@ class SystemDUnitGeneration(cmd_lib.CMD):
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
         else:
-            out.Console.console.out(self.template.render(**data))
+            out.console.out(self.template.render(**data))
 
 
 class NginxConfigGeneration(cmd_lib.CMD):
@@ -182,4 +235,4 @@ class NginxConfigGeneration(cmd_lib.CMD):
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
         else:
-            out.Console.console.out(self.template.render(**data))
+            out.console.out(self.template.render(**data))

@@ -66,15 +66,15 @@ class EvalTaskWorker(AbstractWorker):
             if not isinstance(br, SubmissionEvaluationMessage):
                 raise ValueError("Cannot process non SubmissionEvaluationMessages")
 
-            out.Console.Logger.info(f"Received evaluation request of {br.submission_id}")
+            out.Logger.info(f"Received evaluation request of {br.submission_id}")
             # create a log entry
             self.start_process(br.job_id, br.submission_id)
 
             status, eval_output = self.eval_subprocess(br)
             if status == 0:
-                out.Console.Logger.info(f"Evaluation of {br.submission_id} was completed successfully")
+                out.Logger.info(f"Evaluation of {br.submission_id} was completed successfully")
             else:
-                out.Console.Logger.warning(f"Evaluation of {br.submission_id} was completed "
+                out.Logger.warning(f"Evaluation of {br.submission_id} was completed "
                                            f"with a non zero return code. see logs for details!!")
 
             # write output in log

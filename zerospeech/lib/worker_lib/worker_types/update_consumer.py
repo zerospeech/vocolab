@@ -50,7 +50,7 @@ class UpdateTaskWorker(AbstractWorker):
             if not isinstance(br, SubmissionUpdateMessage):
                 raise ValueError("Cannot process non SubmissionUpdateMessages")
 
-            out.Console.Logger.info(f"Received update request for {br.submission_id}")
+            out.Logger.info(f"Received update request for {br.submission_id}")
 
             self.start_process(br.job_id, br.submission_id)
             await self.eval_function(br)

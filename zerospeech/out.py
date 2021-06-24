@@ -1,3 +1,4 @@
+import sys
 from logging.handlers import RotatingFileHandler, WatchedFileHandler
 import logging
 from pathlib import Path
@@ -19,6 +20,16 @@ ERROR_STYLE = Style(color='red', bold=True, underline=True)
 INFO_STYLE = Style(color='green', bold=True)
 DEBUG_STYLE = Style(color='yellow', bold=True)
 WARNING_STYLE = Style(color='orange1', bold=True)
+
+
+class PathPrompt(PromptBase[Path]):
+    """A prompt that returns an integer.
+    Example:
+        >>> burrito_count = PathPrompt.ask("Where did you store the treasure ?")
+    """
+
+    response_type = Path
+    validate_error_message = "[prompt.invalid]Please enter a valid path"
 
 
 def _get_ic(debug):
@@ -138,6 +149,7 @@ class _Console:
         self.inspect = None
         self._logger = None
         self.build_consoles()
+        self.PathPrompt = PathPrompt()
         self._logger = _Log(
             neutral_console=self._neutral_console,
             info_console=self._info_console,
@@ -262,44 +274,5 @@ class _Console:
 
 
 # Instantiate Console
-Console = _Console()
-
-
-class PathPrompt(PromptBase[Path]):
-    """A prompt that returns an integer.
-    Example:
-        >>> burrito_count = PathPrompt.ask("Where did you store the treasure ?")
-    """
-
-    response_type = Path
-    validate_error_message = "[prompt.invalid]Please enter a valid path"
-
-
-if __name__ == '__main__':
-    Console.console.print("I am the console")
-    if not Console.log_to_file:
-        Console.console.rule("[bold red]Testing Printing")
-    Console.info("Hello guys")
-    Console.warning("This is your final warning")
-    Console.error("Now you made me throw an error")
-
-    try:
-        raise ValueError("a value errored")
-    except ValueError:
-        Console.exception()
-
-    if not Console.log_to_file:
-        Console.console.rule("[bold red]Testing Logging")
-    Console.Logger.info("This is a record of the event")
-    Console.Logger.warning("I warn you")
-    Console.Logger.error("Now the error happened")
-    try:
-        raise ValueError("a value errored")
-    except ValueError:
-        Console.Logger.exception("the value was not correct")
-
-    if not Console.log_to_file:
-        Console.console.rule("[bold red]Testing Debug Tracing")
-
-    Console.ic(Console)
-    Console.inspect(Console)
+# noinspection PyTypeChecker
+sys.modules[__name__] = _Console()

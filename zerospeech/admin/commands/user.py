@@ -35,7 +35,7 @@ class UsersCMD(cmd_lib.CMD):
         if args.mail_list:
             for u in user_lst:
                 if u.active and u.verified == 'True':
-                    out.Console.print(f"{u.username} {u.email}")
+                    out.print(f"{u.username} {u.email}")
             sys.exit(0)
 
         # Prepare output
@@ -51,7 +51,7 @@ class UsersCMD(cmd_lib.CMD):
                 f"{usr.id}", usr.username, usr.email, f"{usr.active}", f"{usr.verified}"
             )
 
-        out.Console.print(table)
+        out.print(table)
 
 
 class UserSessionsCMD(cmd_lib.CMD):
@@ -78,7 +78,7 @@ class UserSessionsCMD(cmd_lib.CMD):
                 f"{usr.id}", usr.username, usr.email, f"{usr.active}", f"{usr.verified}"
             )
 
-        out.Console.print(table)
+        out.print(table)
 
     def run(self, argv):
         _ = self.parser.parse_args(argv)
@@ -98,10 +98,10 @@ class CloseUserSessionsCMD(cmd_lib.CMD):
 
         if args.user_id:
             asyncio.run(userQ.delete_session(by_uid=args.user_id))
-            out.Console.print(f"All sessions of user {args.user_id} were closed", style="bold")
+            out.print(f"All sessions of user {args.user_id} were closed", style="bold")
         elif args.close_all:
             asyncio.run(userQ.delete_session(clear_all=True))
-            out.Console.print(f"All sessions were closed", style="bold")
+            out.print(f"All sessions were closed", style="bold")
         else:
             self.parser.print_help()
 
@@ -119,7 +119,7 @@ class CreateUserSessionsCMD(cmd_lib.CMD):
         args = self.parser.parse_args(argv)
 
         usr, token = asyncio.run(userQ.admin_login(by_uid=args.user_id))
-        out.Console.print(f"{usr.username}, {usr.email}, {token}")
+        out.print(f"{usr.username}, {usr.email}, {token}")
         sys.exit(0)
 
 
@@ -159,18 +159,18 @@ class CreateUserCMD(cmd_lib.CMD):
 
     def _create_form_input(self, progress):
 
-        out.Console.print("-- New User Info --", style="bold")
-        first_name = out.Console.console.input("First Name: ")
-        last_name = out.Console.console.input("Last Name: ")
-        email = out.Console.console.input("Email: ")
-        affiliation = out.Console.console.input("Affiliation: ")
+        out.print("-- New User Info --", style="bold")
+        first_name = out.input("First Name: ")
+        last_name = out.input("Last Name: ")
+        email = out.input("Email: ")
+        affiliation = out.input("Affiliation: ")
 
         clean_last_name = ''.join([i if i in string.ascii_letters else ' ' for i in last_name])
         def_username = f"{first_name[0]}{clean_last_name.replace(' ', '')}".lower()
-        username = out.Console.console.input(f"Username(default {def_username}): ")
+        username = out.input(f"Username(default {def_username}): ")
         username = username if username else def_username
 
-        password = out.Console.console.input("Password: ", password=True)
+        password = out.input("Password: ", password=True)
 
         user = UserCreate(
             username=username,
@@ -191,7 +191,7 @@ class CreateUserCMD(cmd_lib.CMD):
             if args.from_file:
                 json_file = Path(args.from_file)
                 if not json_file.is_file() or json_file.suffix != ".json":
-                    out.Console.print(f":x: Input: {json_file} does not exist or is not a valid json file.")
+                    out.print(f":x: Input: {json_file} does not exist or is not a valid json file.")
                     sys.exit(1)
                 self._create_from_file(json_file, progress)
             else:
@@ -230,13 +230,13 @@ class VerifyUserCMD(cmd_lib.CMD):
                 with (_settings.DATA_FOLDER / 'email_verification.path').open() as fp:
                     verification_path = fp.read()
             except FileNotFoundError:
-                out.Console.error("Path file not found in settings")
+                out.error("Path file not found in settings")
                 sys.exit(1)
 
             try:
                 user = asyncio.run(userQ.get_user(by_uid=args.send))
             except ValueError:
-                out.Console.error(f"User with id: {args.send} does not exist !!")
+                out.error(f"User with id: {args.send} does not exist !!")
                 sys.exit(1)
 
             if user.verified != 'True':
@@ -251,7 +251,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                     template_name='email_validation.jinja2'
                 ))
             else:
-                out.Console.error(f"User {user.username} is already verified !!")
+                out.error(f"User {user.username} is already verified !!")
                 sys.exit(1)
 
         elif args.send_all:
@@ -260,7 +260,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                 with (_settings.DATA_FOLDER / 'email_verification.path').open() as fp:
                     verification_path = fp.read()
             except FileNotFoundError:
-                out.Console.error("Path file not found in settings")
+                out.error("Path file not found in settings")
                 sys.exit(1)
 
             users = asyncio.run(userQ.get_user_list())
@@ -298,19 +298,19 @@ class UserActivationCMD(cmd_lib.CMD):
         if args.activate:
             # activate user
             asyncio.run(userQ.toggle_user_status(user_id=args.activate, active=True))
-            out.Console.info("User activated successfully")
+            out.info("User activated successfully")
         elif args.deactivate:
             # deactivate user
             asyncio.run(userQ.toggle_user_status(user_id=args.deactivate, active=False))
-            out.Console.info("User deactivated successfully")
+            out.info("User deactivated successfully")
         elif args.activate_all:
             # activate all users
             asyncio.run(userQ.toggle_all_users_status(active=True))
-            out.Console.info("Users activated successfully")
+            out.info("Users activated successfully")
         elif args.deactivate_all:
             # deactivate all users
             asyncio.run(userQ.toggle_all_users_status(active=False))
-            out.Console.info("Users deactivated successfully")
+            out.info("Users deactivated successfully")
         else:
             self.parser.print_help()
 
@@ -331,7 +331,7 @@ class PasswordUserCMD(cmd_lib.CMD):
                 with (_settings.DATA_FOLDER / 'password_reset.path').open() as fp:
                     password_reset_path = fp.read()
             except FileNotFoundError:
-                out.Console.error("Path file not found in settings")
+                out.error("Path file not found in settings")
                 sys.exit(1)
 
             user = asyncio.run(userQ.get_user(by_uid=args.reset))

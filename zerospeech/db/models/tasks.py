@@ -95,9 +95,9 @@ def message_from_bytes(byte_msg: bytes) -> Union[BrokerMessage,
         elif list(url_obj.keys()) == list(SimpleLogMessage.__fields__.keys()):
             return SimpleLogMessage(**url_obj)
         else:
-            out.Console.Logger.error(f"Unknown message type: {str(byte_msg.decode('utf-8'))}")
+            out.Logger.error(f"Unknown message type: {str(byte_msg.decode('utf-8'))}")
             raise ValueError(f"Unknown message type {str(byte_msg.decode('utf-8'))}")
 
     except (json.JSONDecodeError, ValidationError):
-        out.Console.Logger.error(f"error while parsing command: {str(byte_msg.decode('utf-8'))}")
+        out.Logger.error(f"error while parsing command: {str(byte_msg.decode('utf-8'))}")
         raise ValueError(f"command {str(byte_msg.decode('utf-8'))} not valid!!")

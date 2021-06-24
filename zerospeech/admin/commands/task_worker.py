@@ -6,7 +6,6 @@ from jinja2 import Environment, FileSystemLoader
 
 from zerospeech import out, get_settings
 from zerospeech.admin import cmd_lib
-from zerospeech.db.models.tasks import SimpleLogMessage
 from zerospeech.lib import worker_lib
 from zerospeech.worker.run_server import run as tasks_run
 
@@ -51,7 +50,7 @@ class EchoTaskWorkerCMD(cmd_lib.CMD):
         try:
             tasks_run(worker='echo', **args.__dict__)
         except Exception:
-            out.Console.exception()
+            out.exception()
             sys.exit(1)
 
 
@@ -71,7 +70,7 @@ class EvaluationTaskWorkerCMD(cmd_lib.CMD):
         try:
             tasks_run(worker='eval', **args.__dict__)
         except Exception:
-            out.Console.exception()
+            out.exception()
             sys.exit(1)
 
 
@@ -91,7 +90,7 @@ class UpdateTaskWorkerCMD(cmd_lib.CMD):
         try:
             tasks_run(worker='update', **args.__dict__)
         except Exception:
-            out.Console.exception()
+            out.exception()
             sys.exit(1)
 
 
@@ -121,7 +120,7 @@ class TestEchoWorker(cmd_lib.CMD):
                 label="cli-echo-testing"
             )
         )
-        out.Console.info('Message delivered successfully !!')
+        out.info('Message delivered successfully !!')
 
 
 class GenerateSystemDUnitCMD(cmd_lib.CMD):
@@ -147,4 +146,4 @@ class GenerateSystemDUnitCMD(cmd_lib.CMD):
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
         else:
-            out.Console.console.out(self.template.render(**data))
+            out.console.out(self.template.render(**data))

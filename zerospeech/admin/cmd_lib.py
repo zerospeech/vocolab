@@ -203,23 +203,23 @@ class CLI:
         # check if requesting cmd list for autocomplete
         if self.cmd_tree.is_autocomplete(args.command):
             # todo add 2 argument for subcommand autocompletion
-            out.Console.print(" ".join(self.cmd_tree.get_all_paths()))
+            out.print(" ".join(self.cmd_tree.get_all_paths()))
             sys.exit(0)
 
         # check if requesting auto complete bash function
         if self.cmd_tree.is_auto_fn(args.command):
-            out.Console.print(BASH_AUTOCOMPLETE_FN)
+            out.print(BASH_AUTOCOMPLETE_FN)
             sys.exit(0)
 
         cmd_node = self.cmd_tree.find_cmd(args.command)
         if cmd_node is None or cmd_node.identifier == 0:
-            out.Console.error(f'Unrecognized command {args.command}\n')
+            out.error(f'Unrecognized command {args.command}\n')
             self.parser.print_help()
             sys.exit(1)
 
         cmd = cmd_node.data
         if not isinstance(cmd, CMD):
-            out.Console.error(f'Unrecognized command {args.command}\n')
+            out.error(f'Unrecognized command {args.command}\n')
             self.parser.print_help()
             sys.exit(2)
 

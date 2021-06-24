@@ -25,7 +25,7 @@ async def build_leaderboard(*, leaderboard_id: int):
         *leaderboard.external_entries.rglob('*.yml')
     ]
     for item in external_entries:
-        out.Console.debug(item)
+        out.debug(item)
         leaderboard_entries.append(_fs.commons.load_dict_file(item))
 
     if not leaderboard.archived:

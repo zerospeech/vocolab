@@ -6,7 +6,7 @@ from zerospeech.lib.worker_lib import Config, Server, Multiprocess
 
 def run(**kwargs):
     """ Run the server """
-    out.Console.Logger.info(f"Initiating worker server @ PID: {os.getpid()}")
+    out.Logger.info(f"Initiating worker server @ PID: {os.getpid()}")
     config = Config(**kwargs)
     server = Server(config=config)
 

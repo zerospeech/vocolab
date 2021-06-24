@@ -27,7 +27,7 @@ def parse_email_exceptions(e: Exception):
     from fastapi_mail.errors import ConnectionErrors, WrongFile, TemplateFolderDoesNotExist
 
     if isinstance(e, ConnectionErrors):
-        out.Console.error("issues with connections ?")
+        out.error("issues with connections ?")
     raise e
 
 
@@ -48,7 +48,7 @@ async def simple_html_email(emails: List[EmailStr], subject: str, content: str):
     )
     try:
         await fm.send_message(message)
-        out.Console.Logger.info(f'email send successfully to {emails}')
+        out.Logger.info(f'email send successfully to {emails}')
     except Exception as e:
         parse_email_exceptions(e)
 
@@ -72,9 +72,9 @@ async def template_email(emails: List[EmailStr], subject: str, data: Dict[str, A
     )
     try:
         await fm.send_message(message, template_name=template_name)
-        out.Console.info(f'email send successfully to {emails}')
+        out.info(f'email send successfully to {emails}')
     except Exception as e:
-        out.Console.Logger.error(f"an issue occurred while sending an email to {emails}")
+        out.Logger.error(f"an issue occurred while sending an email to {emails}")
         parse_email_exceptions(e)
 
 
@@ -96,6 +96,6 @@ async def notify_admin(subject: str, data: Dict[str, Any], template_name: str):
     )
     try:
         await fm.send_message(message, template_name=template_name)
-        out.Console.Logger.info(f'email send successfully to {_settings.admin_email}')
+        out.Logger.info(f'email send successfully to {_settings.admin_email}')
     except Exception as e:
         parse_email_exceptions(e)

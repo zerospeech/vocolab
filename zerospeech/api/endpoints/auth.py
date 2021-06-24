@@ -25,7 +25,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """ Authenticate a user """
     try:
         _, token = await userQ.login_user(login=form_data.username, pwd=form_data.password)
-        out.Console.inspect(form_data)
+        out.inspect(form_data)
         return models.api.LoggedItem(access_token=token, token_type="bearer")
     except ValueError:
         raise HTTPException(
@@ -78,7 +78,7 @@ async def post_signup(request: Request, background_tasks: BackgroundTasks,
             redirect_label="go back to form",
             success=False
         )
-        out.Console.Logger.error(f'This {e.data} is already in use, cannot recreate ({user})')
+        out.Logger.error(f'This {e.data} is already in use, cannot recreate ({user})')
     else:
         data = dict(
             image_dir=f"{request.base_url}static/img",
@@ -119,7 +119,7 @@ async def post_password_update(v: str, request: Request, password: str = Form(..
         user = await userQ.get_user(by_password_reset_session=v)
         await userQ.update_users_password(user=user, password=password, password_validation=password_validation)
     except ValueError as e:
-        out.Console.Logger.error(
+        out.Logger.error(
             f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
 
         data = dict(
@@ -152,7 +152,7 @@ async def put_password_update(v: str, request: Request, password: str = Form(...
 
         user = await userQ.get_user(by_password_reset_session=v)
     except ValueError as e:
-        out.Console.Logger.error(
+        out.Logger.error(
             f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
 
         raise HTTPException(

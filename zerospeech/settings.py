@@ -103,6 +103,12 @@ class _ZerospeechSettings(BaseSettings):
     MAIL_SSL: bool = False
     MAIL_TEMPLATE_DIR: Path = TEMPLATES_DIR / 'emails'
 
+    # Deployment Variables
+    bind: str = "unix:/run/gunicorn.socket"
+    user: str = "zerospeech"
+    group: str = "zerospeech"
+    app_location: str = "zerospeech.api:app"
+
     def __folder_factory__(self):
 
         def factory(key, default):

@@ -39,7 +39,7 @@ class EvaluatorsCMD(cmd_lib.CMD):
             )
 
         # print
-        out.Console.print(table)
+        out.print(table)
 
 
 class ListHostsEvaluatorsCMD(cmd_lib.CMD):
@@ -74,7 +74,7 @@ class ListHostsEvaluatorsCMD(cmd_lib.CMD):
             )
 
         # print
-        out.Console.print(table)
+        out.print(table)
 
 
 class DiscoverEvaluatorsCMD(cmd_lib.CMD):
@@ -92,21 +92,21 @@ class DiscoverEvaluatorsCMD(cmd_lib.CMD):
             raise NotImplemented('import of local evaluators is not implemented yet !!')
 
         if args.host not in _settings.HOSTS:
-            out.Console.print(":x: Error specified host was not found", style="red")
+            out.print(":x: Error specified host was not found", style="red")
             sys.exit(1)
 
         remote_dir = _settings.REMOTE_BIN.get(args.host, None)
         if remote_dir is None:
-            out.Console.print(":x: Error specified host does not have a known bin dir", style="red")
+            out.print(":x: Error specified host does not have a known bin dir", style="red")
             sys.exit(2)
 
         evaluators = evaluators_lib.discover_evaluators(args.host, remote_dir)
         # show
-        out.Console.print(f"Found evaluators : {[ev.label for ev in evaluators]}")
+        out.print(f"Found evaluators : {[ev.label for ev in evaluators]}")
         response = Confirm.ask("Do want to import them into the database?")
         if response:
             asyncio.run(ch_queries.add_evaluator(lst_eval=evaluators))
-            out.Console.print(":heavy_check_mark: successfully inserted evaluators")
+            out.print(":heavy_check_mark: successfully inserted evaluators")
 
 
 class UpdateBaseArguments(cmd_lib.CMD):
@@ -128,4 +128,4 @@ class UpdateBaseArguments(cmd_lib.CMD):
         asyncio.run(
             ch_queries.edit_evaluator_args(eval_id=args.evaluator_id, arg_list=rest)
         )
-        out.Console.info(":heavy_check_mark: successfully updated evaluator")
+        out.info(":heavy_check_mark: successfully updated evaluator")

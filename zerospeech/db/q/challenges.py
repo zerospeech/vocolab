@@ -2,8 +2,8 @@ from datetime import datetime
 from typing import List, Any, Optional
 from uuid import uuid4
 
+from zerospeech import get_settings
 from zerospeech.db import models, zrDB, schema, exc as db_exc
-from zerospeech import get_settings, out
 from zerospeech.lib import misc
 
 _settings = get_settings()
@@ -198,7 +198,7 @@ async def get_evaluator(*, by_id: Optional[int] = None) -> Optional[schema.Evalu
 async def add_evaluator(*, lst_eval: List[models.cli.NewEvaluatorItem]):
     """ Insert a list of evaluators into the database """
     query = schema.evaluators_table.insert()
-    # out.Console.ic([i.dict() for i in lst_eval])
+    # out.ic([i.dict() for i in lst_eval])
     await zrDB.execute_many(query, [i.dict() for i in lst_eval])
 
 

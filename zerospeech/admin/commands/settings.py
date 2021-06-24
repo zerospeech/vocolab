@@ -95,4 +95,4 @@ class GenerateEnvFileCMD(cmd_lib.CMD):
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
         else:
-            out.Console.console.out(self.template.render(**data))
+            out.console.out(self.template.render(**data))

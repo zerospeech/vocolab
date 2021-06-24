@@ -56,7 +56,7 @@ class SubmissionCMD(cmd_lib.CMD):
                 f"{i.status}", f"{i.evaluator_id}"
             )
         # print
-        out.Console.print(table)
+        out.print(table)
 
 
 class SetSubmissionCMD(cmd_lib.CMD):
@@ -108,7 +108,7 @@ class CreateSubmissionCMD(cmd_lib.CMD):
         archive = Path(args.archive)
 
         if not archive.is_file():
-            out.Console.error(f'Requested file {archive} does not exist')
+            out.error(f'Requested file {archive} does not exist')
 
         async def create_submission(ch_id, user_id):
             try:
@@ -116,7 +116,7 @@ class CreateSubmissionCMD(cmd_lib.CMD):
                 _user = await usr_queries.get_user(by_uid=user_id)
 
                 if not _user.enabled:
-                    out.Console.error(f'User {_user.username} is not allowed to perform this action')
+                    out.error(f'User {_user.username} is not allowed to perform this action')
                     sys.exit(1)
 
                 _submission_id = await ch_queries.add_submission(new_submission=NewSubmission(
@@ -125,7 +125,7 @@ class CreateSubmissionCMD(cmd_lib.CMD):
                 ), evaluator_id=challenge.evaluator)
                 return _challenge, _user, _submission_id
             except ValueError:
-                out.Console.exception()
+                out.exception()
                 sys.exit(1)
 
         # fetch db items
@@ -177,7 +177,7 @@ class EvalSubmissionCMD(cmd_lib.CMD):
         submission: db_challenges.ChallengeSubmission = asyncio.run(ch_queries.get_submission(by_id=args.submission_id))
 
         if submission.status in self.no_eval:
-            out.Console.print(f"Cannot evaluate a submission that has status : {submission.status}")
+            out.print(f"Cannot evaluate a submission that has status : {submission.status}")
             sys.exit(1)
 
         asyncio.run(

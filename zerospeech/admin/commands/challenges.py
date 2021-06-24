@@ -107,17 +107,17 @@ class AddChallengeCMD(cmd_lib.CMD):
             if not args.dry_run:
                 for item in obj_list:
                     asyncio.run(challengesQ.create_new_challenge(item))
-                    out.Console.print(f"insertion of {item.label} was successful:white_check_mark:",
+                    out.print(f"insertion of {item.label} was successful:white_check_mark:",
                                       style="bold green")
             else:
-                out.Console.inspect(obj_list)
+                out.inspect(obj_list)
 
         except json.JSONDecodeError as e:
-            out.Console.error(f":x:\tjson: {e}")
+            out.error(f":x:\tjson: {e}")
         except ValidationError as e:
-            out.Console.error(f":x:\t{e}")
+            out.error(f":x:\t{e}")
         except ValueError as e:
-            out.Console.error(f":x:\t{e}")
+            out.error(f":x:\t{e}")
 
 
 class SetChallenge(cmd_lib.CMD):
@@ -142,4 +142,4 @@ class SetChallenge(cmd_lib.CMD):
                 allow_parsing=True
             )
         )
-        out.Console.info(f"Field {args.field_name}={res} :white_check_mark:")
+        out.info(f"Field {args.field_name}={res} :white_check_mark:")

@@ -39,7 +39,7 @@ async def get_challenge_leaderboard(challenge_id: int, leaderboard_id: int):
     try:
         leaderboard = await leaderboardQ.get_leaderboard(leaderboard_id=leaderboard_id)
 
-        out.Console.ic(leaderboard)
+        out.ic(leaderboard)
 
         if leaderboard.challenge_id != challenge_id:
             raise ValueError('bad challenge id')
@@ -88,7 +88,7 @@ async def upload_submission(
         file_data: UploadFile = File(...),
         current_user: schema.User = Depends(api_lib.get_current_active_user),
 ):
-    out.Console.info(f"user: {current_user.username}")
+    out.info(f"user: {current_user.username}")
     challenge = await challengesQ.get_challenge(challenge_id=challenge_id)
     if challenge is None:
         return ValueError(f'challenge {challenge_id} not found or inactive')

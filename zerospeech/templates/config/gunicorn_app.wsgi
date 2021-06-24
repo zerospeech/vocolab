@@ -1,13 +1,11 @@
-import uvicorn.workers
-
+wsgi_app = "{{wsgi_app}}"
 # bind as unix:socket or ip:port
-bind = 'unix:/run/gunicorn.sock'
+bind = '{{bind_point}}'
 # backlog size (number of pending connections)
 backlog = 2048
 # Number of processes to create
-workers = 4
-# Class to use for workers (should be uvicorn class ? )
-worker_class = uvicorn.workers.UvicornWorker
+workers = {{nb_workers}}
+worker_class = "{{worker_class}}"
 worker_connections = 1000
 timeout = 30
 keepalive = 2
@@ -17,8 +15,7 @@ spew = False
 daemon = False
 # Environment variables to set for processes
 raw_env = [
-    'DJANGO_SECRET_KEY=something',
-    'SPAM=eggs',
+    'ZR_ENV_FILE={{zr_env_file}}',
 ]
 # The path to a pid file to write (None: use system default).
 pidfile = None
@@ -31,38 +28,10 @@ group = None
 # A directory to store temporary request data when requests are read.
 tmp_upload_dir = None
 # Logging
-errorlog = '-'
+errorlog = None
 loglevel = 'info'
-accesslog = '-'
+accesslog = None
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
 
 # rename proctitle to appear with specific name (None: use system default).
 proc_name = None
-
-
-# Called just after a worker has been forked.
-def post_fork(server, worker):
-    server.log.info("Worker spawned (pid: %s)", worker.pid)
-
-
-# Called just prior to forking the worker subprocess.
-def pre_fork(server, worker):
-    pass
-
-
-# Called just prior to forking off a secondary
-#   master process during things like config reloading.
-def pre_exec(server):
-    server.log.info("Forked child, re-executing.")
-
-
-def when_ready(server):
-    server.log.info("Server is ready. Spawning workers")
-
-
-def worker_int(worker):
-    worker.log.info("worker received INT or QUIT signal")
-
-
-def worker_abort(worker):
-    worker.log.info("worker received SIGABRT signal")
