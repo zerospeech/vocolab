@@ -1,9 +1,11 @@
 import sys
+from pathlib import Path
 
+from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.markdown import Markdown
 
-from zerospeech import get_settings
+from zerospeech import get_settings, out
 from zerospeech.admin import cmd_lib
 
 _settings = get_settings()
@@ -36,22 +38,11 @@ For more information on all the variables & their usage see [docs folder](docs/s
 """
 
 
-class ChecksCMD(cmd_lib.CMD):
-    """ A container for check commands """
+class SettingsCMD(cmd_lib.CMD):
+    """ Commands managing settings """
 
     def __init__(self, root, name, cmd_path):
-        super(ChecksCMD, self).__init__(root, name, cmd_path)
-
-    def run(self, argv):
-        self.parser.print_help()
-        sys.exit(0)
-
-
-class CheckSettingsCMD(cmd_lib.CMD):
-    """ Command allowing to verify settings """
-
-    def __init__(self, root, name, cmd_path):
-        super(CheckSettingsCMD, self).__init__(root, name, cmd_path)
+        super(SettingsCMD, self).__init__(root, name, cmd_path)
         # arguments
         self.parser.add_argument('--get', help='Retrieves a specific value')
         self.parser.add_argument('--info', help='Info on how to set settings', action='store_true')
@@ -84,3 +75,24 @@ class CheckSettingsCMD(cmd_lib.CMD):
 
             console.print("---------------------------------------------------------",
                           style="bold italic purple")
+
+
+class GenerateEnvFileCMD(cmd_lib.CMD):
+    """ Generate a template .env file """
+    
+    def __init__(self, root, name, cmd_path):
+        super(GenerateEnvFileCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
+        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
+            .get_template("example.env")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        args_dict = vars(args)
+        data = dict()
+        # export
+        if args.out_file:
+            with Path(args.out_file).open("w") as fp:
+                fp.write(self.template.render(**data))
+        else:
+            out.Console.console.out(self.template.render(**data))

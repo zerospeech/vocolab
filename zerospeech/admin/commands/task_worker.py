@@ -1,5 +1,8 @@
 import asyncio
 import sys
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
 
 from zerospeech import out, get_settings
 from zerospeech.admin import cmd_lib
@@ -121,3 +124,27 @@ class TestEchoWorker(cmd_lib.CMD):
         out.Console.info('Message delivered successfully !!')
 
 
+class GenerateSystemDUnitCMD(cmd_lib.CMD):
+    """ Generate a template systemD unit file to manage workers daemon """
+
+    def __init__(self, root, name, cmd_path):
+        super(GenerateSystemDUnitCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
+        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR)) \
+            .get_template("worker.service")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        args_dict = vars(args)
+        data = dict(
+            user=args_dict.get('user', 'zerospeech'),
+            group=args_dict.get('group', 'zerospeech'),
+            run_dir=args_dict.get('run_dir', '/zerospeech/app-data'),
+            cmd=args_dict.get('gunicorn_exe', "echo 'NotImplemented'"),
+        )
+        # export
+        if args.out_file:
+            with Path(args.out_file).open("w") as fp:
+                fp.write(self.template.render(**data))
+        else:
+            out.Console.console.out(self.template.render(**data))

@@ -47,8 +47,6 @@ def build_cli():
         tree.add_cmd_tree(
             commands.submissions.SubmissionCMD(CMD_NAME, 'submissions', ''),
             commands.submissions.SetSubmissionCMD(CMD_NAME, 'set', 'submissions'),
-            #  todo: do we really need a delete function ?
-            #  commands.submissions.DeleteSubmissionCMD(CMD_NAME, 'delete', 'submissions')
             commands.submissions.CreateSubmissionCMD(CMD_NAME, 'create', 'submissions'),
             commands.submissions.EvalSubmissionCMD(CMD_NAME, 'eval', 'submissions')
         )
@@ -61,15 +59,21 @@ def build_cli():
             commands.task_worker.EvaluationTaskWorkerCMD(CMD_NAME, 'eval', 'worker:run'),
             commands.task_worker.UpdateTaskWorkerCMD(CMD_NAME, 'update', 'worker:run'),
             commands.task_worker.TestTaskWorkerCMD(CMD_NAME, 'test', 'worker'),
-            commands.task_worker.TestEchoWorker(CMD_NAME, 'echo', 'worker:test')
+            commands.task_worker.TestEchoWorker(CMD_NAME, 'echo', 'worker:test'),
+            commands.task_worker.GenerateSystemDUnitCMD(CMD_NAME, 'daemon_config', 'worker')
         )
 
     tree.add_cmd_tree(
-        commands.checks.ChecksCMD(CMD_NAME, 'check', ''),
-        commands.checks.CheckSettingsCMD(CMD_NAME, 'settings', 'check'),
+        commands.settings.SettingsCMD(CMD_NAME, 'settings', ''),
+        commands.settings.GenerateEnvFileCMD(CMD_NAME, 'template', 'settings'),
         commands.api.APICMD(CMD_NAME, 'api', ''),
         commands.api.DebugAPICMD(CMD_NAME, 'debug', 'api'),
-        commands.api.APInitEnvironmentCMD(CMD_NAME, 'init', 'api')
+        commands.api.APInitEnvironmentCMD(CMD_NAME, 'init', 'api'),
+        commands.api.ConfigFiles(CMD_NAME, 'config', 'api'),
+        commands.api.GunicornConfigGeneration(CMD_NAME, 'gunicorn', 'api:config'),
+        commands.api.SystemDSocketFileGeneration(CMD_NAME, 'socket', 'api:config'),
+        commands.api.SystemDUnitGeneration(CMD_NAME, 'unit', 'api:config'),
+        commands.api.NginxConfigGeneration(CMD_NAME, 'nginx', 'api:config')
     )
 
     if has_leaderboard and has_submissions:

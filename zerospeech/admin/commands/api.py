@@ -1,5 +1,10 @@
+import shutil
 from os import execv
+from pathlib import Path
 from shutil import which
+from urllib.parse import urlparse
+
+from jinja2 import Environment, FileSystemLoader
 
 from zerospeech import get_settings, out
 from zerospeech.admin import cmd_lib
@@ -72,5 +77,109 @@ class APInitEnvironmentCMD(cmd_lib.CMD):
         create_db()
 
 
-# TODO create gunicorn config generation
-# TODO create gunicorn wrapper cli
+class ConfigFiles(cmd_lib.CMD):
+    """ API Deployment config files """
+
+    def __init__(self, root, name, cmd_path):
+        super(ConfigFiles, self).__init__(root, name, cmd_path)
+
+    def run(self, argv):
+        _ = self.parser.parse_args(argv)
+        self.parser.print_help()
+
+
+class GunicornConfigGeneration(cmd_lib.CMD):
+    """ Generate a template gunicorn config file """
+    
+    def __init__(self, root, name, cmd_path):
+        super(GunicornConfigGeneration, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
+        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
+            .get_template("gunicorn_app.wsgi")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        data = dict()
+        # export
+        if args.out_file:
+            with Path(args.out_file).open("w") as fp:
+                fp.write(self.template.render(**data))
+        else:
+            out.Console.console.out(self.template.render(**data))
+
+
+class SystemDSocketFileGeneration(cmd_lib.CMD):
+    """ Generate a template SystemD socket unit file """
+
+    def __init__(self, root, name, cmd_path):
+        super(SystemDSocketFileGeneration, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
+        self.parser.add_argument('-s', '--socket-user', type=str, help='User to read the socket file.')
+        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
+            .get_template("gunicorn.socket")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        args_dict = vars(args)
+        data = dict(
+            socket_user=args_dict.get('socket_user', "www-data")
+        )
+        # export
+        if args.out_file:
+            with Path(args.out_file).open("w") as fp:
+                fp.write(self.template.render(**data))
+        else:
+            out.Console.console.out(self.template.render(**data))
+
+
+class SystemDUnitGeneration(cmd_lib.CMD):
+    """ Generate a template SystemD unit file to manage api daemon """
+
+    def __init__(self, root, name, cmd_path):
+        super(SystemDUnitGeneration, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
+        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
+            .get_template("api.service")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        args_dict = vars(args)
+        data = dict(
+            user=args_dict.get('user', 'zerospeech'),
+            group=args_dict.get('group', 'zerospeech'),
+            run_dir=args_dict.get('run_dir', '/zerospeech/app-data'),
+            gunicorn_exe=args_dict.get('gunicorn_exe', shutil.which('gunicorn')),
+            appfile=args_dict.get('gunicorn_exe', shutil.which('gunicorn')),
+        )
+        # export
+        if args.out_file:
+            with Path(args.out_file).open("w") as fp:
+                fp.write(self.template.render(**data))
+        else:
+            out.Console.console.out(self.template.render(**data))
+
+
+class NginxConfigGeneration(cmd_lib.CMD):
+    """ Generate a template Nginx server file """
+
+    def __init__(self, root, name, cmd_path):
+        super(NginxConfigGeneration, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
+        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
+            .get_template("nginx.conf")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        args_dict = vars(args)
+        default_url = urlparse(_settings.API_BASE_URL)
+        data = dict(
+            url=args_dict.get('url', f"{default_url.netloc}{default_url.path}"),
+            access_log=args_dict.get('access_log', f"/var/log/nginx/api_access.log"),
+            error_log=args_dict.get('error_log', f"/var/log/nginx/api_error.log")
+        )
+        # export
+        if args.out_file:
+            with Path(args.out_file).open("w") as fp:
+                fp.write(self.template.render(**data))
+        else:
+            out.Console.console.out(self.template.render(**data))

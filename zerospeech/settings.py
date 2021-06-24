@@ -74,7 +74,7 @@ class _ZerospeechSettings(BaseSettings):
     session_expiry_delay: timedelta = timedelta(days=7)
     password_reset_expiry_delay: timedelta = timedelta(minutes=45)
 
-    # Data Locations
+    # Data Locations [ defaults are set by a factory function ]
     STATIC_DIR: Optional[Path] = None
     USER_DATA_DIR: Optional[Path] = None
     SUBMISSION_DIR: Optional[Path] = None
@@ -84,6 +84,7 @@ class _ZerospeechSettings(BaseSettings):
     TEMPLATES_DIR: Path = app_home / 'templates'
     HTML_TEMPLATE_DIR: Path = TEMPLATES_DIR / 'pages'
     MATTERMOST_TEMPLATE_DIR: Path = TEMPLATES_DIR / 'mattermost'
+    CONFIG_TEMPLATE_DIR: Path = TEMPLATES_DIR / 'config'
 
     # Mattermost
     mattermost_url: HttpUrl = 'https://mattermost.cognitive-ml.fr/hooks'
