@@ -72,7 +72,7 @@ def build_cli():
         commands.api.ConfigFiles(CMD_NAME, 'config', 'api'),
         commands.api.GunicornConfigGeneration(CMD_NAME, 'gunicorn', 'api:config'),
         commands.api.SystemDSocketFileGeneration(CMD_NAME, 'socket', 'api:config'),
-        commands.api.SystemDUnitGeneration(CMD_NAME, 'unit', 'api:config'),
+        commands.api.SystemDUnitGeneration(CMD_NAME, 'service', 'api:config'),
         commands.api.NginxConfigGeneration(CMD_NAME, 'nginx', 'api:config')
     )
 

@@ -105,9 +105,12 @@ class _ZerospeechSettings(BaseSettings):
 
     # Deployment Variables
     bind: str = "unix:/run/gunicorn.socket"
-    user: str = "zerospeech"
-    group: str = "zerospeech"
-    app_location: str = "zerospeech.api:app"
+    NGINX_USER = "www-data"
+    SERVICE_USER: str = "api-user"
+    SERVICE_GROUP: str = "api-user"
+    WSGI_APP: str = "zerospeech.api:app"
+    GUNICORN_WORKER_CLASS: str = "uvicorn.workers.UvicornWorker"
+    NB_WORKERS: int = 4
 
     def __folder_factory__(self):
 

@@ -21,10 +21,6 @@ raw_env = [
 pidfile = None
 # A mask for file permissions written by Gunicorn
 umask = 0
-# Switch worker processes to run as this user (None: use system default).
-user = None
-# Switch worker process to run as this group (None: use system default).
-group = None
 # A directory to store temporary request data when requests are read.
 tmp_upload_dir = None
 # Logging

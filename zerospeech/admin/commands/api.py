@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 from os import execv
 from pathlib import Path
 from shutil import which
@@ -144,14 +145,13 @@ class GunicornConfigGeneration(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        args_dict = vars(args)
 
         data = dict(
-            wsgi_app=args_dict.get('wsgi_app', 'zerospeech.api:app'),
+            wsgi_app=_settings.WSGI_APP,
             zr_env_file=os.environ.get('ZR_ENV_FILE', ''),
-            worker_class="uvicorn.workers.UvicornWorker",
-            nb_workers=4,
-            bind_point="127.0.1:5933"  # "unix:gunicorn.sock"
+            worker_class=_settings.GUNICORN_WORKER_CLASS,
+            nb_workers=_settings.NB_WORKERS,
+            bind_point=_settings.bind
         )
         # export
         if args.out_file:
@@ -167,15 +167,21 @@ class SystemDSocketFileGeneration(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(SystemDSocketFileGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.parser.add_argument('-s', '--socket-user', type=str, help='User to read the socket file.')
         self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
             .get_template("gunicorn.socket")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        args_dict = vars(args)
+        bind = urlparse(_settings.bind)
+        if bind.scheme == 'unix':
+            socket_file = bind.path
+        else:
+            out.warning('There is no socket bind in configurations')
+            sys.exit(1)
+
         data = dict(
-            socket_user=args_dict.get('socket_user', "www-data")
+            socket_user=_settings.NGINX_USER,
+            socket_file=socket_file
         )
         # export
         if args.out_file:
@@ -191,18 +197,28 @@ class SystemDUnitGeneration(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(SystemDUnitGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
+        self.parser.add_argument('gunicorn_config_file', type=str, help="File to configure gunicorn with")
+        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR), trim_blocks=True)\
             .get_template("api.service")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        args_dict = vars(args)
+        gunicorn_cfg_file = Path(args.gunicorn_config_file)
+
+        if not gunicorn_cfg_file.is_file():
+            out.error(f'Config given : {gunicorn_cfg_file} ! Error no such file found ')
+            sys.exit(1)
+
+        bind = urlparse(_settings.bind)
+        has_socket = bind.scheme == "unix"
+
         data = dict(
-            user=args_dict.get('user', 'zerospeech'),
-            group=args_dict.get('group', 'zerospeech'),
-            run_dir=args_dict.get('run_dir', '/zerospeech/app-data'),
-            gunicorn_exe=args_dict.get('gunicorn_exe', shutil.which('gunicorn')),
-            appfile=args_dict.get('gunicorn_exe', shutil.which('gunicorn')),
+            user=_settings.SERVICE_USER,
+            group=_settings.SERVICE_GROUP,
+            run_dir=_settings.DATA_FOLDER,
+            gunicorn_exe=shutil.which('gunicorn'),
+            gunicorn_cmd=f"-c {gunicorn_cfg_file.resolve()}",
+            has_socket=has_socket
         )
         # export
         if args.out_file:
@@ -218,17 +234,17 @@ class NginxConfigGeneration(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(NginxConfigGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
+        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR), trim_blocks=True)\
             .get_template("nginx.conf")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        args_dict = vars(args)
         default_url = urlparse(_settings.API_BASE_URL)
         data = dict(
-            url=args_dict.get('url', f"{default_url.netloc}{default_url.path}"),
-            access_log=args_dict.get('access_log', f"/var/log/nginx/api_access.log"),
-            error_log=args_dict.get('error_log', f"/var/log/nginx/api_error.log")
+            url=f"{default_url.netloc}{default_url.path}",
+            bind_url=_settings.bind,
+            access_log=f"/var/log/nginx/api_access.log",
+            error_log=f"/var/log/nginx/api_error.log"
         )
         # export
         if args.out_file:

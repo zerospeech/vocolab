@@ -1,6 +1,8 @@
 [Unit]
 Description=gunicorn daemon
+{% if has_socket %}
 Requires=gunicorn.socket
+{% endif %}
 After=network.target
 
 [Service]
@@ -13,7 +15,7 @@ Group={{group}}
 # see http://0pointer.net/blog/dynamic-users-with-systemd.html
 RuntimeDirectory=gunicorn
 WorkingDirectory={{run_dir}}
-ExecStart={{gunicorn_exe}} {{appfile}}
+ExecStart={{gunicorn_exe}} {{gunicorn_cmd}}
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
