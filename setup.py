@@ -15,7 +15,11 @@ setuptools.setup(
         'zerospeech_admin': [
             'zerospeech/templates/emails/*.jinja2',
             'zerospeech/templates/mattermost/*.jinja2',
-            'zerospeech/templates/pages/*.jinja2'
+            'zerospeech/templates/pages/*.jinja2',
+            'zerospeech/templates/config/*.service',
+            'zerospeech/templates/config/*.socket',
+            'zerospeech/templates/config/*.wsgi',
+            'zerospeech/templates/config/*.conf',
         ],
     },
 )
