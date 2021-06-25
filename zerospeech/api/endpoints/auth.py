@@ -69,7 +69,7 @@ async def post_signup(request: Request, background_tasks: BackgroundTasks,
         affiliation=affiliation
     )
     try:
-        await api_lib.signup(request, user, background_tasks)
+        await api_lib.signup(request, user)
     except exc.ValueNotValid as e:
         data = dict(
             image_dir=f"{request.base_url}static/img",

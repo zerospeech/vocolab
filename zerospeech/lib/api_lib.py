@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import Depends, HTTPException, status, Request, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer
 from typing import Dict, Any
@@ -10,7 +12,6 @@ from zerospeech.db.q import userQ
 from zerospeech.lib import notify, _fs
 
 _settings = settings.get_settings()
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -66,7 +67,7 @@ def generate_html_response(data: Dict[str, Any], template_name: str) -> str:
     return template.render(**data)
 
 
-async def signup(request: Request, user: models.misc.UserCreate, background_tasks: BackgroundTasks):
+async def signup(request: Request, user: models.misc.UserCreate):
     """ Creates a new user and schedules the registration email """
     verification_code = await userQ.create_user(usr=user)
     data = {
@@ -75,8 +76,11 @@ async def signup(request: Request, user: models.misc.UserCreate, background_task
         'url': f"{request.url_for('email_verification')}?v={verification_code}&username={user.username}",
         'admin_email': _settings.admin_email
     }
-    background_tasks.add_task(notify.email.template_email,
-                              emails=[user.email],
-                              subject='[Zerospeech] Account Verification',
-                              data=data,
-                              template_name='email_validation.jinja2')
+    # run in the background
+    loop = asyncio.get_running_loop()
+    loop.create_task(notify.email.template_email(
+        emails=[user.email],
+        subject='[Zerospeech] Account Verification',
+        data=data,
+        template_name='email_validation.jinja2')
+    )
