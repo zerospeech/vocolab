@@ -19,5 +19,6 @@ PyYAML
 aiofiles
 aio_pika
 aiosqlite
+gunicorn==20.1.0
 ###todo pycryptodome-3.10.1 ????
 pycryptodome

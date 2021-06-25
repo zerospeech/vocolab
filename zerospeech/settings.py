@@ -110,7 +110,7 @@ class _ZerospeechSettings(BaseSettings):
     SERVICE_GROUP: str = "api-user"
     WSGI_APP: str = "zerospeech.api:app"
     GUNICORN_WORKER_CLASS: str = "uvicorn.workers.UvicornWorker"
-    NB_WORKERS: int = 4
+    GUNICORN_WORKERS: int = 4
 
     def __folder_factory__(self):
 

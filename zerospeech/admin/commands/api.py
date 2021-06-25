@@ -150,13 +150,14 @@ class GunicornConfigGeneration(cmd_lib.CMD):
             wsgi_app=_settings.WSGI_APP,
             zr_env_file=os.environ.get('ZR_ENV_FILE', ''),
             worker_class=_settings.GUNICORN_WORKER_CLASS,
-            nb_workers=_settings.NB_WORKERS,
+            nb_workers=_settings.GUNICORN_WORKERS,
             bind_point=_settings.bind
         )
         # export
         if args.out_file:
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
+                fp.write('\n')
         else:
             out.console.out(self.template.render(**data))
 
@@ -187,6 +188,7 @@ class SystemDSocketFileGeneration(cmd_lib.CMD):
         if args.out_file:
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
+                fp.write('\n')
         else:
             out.console.out(self.template.render(**data))
 
@@ -224,6 +226,7 @@ class SystemDUnitGeneration(cmd_lib.CMD):
         if args.out_file:
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
+                fp.write('\n')
         else:
             out.console.out(self.template.render(**data))
 
@@ -250,5 +253,6 @@ class NginxConfigGeneration(cmd_lib.CMD):
         if args.out_file:
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
+                fp.write('\n')
         else:
             out.console.out(self.template.render(**data))
