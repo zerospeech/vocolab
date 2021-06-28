@@ -1,6 +1,5 @@
 import asyncio
 import json
-import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -9,8 +8,8 @@ from rich.table import Table
 
 from zerospeech import out
 from zerospeech.admin import cmd_lib
-from zerospeech.db.q import challengesQ
 from zerospeech.db import schema, models
+from zerospeech.db.q import challengesQ
 
 
 class ChallengesCMD(cmd_lib.CMD):
@@ -55,7 +54,7 @@ class ChallengesCMD(cmd_lib.CMD):
                 f"{end_date_str}", f"{ch.evaluator}"
             )
         # print
-        out.Console.print(table)
+        out.print(table)
 
 
 class AddChallengeCMD(cmd_lib.CMD):
@@ -82,11 +81,11 @@ class AddChallengeCMD(cmd_lib.CMD):
                 obj_list = [models.cli.NewChallenge(**item) for item in obj]
 
             else:
-                out.Console.print("Creating a new Challenge", style="bold purple")
-                label = out.Console.console.input("[bold]label:[/bold] ")
-                url = out.Console.console.input("[bold]URL:[/bold] ")
-                start_date = out.Console.console.input("[bold]start date (dd/mm/yyyy):[/bold] ")
-                end_date = out.Console.console.input("[bold]end date (dd/mm/yyyy or none):[/bold] ")
+                out.print("Creating a new Challenge", style="bold purple")
+                label = out.console.input("[bold]label:[/bold] ")
+                url = out.console.input("[bold]URL:[/bold] ")
+                start_date = out.console.input("[bold]start date (dd/mm/yyyy):[/bold] ")
+                end_date = out.console.input("[bold]end date (dd/mm/yyyy or none):[/bold] ")
                 print("\n")
 
                 if end_date == "none":
@@ -108,7 +107,7 @@ class AddChallengeCMD(cmd_lib.CMD):
                 for item in obj_list:
                     asyncio.run(challengesQ.create_new_challenge(item))
                     out.print(f"insertion of {item.label} was successful:white_check_mark:",
-                                      style="bold green")
+                              style="bold green")
             else:
                 out.inspect(obj_list)
 

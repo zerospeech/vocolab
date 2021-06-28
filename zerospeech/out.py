@@ -27,7 +27,6 @@ class PathPrompt(PromptBase[Path]):
     Example:
         >>> burrito_count = PathPrompt.ask("Where did you store the treasure ?")
     """
-
     response_type = Path
     validate_error_message = "[prompt.invalid]Please enter a valid path"
 

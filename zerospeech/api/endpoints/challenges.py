@@ -33,29 +33,6 @@ async def get_challenge_info(challenge_id: int):
     return await challengesQ.get_challenge(challenge_id=challenge_id, allow_inactive=True)
 
 
-@router.get('/{challenge_id}/{leaderboard_id}',  responses={404: {"model": models.api.Message}})
-async def get_challenge_leaderboard(challenge_id: int, leaderboard_id: int):
-    """ Return leaderboard of a specific challenge """
-    try:
-        leaderboard = await leaderboardQ.get_leaderboard(leaderboard_id=leaderboard_id)
-
-        out.ic(leaderboard)
-
-        if leaderboard.challenge_id != challenge_id:
-            raise ValueError('bad challenge id')
-
-    except ValueError:
-        raise exc.ResourceRequestedNotFound(f'No leaderboard with id {leaderboard_id} in challenge {challenge_id}')
-
-    if leaderboard.path_to.is_file():
-        return api_lib.file2dict(leaderboard.path_to)
-    else:
-        return dict(
-            updatedOn=datetime.now().isoformat(),
-            data=[]
-        )
-
-
 # todo test submit creation
 @router.post('/{challenge_id}/submission/create', responses={404: {"model": models.api.Message}})
 async def create_submission(

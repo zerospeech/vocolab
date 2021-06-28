@@ -16,7 +16,12 @@ from zerospeech.exc import ZerospeechException
 
 _settings = settings.get_settings()
 
-app = FastAPI(swagger_static={"favicon": _settings.favicon})
+app = FastAPI(
+    title=f"{_settings.app_name}",
+    description=f"{_settings.doc_description}",
+    version=f"{_settings.version}",
+    swagger_static={"favicon": _settings.favicon}
+)
 
 app.add_middleware(
     CORSMiddleware,

@@ -113,7 +113,7 @@ class _ZerospeechSettings(BaseSettings):
     GUNICORN_WORKERS: int = 4
 
     def __folder_factory__(self):
-
+        """ A function that build dynamic paths """
         def factory(key, default):
             if not getattr(self, key):
                 setattr(self, key, self.DATA_FOLDER / default)

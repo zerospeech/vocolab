@@ -11,12 +11,17 @@ _settings = get_settings()
 
 
 def get_static_location(label: str):
-    return _settings.LEADERBOARD_LOCATION / 'static' / label
+    return _settings.STATIC_DIR / 'leaderboards' / label
 
 
 async def build_leaderboard(*, leaderboard_id: int):
     leaderboard = await leaderboardQ.get_leaderboard(leaderboard_id=leaderboard_id)
     leaderboard_entries = []
+    static_location = get_static_location(leaderboard.label)
+
+    # create static dir
+    if leaderboard.static_files:
+        static_location.mkdir(exist_ok=True, parents=True)
 
     # load external entries
     external_entries = [
@@ -25,14 +30,13 @@ async def build_leaderboard(*, leaderboard_id: int):
         *leaderboard.external_entries.rglob('*.yml')
     ]
     for item in external_entries:
-        out.debug(item)
         leaderboard_entries.append(_fs.commons.load_dict_file(item))
 
-    if not leaderboard.archived:
-        static_location = get_static_location(leaderboard.label)
-        if leaderboard.static_files:
-            (static_location / 'static').mkdir(exist_ok=True, parents=True)
+    # copy external static files
+    if leaderboard.static_files and (leaderboard.external_entries / 'static').is_dir():
+        _fs.commons.copy_all_contents(leaderboard.external_entries / 'static', static_location)
 
+    if not leaderboard.archived:
         submission_list = await challengesQ.list_submission(by_track=leaderboard.challenge_id)
         for sub in submission_list:
             # skip not completed submissions
