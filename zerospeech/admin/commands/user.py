@@ -335,6 +335,7 @@ class PasswordUserCMD(cmd_lib.CMD):
                 sys.exit(1)
 
             user = asyncio.run(userQ.get_user(by_uid=args.reset))
+            out.ic(user)
             session = asyncio.run(userQ.create_password_reset_session(username=user.username, email=user.email))
             asyncio.run(notify.email.template_email(
                 emails=[user.email],
