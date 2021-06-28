@@ -1,12 +1,12 @@
 from typing import List, Any, Dict
 
 from fastapi_mail import FastMail, ConnectionConfig, MessageSchema
+from jinja2 import Environment, FileSystemLoader
 from pydantic import EmailStr
 
 from zerospeech import get_settings, out
 
 _settings = get_settings()
-
 
 email_cgf = ConnectionConfig(
     MAIL_USERNAME=_settings.MAIL_USERNAME,
@@ -53,29 +53,57 @@ async def simple_html_email(emails: List[EmailStr], subject: str, content: str):
         parse_email_exceptions(e)
 
 
-async def template_email(emails: List[EmailStr], subject: str, data: Dict[str, Any], template_name: str):
+async def template_email1(emails: List[EmailStr], subject: str, data: Dict[str, Any], template_name: str):
     """ Send an email using an existing jinja2 template
 
     :param emails: <List[EmailStr]> a list of email recipients
     :param subject: <str> the email subject
     :param data: <Dict[str, Any]> data to be processed into the template
     :param template_name: <str> the filename of the template
-    :return: ACK ? (todo check return values)
-    :raises SomeException when template is unknown (todo check which exception)
-    :raises SomeException when config not valid (todo check which exception)
     """
     message = MessageSchema(
         subject=subject,
-        recipients=emails,  # List of recipients, as many as you can pass
+        recipients=emails,
         body=data,
         subtype="html"
     )
+    out.ic(message)
     try:
         await fm.send_message(message, template_name=template_name)
         out.info(f'email send successfully to {emails}')
     except Exception as e:
-        out.Logger.error(f"an issue occurred while sending an email to {emails}")
-        parse_email_exceptions(e)
+        # out.Logger.error(f"an issue occurred while sending an email to {emails}")
+        # parse_email_exceptions(e)
+        out.exception()
+
+
+async def template_email2(emails: List[EmailStr], subject: str, data: Dict[str, Any], template_name: str):
+    """ Send an email using an existing jinja2 template
+
+    :param emails: <List[EmailStr]> a list of email recipients
+    :param subject: <str> the email subject
+    :param data: <Dict[str, Any]> data to be processed into the template
+    :param template_name: <str> the filename of the template
+    """
+    template = Environment(loader=FileSystemLoader(_settings.MAIL_TEMPLATE_DIR), trim_blocks=True) \
+        .get_template(template_name)
+
+    body = template.render(body=data)
+
+    message = MessageSchema(
+        subject=subject,
+        recipients=emails,
+        body=body,
+        subtype="html"
+    )
+    out.ic(message)
+    try:
+        await fm.send_message(message, template_name=template_name)
+        out.info(f'email send successfully to {emails}')
+    except Exception as e:
+        # out.Logger.error(f"an issue occurred while sending an email to {emails}")
+        # parse_email_exceptions(e)
+        out.exception()
 
 
 async def notify_admin(subject: str, data: Dict[str, Any], template_name: str):
@@ -99,3 +127,7 @@ async def notify_admin(subject: str, data: Dict[str, Any], template_name: str):
         out.Logger.info(f'email send successfully to {_settings.admin_email}')
     except Exception as e:
         parse_email_exceptions(e)
+
+
+# set version
+template_email = template_email2

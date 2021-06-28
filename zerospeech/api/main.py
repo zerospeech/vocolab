@@ -84,10 +84,8 @@ async def startup():
     await zrDB.connect()
     # create data_folders
     _settings.USER_DATA_DIR.mkdir(exist_ok=True, parents=True)
-
     _settings.LEADERBOARD_LOCATION.mkdir(exist_ok=True)
-    (_settings.USER_DATA_DIR / 'submissions').mkdir(exist_ok=True)
-    (_settings.USER_DATA_DIR / 'profiles').mkdir(exist_ok=True)
+    _settings.SUBMISSION_DIR.mkdir(exist_ok=True, parents=True)
     # write location of email-verification path
     with (_settings.DATA_FOLDER / 'email_verification.path').open('w') as fp:
         fp.write(app.url_path_for("email_verification"))

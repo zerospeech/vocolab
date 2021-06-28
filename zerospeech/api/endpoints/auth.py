@@ -42,10 +42,10 @@ async def logout(token: schema.LoggedUser = Depends(api_lib.validate_token)):
 
 
 @router.put('/signup')
-async def put_signup(request: Request, user: models.misc.UserCreate, background_tasks: BackgroundTasks):
+async def put_signup(request: Request, user: models.misc.UserCreate):
     """ Create a new user """
     try:
-        await api_lib.signup(request, user, background_tasks)
+        await api_lib.signup(request, user)
     except exc.ValueNotValid as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -55,7 +55,7 @@ async def put_signup(request: Request, user: models.misc.UserCreate, background_
 
 
 @router.post('/signup', response_class=HTMLResponse)
-async def post_signup(request: Request, background_tasks: BackgroundTasks,
+async def post_signup(request: Request,
                       first_name: str = Form(...), last_name: str = Form(...),
                       affiliation: str = Form(...), email: EmailStr = Form(...),
                       username: str = Form(...), password: str = Form(...)):
