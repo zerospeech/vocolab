@@ -1,18 +1,15 @@
 [Unit]
 Description=zr worker server
 After=network.target
+After=syslog.target
 
 [Service]
-Type=notify
+Type=simple
 User={{user}}
 Group={{group}}
 Environment=ZR_ENV_FILE={{settings_file}}
 WorkingDirectory={{run_dir}}
 ExecStart={{cmd}}
-ExecStop=/bin/kill -s TERM $MAINPID
-KillMode=mixed
-TimeoutStopSec=5
-PrivateTmp=true
 
 [Install]
 WantedBy=multi-user.target
