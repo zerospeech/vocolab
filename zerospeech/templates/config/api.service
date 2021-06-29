@@ -17,7 +17,7 @@ RuntimeDirectory=gunicorn
 WorkingDirectory={{run_dir}}
 ExecStart={{gunicorn_exe}} {{gunicorn_cmd}}
 ExecReload=/bin/kill -s HUP $MAINPID
-ExecStop=/bin/kill -s TERM
+ExecStop=/bin/kill -s TERM $MAINPID
 
 [Install]
 WantedBy=multi-user.target

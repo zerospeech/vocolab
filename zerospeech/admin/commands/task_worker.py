@@ -1,4 +1,6 @@
 import asyncio
+import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -129,17 +131,24 @@ class GenerateSystemDUnitCMD(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(GenerateSystemDUnitCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
+        self.parser.add_argument('worker_type', choices=['eval', 'update'])
         self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR)) \
             .get_template("worker.service")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        args_dict = vars(args)
+        cmd = f"{shutil.which('zr')}"
+        if args.worker_type == 'eval':
+            cmd += f" worker:run:eval -w {_settings.EVAL_WORKERS}"
+        else:
+            cmd += f" worker:run:update -w {_settings.UPDATE_WORKERS}"
+
         data = dict(
-            user=args_dict.get('user', 'zerospeech'),
-            group=args_dict.get('group', 'zerospeech'),
-            run_dir=args_dict.get('run_dir', '/zerospeech/app-data'),
-            cmd=args_dict.get('gunicorn_exe', "echo 'NotImplemented'"),
+            user=_settings.SERVICE_USER,
+            group=_settings.SERVICE_GROUP,
+            run_dir=_settings.DATA_FOLDER,
+            settings_file=os.environ.get('ZR_ENV_FILE'),
+            cmd=cmd,
         )
         # export
         if args.out_file:

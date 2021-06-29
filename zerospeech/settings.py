@@ -111,6 +111,8 @@ class _ZerospeechSettings(BaseSettings):
     WSGI_APP: str = "zerospeech.api:app"
     GUNICORN_WORKER_CLASS: str = "uvicorn.workers.UvicornWorker"
     GUNICORN_WORKERS: int = 4
+    EVAL_WORKERS: int = 4
+    UPDATE_WORKERS: int = 2
 
     def __folder_factory__(self):
         """ A function that build dynamic paths """
