@@ -197,9 +197,21 @@ async def get_evaluator(*, by_id: Optional[int] = None) -> Optional[schema.Evalu
 
 async def add_evaluator(*, lst_eval: List[models.cli.NewEvaluatorItem]):
     """ Insert a list of evaluators into the database """
-    query = schema.evaluators_table.insert()
-    # out.ic([i.dict() for i in lst_eval])
-    await zrDB.execute_many(query, [i.dict() for i in lst_eval])
+    insert_query = schema.evaluators_table.insert()
+    for i in lst_eval:
+        query = schema.evaluators_table.select().where(
+            schema.evaluators_table.c.label == i.label
+        ).where(
+            schema.evaluators_table.c.host == i.host
+        )
+        res = await zrDB.fetch_one(query)
+        if res is None:
+            await zrDB.execute(insert_query, i)
+        else:
+            update_query = schema.evaluators_table.update().where(
+                schema.evaluators_table.c.id == res.id
+            ).values(executor=i.executor, script_path=i.script_path, base_arguments=i.base_arguments)
+            await zrDB.execute(update_query)
 
 
 async def edit_evaluator_args(*, eval_id: int, arg_list: List[str]):

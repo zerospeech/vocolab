@@ -6,7 +6,7 @@
 		"end_date": "2060-01-01",
 		"url": "https://zerospeech.com/track/2021",
 		"active": true,
-		"evaluator": 1
+		"evaluator": null
 	},
 	{
 		"id": 2,
