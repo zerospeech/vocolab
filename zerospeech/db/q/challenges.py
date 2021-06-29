@@ -70,7 +70,7 @@ async def update_challenge_property(*, challenge_id: int, variable_name: str, va
     if allow_parsing:
         value = misc.str2type(value, field.type_)
 
-    if not isinstance(value, field.type_):
+    if value is not None and not isinstance(value, field.type_):
         raise ValueError(f"Challenge.{variable_name} should be of type {field.type_}")
 
     query = schema.challenges_table.update().where(

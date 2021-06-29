@@ -19,6 +19,7 @@ def str2type(value: str, m_type):
         - str2datetime
         - str2Path
         - str2{int, float, **}
+        - none, null, nan -> None
 
         **: Any builtin python type that has a constructor that accepts strings
 
@@ -26,6 +27,9 @@ def str2type(value: str, m_type):
     :param m_type: desired python <type '>
     :return: value cast in desired type
     """
+    if value.lower() in ['null', 'none', 'nan']:
+        return None
+
     if m_type == bool:
         if value.lower() in __FALSE_VALUES__:
             return False
