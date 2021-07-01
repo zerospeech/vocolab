@@ -24,7 +24,8 @@ def build_cli():
             commands.user.CreateUserCMD(CMD_NAME, 'create', 'users'),
             commands.user.VerifyUserCMD(CMD_NAME, 'verify', 'users'),
             commands.user.UserActivationCMD(CMD_NAME, 'activate', 'users'),
-            commands.user.PasswordUserCMD(CMD_NAME, 'password', 'users')
+            commands.user.PasswordUserCMD(CMD_NAME, 'password', 'users'),
+            commands.user.CheckPasswordCMD(CMD_NAME, 'check', 'users:password'),
         )
 
     if has_challenges:

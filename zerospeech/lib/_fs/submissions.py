@@ -49,7 +49,7 @@ class SubmissionLogger:
             fp.write(f"[{self.when()}]: Submission {self.id} was created\n")
             fp.write(f"--> user: {who}\n")
             fp.write(f"--> challenge: {what}\n")
-            fp.write(f"--> as multipart: {multipart}")
+            fp.write(f"--> as multipart: {multipart}\n")
 
     def append_eval(self, eval_output):
         with self.submission_log.open('a') as fp:

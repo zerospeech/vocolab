@@ -143,6 +143,17 @@ async def get_submission(*, by_id: str) -> schema.ChallengeSubmission:
     return schema.ChallengeSubmission(**sub)
 
 
+async def get_user_submissions(*, user_id: int) -> List[schema.ChallengeSubmission]:
+    """ Fetch all the submissions of a specific user """
+    query = schema.submissions_table.select().where(
+        schema.submissions_table.c.user_id == user_id
+    )
+    subs = await zrDB.fetch_all(query)
+    if subs is None:
+        return []
+    return [schema.ChallengeSubmission(**it) for it in subs]
+
+
 async def update_submission_status(*, by_id: str, status: schema.SubmissionStatus):
     """ Update the status of a submission """
     query = schema.submissions_table.update().where(
@@ -180,15 +191,12 @@ async def get_evaluators():
     return [schema.EvaluatorItem(**i) for i in results]
 
 
-async def get_evaluator(*, by_id: Optional[int] = None) -> Optional[schema.EvaluatorItem]:
+async def get_evaluator(*, by_id: int) -> Optional[schema.EvaluatorItem]:
     """ Returns a specific evaluator """
-    if by_id:
-        query = schema.evaluators_table.select().where(
-            schema.evaluators_table.c.id == by_id
-        )
-    else:
-        raise ValueError('No filter given')
 
+    query = schema.evaluators_table.select().where(
+        schema.evaluators_table.c.id == by_id
+    )
     result = await zrDB.fetch_one(query)
     if not result:
         return None

@@ -8,10 +8,13 @@ class ZerospeechException(Exception):
     """ Generic Base Exception definition for the Zerospeech API """
     __http_status__: int = http_status.HTTP_400_BAD_REQUEST
 
-    def __init__(self, msg: Optional[str] = None, data: Optional[Any] = None):
+    def __init__(self, msg: Optional[str] = None, data: Optional[Any] = None, status: Optional[int] = None):
 
         if msg is None:
             msg = self.__doc__
+
+        if status is not None:
+            self.__http_status__ = status
 
         self.message = msg
         self.data = data
@@ -33,6 +36,11 @@ class OptionMissing(ZerospeechException):
 
 class UserError(ZerospeechException):
     """ Generic Exception for actions on users """
+    pass
+
+
+class AccessError(UserError):
+    """ Exception for when accessing forbidden resources """
     pass
 
 

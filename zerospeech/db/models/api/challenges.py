@@ -1,6 +1,6 @@
 """ Dataclasses representing API/challenge input output data types """
 from datetime import date
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from pydantic import BaseModel, HttpUrl
 
@@ -46,6 +46,26 @@ class NewSubmission(BaseModel):
     """ Item used in the database to create a new submission entry """
     user_id: int
     track_id: int
+
+
+class SubmissionPreview(BaseModel):
+    submission_id: str
+    track_label: str
+    track_id: int
+    status: str
+
+
+class SubmissionView(BaseModel):
+    submission_id: str
+    user_id: int
+    username: str
+    track_label: str
+    track_id: int
+    status: str
+    date: date
+    evaluator_label: str
+    evaluator_cmd: str
+    leaderboards: List[Tuple[str, int]]
 
 
 class UploadSubmissionPartResponse(BaseModel):

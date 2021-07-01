@@ -59,6 +59,8 @@ class SubmissionStatus(str, Enum):
     completed = 'completed'
     canceled = 'canceled'
     failed = 'failed'
+    no_eval = 'no_eval'
+    excluded = 'excluded'
 
     @classmethod
     def get_values(cls):

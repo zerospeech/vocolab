@@ -69,11 +69,14 @@ async def upload_submission(
     challenge = await challengesQ.get_challenge(challenge_id=challenge_id)
     if challenge is None:
         return ValueError(f'challenge {challenge_id} not found or inactive')
+    try:
+        is_completed, remaining = submissions_lib.add_part(submission_id, part_name, file_data)
 
-    is_completed, remaining = submissions_lib.add_part(submission_id, part_name, file_data)
+        if is_completed:
+            # run the completion of the submission on the background
+            background_tasks.add_task(submissions_lib.complete_submission, submission_id, with_eval=True)
 
-    if is_completed:
-        # run the completion of the submission on the background
-        background_tasks.add_task(submissions_lib.complete_submission, submission_id)
-
-    return models.api.UploadSubmissionPartResponse(completed=is_completed, remaining=[n.file_name for n in remaining])
+        return models.api.UploadSubmissionPartResponse(completed=is_completed, remaining=[n.file_name for n in remaining])
+    except exc.ZerospeechException as e:
+        out.exception()
+        raise e

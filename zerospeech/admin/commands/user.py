@@ -7,6 +7,7 @@ from pathlib import Path
 
 from pydantic import EmailStr
 from rich.progress import Progress, BarColumn
+from rich.prompt import Prompt
 from rich.table import Table
 
 from zerospeech import out, get_settings
@@ -349,3 +350,23 @@ class PasswordUserCMD(cmd_lib.CMD):
             ))
         else:
             self.parser.print_help()
+
+
+class CheckPasswordCMD(cmd_lib.CMD):
+    """ Check the password of a user """
+    
+    def __init__(self, root, name, cmd_path):
+        super(CheckPasswordCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('user_id', type=int)
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        pwd = Prompt.ask('password', password=True)
+
+        user = asyncio.run(userQ.get_user(by_uid=args.user_id))
+        if userQ.check_users_password(password=pwd, user=user):
+            out.info("--> Passwords match !!")
+            sys.exit(0)
+        else:
+            out.error("--> Passwords do not match !!")
+            sys.exit(1)

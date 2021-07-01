@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from fastapi import UploadFile
 
-from zerospeech import exc
+from zerospeech import exc, out
 from zerospeech.db import models, schema
 from zerospeech.db.q import challengesQ
 from zerospeech.lib import _fs, leaderboards_lib, worker_lib
@@ -80,14 +80,17 @@ def complete_submission(submission_id: str, with_eval: bool = True):
 async def evaluate(submission_id: str, extra_args: Optional[List[str]] = None):
     """ Setup a submission to be evaluated by a worker """
     submission = await challengesQ.get_submission(by_id=submission_id)
+    logger = SubmissionLogger(submission_id)
     evaluator = await challengesQ.get_evaluator(by_id=submission.evaluator_id)
     extra_args = extra_args if extra_args is not None else []
 
+    if evaluator is None:
+        await challengesQ.update_submission_status(by_id=submission_id, status=schema.SubmissionStatus.no_eval)
+        logger.log(f'challenge {submission.track_id} has not configured evaluators !')
+        return None
+
     # set status to evaluating
     await challengesQ.update_submission_status(by_id=submission_id, status=schema.SubmissionStatus.evaluating)
-
-    if evaluator is None:
-        raise ValueError('No Evaluator Found')
 
     # Transfer submission to host if remote
     if evaluator.host != _settings.hostname:
