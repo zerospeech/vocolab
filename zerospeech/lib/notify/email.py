@@ -98,7 +98,7 @@ async def template_email2(emails: List[EmailStr], subject: str, data: Dict[str, 
     )
     out.ic(message)
     try:
-        await fm.send_message(message, template_name=template_name)
+        await fm.send_message(message)
         out.info(f'email send successfully to {emails}')
     except Exception as e:
         # out.Logger.error(f"an issue occurred while sending an email to {emails}")

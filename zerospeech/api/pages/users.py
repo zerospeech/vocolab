@@ -17,7 +17,7 @@ router = APIRouter()
 _settings = get_settings()
 
 
-@router.get('/new-user', response_class=HTMLResponse)
+@router.get('/new-user', response_class=HTMLResponse, include_in_schema=False)
 async def new_user_page(request: Request):
     """ Return the form used for creating a new user """
     data = dict(
@@ -27,7 +27,7 @@ async def new_user_page(request: Request):
     return api_lib.generate_html_response(data, template_name='signup.html.jinja2')
 
 
-@router.get('/email-verify', response_class=HTMLResponse)
+@router.get('/email-verify', response_class=HTMLResponse, include_in_schema=False)
 async def email_verification(v: str, username: str, request: Request):
     """ Verify a new users email address """
     msg = 'Success'
@@ -55,7 +55,7 @@ async def email_verification(v: str, username: str, request: Request):
     return api_lib.generate_html_response(data=data, template_name='email_verification.html.jinja2')
 
 
-@router.get('/password-update', response_class=HTMLResponse)
+@router.get('/password-update', response_class=HTMLResponse, include_in_schema=False)
 async def password_update_page(v: str, request: Request):
     """ An HTML page-form that allows a user to change their password """
     try:
@@ -76,3 +76,12 @@ async def password_update_page(v: str, request: Request):
         submit_url=f"{request.url_for('post_password_update')}?v={v}",
         session=v,
     ), template_name='reset_password2.html.jinja2')
+
+
+@router.get('/request-password-update', response_class=HTMLResponse, include_in_schema=False)
+async def password_update_page(request: Request):
+    """ Html page-form to request a password reset"""
+    return api_lib.generate_html_response(data=dict(
+        image_dir=f"{request.base_url}static/img",
+        submit_url=f"{request.url_for('password_reset_request')}?html_response=true",
+    ), template_name='password-reset-request.html.jinja2')

@@ -19,6 +19,8 @@ _settings = get_settings()
 
 @router.get("/")
 def get_user(current_user: schema.User = Depends(api_lib.get_current_active_user)):
+    # TODO maybe merge profile in base info
+    # profile = users_lib.get_user_data(current_user.username)
     return {
         "username": current_user.username,
         "email": current_user.email,

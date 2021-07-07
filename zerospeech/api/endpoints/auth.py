@@ -1,6 +1,8 @@
 """ Routing for /auth section of the API
 This section handles user authentication, user creation, etc..
 """
+import asyncio
+
 from fastapi import (
     APIRouter, Depends, Response, HTTPException, status,
     Request, BackgroundTasks, Form
@@ -41,19 +43,6 @@ async def logout(token: schema.LoggedUser = Depends(api_lib.validate_token)):
     return Response(status_code=200)
 
 
-@router.put('/signup')
-async def put_signup(request: Request, user: models.misc.UserCreate):
-    """ Create a new user """
-    try:
-        await api_lib.signup(request, user)
-    except exc.ValueNotValid as e:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"This {e.data} already exists !!",
-        )
-    return Response(status_code=200)
-
-
 @router.post('/signup', response_class=HTMLResponse)
 async def post_signup(request: Request,
                       first_name: str = Form(...), last_name: str = Form(...),
@@ -89,27 +78,40 @@ async def post_signup(request: Request,
     return api_lib.generate_html_response(data, template_name='response.html.jinja2')
 
 
-@router.post('/password/reset', response_class=JSONResponse)
+@router.post('/password/reset')
 async def password_reset_request(
-        user: models.api.PasswordResetRequest, request: Request, background_tasks: BackgroundTasks):
+        request: Request,
+        html_response: bool = False,
+        username: str = Form(...), email: EmailStr = Form(...)):
     """ Request a users password to be reset """
-    session = await userQ.create_password_reset_session(username=user.username, email=user.email)
+    session = await userQ.create_password_reset_session(username=username, email=email)
     data = {
-        'username': user.username,
-        'url': f"{request.url_for('password_update_page')}?v={session.token}",
+        'username': username,
+        'url': f"{request.url_for('post_password_update')}?v={session.token}",
         'admin_email': _settings.admin_email
     }
-    background_tasks.add_task(notify.email.template_email,
-                              emails=[user.email],
-                              subject='[Zerospeech] Password Reset',
-                              data=data,
-                              template_name='password_reset.jinja2'
-                              )
+
+    # run in the background
+    loop = asyncio.get_running_loop()
+    loop.create_task(notify.email.template_email(
+        emails=[email],
+        subject='[Zerospeech] Password Reset',
+        data=data,
+        template_name='password_reset.jinja2')
+    )
+    if html_response:
+        data = dict(
+            image_dir=f"{request.base_url}static/img",
+            title=f"Password Change Request Received !",
+            body=f"A verification email will be sent to {email}",
+            success=True
+        )
+        return HTMLResponse(api_lib.generate_html_response(data, template_name='response.html.jinja2'))
     return Response(status_code=200)
 
 
 @router.post('/password/update', response_class=HTMLResponse)
-async def post_password_update(v: str, request: Request, password: str = Form(...),
+async def post_password_update(v: str, request: Request, html_response: bool = False, password: str = Form(...),
                                password_validation: str = Form(...), session_code: str = Form(...)):
     """Update a users password (requires a reset session)"""
     try:
@@ -140,25 +142,3 @@ async def post_password_update(v: str, request: Request, password: str = Form(..
         )
 
     return api_lib.generate_html_response(data, template_name='response.html.jinja2')
-
-
-@router.put('/password/update', response_class=JSONResponse)
-async def put_password_update(v: str, request: Request, password: str = Form(...),
-                              password_validation: str = Form(...), session_code: str = Form(...)):
-    """Update a users password (requires a reset session)"""
-    try:
-        if v != session_code:
-            raise ValueError('session validation not passed !!!')
-
-        user = await userQ.get_user(by_password_reset_session=v)
-    except ValueError as e:
-        out.Logger.error(
-            f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
-
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Page not found"
-        )
-
-    await userQ.update_users_password(user=user, password=password, password_validation=password_validation)
-    return Response(status_code=200)
