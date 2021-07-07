@@ -122,7 +122,7 @@ class CreateSubmissionCMD(cmd_lib.CMD):
                 _submission_id = await ch_queries.add_submission(new_submission=NewSubmission(
                     user_id=_user.id,
                     track_id=_challenge.id
-                ), evaluator_id=challenge.evaluator)
+                ), evaluator_id=_challenge.evaluator)
                 return _challenge, _user, _submission_id
             except ValueError:
                 out.exception()

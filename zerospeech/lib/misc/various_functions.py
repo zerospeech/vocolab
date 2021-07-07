@@ -1,8 +1,10 @@
 import asyncio
+import shutil
+import subprocess
 from collections import Callable
 from contextlib import contextmanager
 from datetime import datetime, date, time
-from typing import List
+from typing import List, Tuple
 
 from dateutil import parser
 
@@ -65,3 +67,31 @@ def run_with_loop(fn: Callable, *args, **kwargs):
         loop.run_until_complete(fn(*args, **kwargs))
     else:
         asyncio.run(fn(*args, **kwargs))
+
+
+def execute(cmd: str, args: List[str]) -> Tuple[int, str]:
+    """ Execute an external process using subprocess
+
+    :returns returncode, output (output is a merge of stout & stderr)
+    """
+
+    if not shutil.which(cmd):
+        raise ValueError(f'CMD: {cmd} was not found in path')
+
+    results = subprocess.Popen(
+        [cmd, *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+
+    output = ""
+
+    while results.poll() is None:
+        line = results.stdout.readline()
+        if line != "":
+            output += line
+
+        line = results.stderr.readline()
+        if line != "":
+            output += line
+
+    return results.returncode, output
+
