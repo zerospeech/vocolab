@@ -95,7 +95,8 @@ def make_submission_on_disk(submission_id: str, username: str, track: str, meta:
     info = {
         'user': username,
         'track': track,
-        "submission_id": submission_id
+        "submission_id": submission_id,
+        "submitted-at": f"{datetime.now().isoformat()}"
     }
     with (folder / 'info.json').open('w') as fp:
         json.dump(info, fp)
