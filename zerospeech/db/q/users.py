@@ -356,7 +356,7 @@ async def get_password_reset_sessions(all_sessions: bool = False) -> List[schema
 async def clear_expired_password_reset_sessions():
     """ Deletes all expired password reset sessions from the password_reset_users table """
     query = schema.password_reset_table.delete().where(
-        schema.logged_users_table.c.expiration_date <= datetime.now()
+        schema.password_reset_table.c.expiration_date <= datetime.now()
     )
     # returns number of deleted entries
     return await zrDB.execute(query)
