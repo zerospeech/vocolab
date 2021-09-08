@@ -337,3 +337,26 @@ async def toggle_all_users_status(*, active: bool = True):
         active=active
     )
     return await zrDB.execute(query)
+
+
+async def get_password_reset_sessions(all_sessions: bool = False) -> List[schema.PasswordResetSession]:
+    """ Return a list of all users """
+    if all_sessions:
+        query = schema.password_reset_table.select()
+    else:
+        query = schema.password_reset_table.select().where(
+            schema.password_reset_table.c.expiration_date > datetime.now()
+        )
+    session_list = await zrDB.fetch_all(query)
+    if session_list is None:
+        raise ValueError(f'database does not contain any user')
+    return [schema.PasswordResetSession(**usr) for usr in session_list]
+
+
+async def clear_expired_password_reset_sessions():
+    """ Deletes all expired password reset sessions from the password_reset_users table """
+    query = schema.password_reset_table.delete().where(
+        schema.logged_users_table.c.expiration_date <= datetime.now()
+    )
+    # returns number of deleted entries
+    return await zrDB.execute(query)

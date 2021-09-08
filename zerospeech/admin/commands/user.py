@@ -370,3 +370,34 @@ class CheckPasswordCMD(cmd_lib.CMD):
         else:
             out.error("--> Passwords do not match !!")
             sys.exit(1)
+
+
+class ResetSessionsCMD(cmd_lib.CMD):
+    """ Check the list of reset sessions """
+    
+    def __init__(self, root, name, cmd_path):
+        super(ResetSessionsCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('--all', action='store_true', help="Show all sessions (even expired ones)")
+        self.parser.add_argument('--clean', action='store_true', help="Clean expired sessions")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+
+        if args.clean:
+            # clean sessions
+            asyncio.run(userQ.clear_expired_password_reset_sessions())
+            out.info('removed all expired password reset sessions :heavy_check_mark:')
+        else:
+            sessions = asyncio.run(userQ.get_password_reset_sessions(args.all))
+            # print
+            table = Table(show_header=True, header_style="bold magenta")
+            table.add_column("user_id")
+            table.add_column("token")
+            table.add_column("expiration_date")
+
+            for item in sessions:
+                table.add_row(
+                    f"{item.user_id}", item.token, item.expiration_date
+                )
+
+            out.print(table)

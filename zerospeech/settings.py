@@ -57,10 +57,13 @@ class _ZerospeechSettings(BaseSettings):
     # FastAPI settings
     favicon: str = 'http://zerospeech.com/_static/favicon.ico'
     origins: List[str] = [
-        "http://localhost:1313",
-        "http://zerospeech.com",
+        # local debug urls
+        "http://zerospeech.test",
+        "http://api.zerospeech.test",
+        # staging urls
+        "https://perso.cognitive-ml.fr"
+        # production urls
         "https://zerospeech.com",
-        "http://api.zerospeech.com",
         "https://api.zerospeech.com",
     ]
     # Queue Channels

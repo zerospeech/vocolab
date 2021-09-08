@@ -44,7 +44,7 @@ def update_profile(
 async def submissions_list(current_user: schema.User = Depends(api_lib.get_current_active_user)):
     """ Return a list of all user submissions """
     submissions = await challengesQ.get_user_submissions(user_id=current_user.id)
-    return [
+    submissions = [
         models.api.SubmissionPreview(
             submission_id=s.id,
             track_id=s.track_id,
@@ -53,6 +53,15 @@ async def submissions_list(current_user: schema.User = Depends(api_lib.get_curre
         )
         for s in submissions
     ]
+
+    data = {}
+    for sub in submissions:
+        if sub.track_label in data.keys():
+            data[sub.track_label].append(sub)
+        else:
+            data[sub.track_label] = [sub]
+
+    return data
 
 
 @router.get('/submissions/tracks/{track_id}')
