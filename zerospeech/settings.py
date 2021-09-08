@@ -55,7 +55,7 @@ class _ZerospeechSettings(BaseSettings):
     REMOTE_BIN: Dict[str, Path] = dict()
 
     # FastAPI settings
-    favicon: str = 'http://zerospeech.com/_static/favicon.ico'
+    favicon: str = 'https://api.zerospeech.com/static/favicon.ico'
     origins: List[str] = [
         # local debug urls
         "http://zerospeech.test",
