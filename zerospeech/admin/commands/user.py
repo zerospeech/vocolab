@@ -397,7 +397,7 @@ class ResetSessionsCMD(cmd_lib.CMD):
 
             for item in sessions:
                 table.add_row(
-                    f"{item.user_id}", item.token, item.expiration_date
+                    f"{item.user_id}", item.token, f"{item.expiration_date.isoformat()}"
                 )
 
             out.print(table)
