@@ -401,3 +401,27 @@ class ResetSessionsCMD(cmd_lib.CMD):
                 )
 
             out.print(table)
+
+
+class NotifyCMD(cmd_lib.CMD):
+    """ Notify all users """
+
+    def __init__(self, root, name, cmd_path):
+        super(NotifyCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('-s', '--subject', type=str, default='',
+                                 help="The subject of the email")
+        self.parser.add_argument("body", type=Path, help="A text file containing the body of the email.")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        user_list = asyncio.run(userQ.get_user_list())
+        email_list = [user.email for user in user_list]
+        with args.body.open() as fp:
+            body = fp.readlines()
+
+        asyncio.run(notify.email.simple_html_email(
+            emails=email_list, subject=f"[ZEROSPEECH] {args.subject}",
+            content=""
+        ))
+        out.info(f'email sent to {[user.username for user in user_list]}')
+

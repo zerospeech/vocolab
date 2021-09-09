@@ -5,7 +5,7 @@ import asyncio
 
 from fastapi import (
     APIRouter, Depends, Response, HTTPException, status,
-    Request, BackgroundTasks, Form
+    Request, Form
 )
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm

@@ -26,7 +26,8 @@ def build_cli():
             commands.user.UserActivationCMD(CMD_NAME, 'activate', 'users'),
             commands.user.PasswordUserCMD(CMD_NAME, 'password', 'users'),
             commands.user.CheckPasswordCMD(CMD_NAME, 'check', 'users:password'),
-            commands.user.ResetSessionsCMD(CMD_NAME, 'reset', 'users:password')
+            commands.user.ResetSessionsCMD(CMD_NAME, 'reset', 'users:password'),
+            commands.user.NotifyCMD(CMD_NAME, 'notify', 'users')
         )
 
     if has_challenges:
