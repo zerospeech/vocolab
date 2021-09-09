@@ -82,7 +82,7 @@ async def request_password_update_page(request: Request):
     """ Html page-form to request a password reset"""
     out.Logger.info(f"BASE URL: {request.base_url}")
     out.Logger.info(f"URL_FOR: {request.url_for('post_password_update')}")
-    
+    out.Logger.info(request.headers)
     return api_lib.generate_html_response(data=dict(
         image_dir=f"{request.base_url}static/img",
         submit_url=f"{request.url_for('password_reset_request')}?html_response=true",
