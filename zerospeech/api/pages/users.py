@@ -43,7 +43,7 @@ async def email_verification(v: str, username: str, request: Request):
         msg = e.__str__()
 
     data = {
-        "image_dir": f"{request.base_url}static/img",
+        "image_dir": f"{api_lib.get_base_url(request)}static/img",
         "success": res,
         "username": username,
         "error": msg,
@@ -70,9 +70,9 @@ async def password_update_page(v: str, request: Request):
             detail="Page not found"
         )
     return api_lib.generate_html_response(data=dict(
-        image_dir=f"{request.base_url}static/img",
+        image_dir=f"{api_lib.get_base_url(request)}static/img",
         username=user.username,
-        submit_url=f"{request.url_for('post_password_update')}?v={v}",
+        submit_url=f"{api_lib.url_for(request, 'post_password_update')}?v={v}",
         session=v,
     ), template_name='reset_password2.html.jinja2')
 
@@ -80,7 +80,7 @@ async def password_update_page(v: str, request: Request):
 @router.get('/request-password-update', response_class=HTMLResponse, include_in_schema=False)
 async def request_password_update_page(request: Request):
     """ Html page-form to request a password reset"""
-    
+
     return api_lib.generate_html_response(data=dict(
         image_dir=f"{api_lib.get_base_url(request)}static/img",
         submit_url=f"{api_lib.url_for(request, 'password_reset_request')}?html_response=true",

@@ -87,7 +87,7 @@ async def password_reset_request(
     session = await userQ.create_password_reset_session(username=username, email=email)
     data = {
         'username': username,
-        'url': f"{request.url_for('post_password_update')}?v={session.token}",
+        'url': f"{api_lib.url_for(request, 'password_update_page')}?v={session.token}",
         'admin_email': _settings.admin_email
     }
 
@@ -110,7 +110,7 @@ async def password_reset_request(
     return Response(status_code=200)
 
 
-@router.post('/password/update', response_class=HTMLResponse)
+@router.post('/password/update')
 async def post_password_update(v: str, request: Request, html_response: bool = False, password: str = Form(...),
                                password_validation: str = Form(...), session_code: str = Form(...)):
     """Update a users password (requires a reset session)"""
@@ -141,4 +141,6 @@ async def post_password_update(v: str, request: Request, html_response: bool = F
             success=True
         )
 
-    return api_lib.generate_html_response(data, template_name='response.html.jinja2')
+    if html_response:
+        return HTMLResponse(api_lib.generate_html_response(data, template_name='response.html.jinja2'))
+    return JSONResponse(data)
