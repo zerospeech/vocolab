@@ -417,7 +417,7 @@ class NotifyCMD(cmd_lib.CMD):
         user_list = asyncio.run(userQ.get_user_list())
         email_list = [user.email for user in user_list]
         with args.body.open() as fp:
-            body = fp.readlines()
+            body = fp.read()
 
         asyncio.run(notify.email.simple_html_email(
             emails=email_list, subject=f"[ZEROSPEECH] {args.subject}",
