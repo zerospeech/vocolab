@@ -69,7 +69,6 @@ async def password_update_page(v: str, request: Request):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Page not found"
         )
-
     return api_lib.generate_html_response(data=dict(
         image_dir=f"{request.base_url}static/img",
         username=user.username,
@@ -79,8 +78,11 @@ async def password_update_page(v: str, request: Request):
 
 
 @router.get('/request-password-update', response_class=HTMLResponse, include_in_schema=False)
-async def password_update_page(request: Request):
+async def request_password_update_page(request: Request):
     """ Html page-form to request a password reset"""
+    out.Logger.info(f"BASE URL: {request.base_url}")
+    out.Logger.info(f"URL_FOR: {request.url_for('post_password_update')}")
+    
     return api_lib.generate_html_response(data=dict(
         image_dir=f"{request.base_url}static/img",
         submit_url=f"{request.url_for('password_reset_request')}?html_response=true",
