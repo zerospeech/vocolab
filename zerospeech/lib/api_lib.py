@@ -1,10 +1,11 @@
 import asyncio
 
-from fastapi import Depends, HTTPException, status, Request, BackgroundTasks
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from typing import Dict, Any
 
 from jinja2 import FileSystemLoader, Environment
+from starlette.datastructures import URL
 
 from zerospeech import settings
 from zerospeech.db import schema, models
@@ -84,3 +85,23 @@ async def signup(request: Request, user: models.misc.UserCreate):
         data=data,
         template_name='email_validation.jinja2')
     )
+
+
+def get_base_url(request: Request) -> str:
+    base_url = f"{request.base_url}"
+
+    headers = request.headers
+    if 'x-forwarded-proto' in headers and headers['x-forwarded-proto'] == 'https':
+        return base_url.replace('http', 'https')
+    else:
+        return base_url
+
+
+def url_for(request: Request, path_requested: str) -> str:
+    url = request.url_for(path_requested)
+
+    headers = request.headers
+    if 'x-forwarded-proto' in headers and headers['x-forwarded-proto'] == 'https':
+        return url.replace('http', 'https')
+    else:
+        return url
