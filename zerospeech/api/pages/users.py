@@ -72,7 +72,7 @@ async def password_update_page(v: str, request: Request):
     return api_lib.generate_html_response(data=dict(
         image_dir=f"{api_lib.get_base_url(request)}static/img",
         username=user.username,
-        submit_url=f"{api_lib.url_for(request, 'post_password_update')}?v={v}",
+        submit_url=f"{api_lib.url_for(request, 'post_password_update')}?v={v}&html_response=true",
         session=v,
     ), template_name='reset_password2.html.jinja2')
 
