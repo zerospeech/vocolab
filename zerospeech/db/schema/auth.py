@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 import sqlalchemy
 from pydantic import BaseModel, EmailStr
@@ -14,6 +15,7 @@ class User(BaseModel):
     verified: str
     hashed_pswd: bytes
     salt: bytes
+    created_at: Optional[datetime]
 
     @property
     def enabled(self):
@@ -32,7 +34,8 @@ users_table = sqlalchemy.Table(
     sqlalchemy.Column("active", sqlalchemy.Boolean),
     sqlalchemy.Column("verified", sqlalchemy.String),
     sqlalchemy.Column("hashed_pswd", sqlalchemy.BLOB),
-    sqlalchemy.Column("salt", sqlalchemy.BLOB)
+    sqlalchemy.Column("salt", sqlalchemy.BLOB),
+    sqlalchemy.Column("created_at", sqlalchemy.DATETIME)
 )
 
 

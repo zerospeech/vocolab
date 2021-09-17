@@ -46,10 +46,13 @@ class UsersCMD(cmd_lib.CMD):
         table.add_column("Email")
         table.add_column("Active")
         table.add_column("Verified")
+        table.add_column("Created")
 
         for usr in user_lst:
+            created = usr.created_at.isoformat() if usr.created_at else None
             table.add_row(
-                f"{usr.id}", usr.username, usr.email, f"{usr.active}", f"{usr.verified}"
+                f"{usr.id}", usr.username, usr.email, f"{usr.active}", f"{usr.verified}",
+                f"{created}"
             )
 
         out.print(table)
@@ -423,5 +426,3 @@ class NotifyCMD(cmd_lib.CMD):
             emails=email_list, subject=f"[ZEROSPEECH] {args.subject}",
             content=body
         ))
-        out.info(f'email sent to {[user.username for user in user_list]}')
-

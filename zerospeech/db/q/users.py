@@ -26,7 +26,8 @@ async def create_user(*, usr: models.misc.UserCreate):
             active=True,
             verified=verification_code,
             hashed_pswd=hashed_pswd,
-            salt=salt
+            salt=salt,
+            created_at=datetime.now()
         )
         await zrDB.execute(query)
 

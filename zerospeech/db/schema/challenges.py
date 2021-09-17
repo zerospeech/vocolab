@@ -53,7 +53,7 @@ class SubmissionStatus(str, Enum):
     uploading = 'uploading'
     uploaded = 'uploaded'
     on_queue = 'on_queue'
-    validating = 'validating'
+    validating = 'validating'  # todo verify usage
     invalid = 'invalid'
     evaluating = 'evaluating'
     completed = 'completed'
