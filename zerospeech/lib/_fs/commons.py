@@ -1,4 +1,5 @@
 import json
+import shlex
 import shutil
 import subprocess
 from pathlib import Path
@@ -8,6 +9,8 @@ from zipfile import ZipFile
 
 import yaml
 from Crypto.Hash import MD5
+
+from zerospeech import out
 
 
 def load_dict_file(location: Path) -> Union[Dict, List]:
@@ -63,8 +66,12 @@ def rsync(*, src_host: Optional[str] = None, src: Path, dest_host: Optional[str]
     if dest_host:
         dest_path = f"{dest_host}:{dest}"
 
-    cmd2 = [which("rsync"), f"-{flags}e", "ssh", "--delete", "--exclude=*.log", f"{source_path}/", f"{dest_path}/"]
-    return subprocess.run(cmd2, capture_output=True)
+    cmd = f"{which('rsync')} -{flags}e ssh " \
+          f"--delete --exclude=*.log --exclude=*.lock " \
+          f"{source_path}/ {dest_path}/"
+
+    out.log.debug(f"> {cmd}")
+    return subprocess.run(shlex.split(cmd), capture_output=True)
 
 
 def md5sum(file_path: Path, chunk_size: int = 8192):
@@ -88,6 +95,12 @@ def unzip(archive: Path, output: Path):
     # open & extract
     with ZipFile(archive, 'r') as zipObj:
         zipObj.extractall(output)
+
+
+def zip_folder(archive_file: Path, location: Path):
+    with ZipFile(archive_file, 'w') as zip_obj:
+        for file in filter(lambda x: x.is_file(), location.rglob("*")):
+            zip_obj.write(file, str(file.relative_to(location)))
 
 
 def ssh_exec(host, cmd: List[str]) -> Tuple[int, str]:

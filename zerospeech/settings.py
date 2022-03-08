@@ -30,11 +30,11 @@ class _ZerospeechSettings(BaseSettings):
     doc_version: str = 'v0'
     doc_description: str = 'A documentation of the API for the Zerospeech Challenge back-end !'
 
-    # Logging info
+    # Console & Logging
     DEBUG: bool = True
     COLORS: bool = True
     QUIET: bool = False
-    VERBOSE: bool = False
+    VERBOSE: bool = True
     ALLOW_PRINTS: bool = True
     ROTATING_LOGS: bool = True
     LOG_FILE: Optional[Path] = None
@@ -61,7 +61,7 @@ class _ZerospeechSettings(BaseSettings):
         "http://zerospeech.test",
         "http://api.zerospeech.test",
         # staging urls
-        "https://perso.cognitive-ml.fr"
+        "https://*.cognitive-ml.fr/*"
         # production urls
         "https://zerospeech.com",
         "https://api.zerospeech.com",
@@ -72,6 +72,14 @@ class _ZerospeechSettings(BaseSettings):
         'update': 'zr-update-channel',
         'echo': 'zr-echo-channel'
     }
+    origin_regex: List[str] = [
+        # local debug urls
+        "http://*.test"
+        # staging urls
+        "https://*.congnitive-ml.fr/*",
+        # production urls
+        "https://*zerospeech.com/*"
+    ]
 
     # Users
     session_expiry_delay: timedelta = timedelta(days=7)
@@ -81,6 +89,7 @@ class _ZerospeechSettings(BaseSettings):
     STATIC_DIR: Optional[Path] = None
     USER_DATA_DIR: Optional[Path] = None
     SUBMISSION_DIR: Optional[Path] = None
+    SUBMISSION_ARCHIVE_DIR: Optional[Path] = None
     LEADERBOARD_LOCATION: Optional[Path] = None
 
     # Templates Locations
@@ -128,6 +137,7 @@ class _ZerospeechSettings(BaseSettings):
         factory('USER_DATA_DIR', 'user_data')
         factory('SUBMISSION_DIR', 'submissions')
         factory('LEADERBOARD_LOCATION', 'leaderboards')
+        factory('SUBMISSION_ARCHIVE_DIR', 'submissions/archive')
 
     class Config:
         env_prefix = 'ZR_'

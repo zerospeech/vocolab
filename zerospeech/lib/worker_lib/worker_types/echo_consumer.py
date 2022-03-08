@@ -21,7 +21,7 @@ class EchoWorker(AbstractWorker):
             if not isinstance(br, SimpleLogMessage):
                 raise ValueError("Cannot process non LogMessage")
 
-            out.info(f"{os.getpid()} | {br}")
+            out.log.info(f"{os.getpid()} | {br}")
 
             # add random delay
             # await asyncio.sleep(random.randint(10, 100))

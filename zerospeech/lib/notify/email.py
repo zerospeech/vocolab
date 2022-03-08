@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Any, Dict
 
 from fastapi_mail import FastMail, ConnectionConfig, MessageSchema
@@ -17,7 +18,7 @@ email_cgf = ConnectionConfig(
     MAIL_SERVER=_settings.MAIL_SERVER,
     MAIL_TLS=_settings.MAIL_TLS,
     MAIL_SSL=_settings.MAIL_SSL,
-    TEMPLATE_FOLDER=str(_settings.MAIL_TEMPLATE_DIR)
+    TEMPLATE_FOLDER=_settings.MAIL_TEMPLATE_DIR
 )
 
 fm = FastMail(email_cgf)
@@ -27,7 +28,7 @@ def parse_email_exceptions(e: Exception):
     from fastapi_mail.errors import ConnectionErrors, WrongFile, TemplateFolderDoesNotExist
 
     if isinstance(e, ConnectionErrors):
-        out.error("issues with connections ?")
+        out.console.error("issues with connections ?")
     raise e
 
 
@@ -48,12 +49,12 @@ async def simple_html_email(emails: List[EmailStr], subject: str, content: str):
     )
     try:
         await fm.send_message(message)
-        out.Logger.info(f'email send successfully to {emails}')
+        out.log.info(f'email send successfully to {emails}')
     except Exception as e:
         parse_email_exceptions(e)
 
 
-async def template_email1(emails: List[EmailStr], subject: str, data: Dict[str, Any], template_name: str):
+async def template_email1(emails: List[EmailStr], subject: str, data, template_name: str):
     """ Send an email using an existing jinja2 template
 
     :param emails: <List[EmailStr]> a list of email recipients
@@ -67,14 +68,15 @@ async def template_email1(emails: List[EmailStr], subject: str, data: Dict[str, 
         body=data,
         subtype="html"
     )
-    out.ic(message)
+    out.console.ic(message)
     try:
         await fm.send_message(message, template_name=template_name)
-        out.info(f'email send successfully to {emails}')
-    except Exception as e:
+        out.log.info(f'email send successfully to {emails}')
+    except Exception:
         # out.Logger.error(f"an issue occurred while sending an email to {emails}")
         # parse_email_exceptions(e)
-        out.exception()
+        out.log.exception()
+        raise
 
 
 async def template_email2(emails: List[EmailStr], subject: str, data: Dict[str, Any], template_name: str):
@@ -96,17 +98,18 @@ async def template_email2(emails: List[EmailStr], subject: str, data: Dict[str, 
         body=body,
         subtype="html"
     )
-    out.ic(message)
+    out.console.ic(message)
     try:
         await fm.send_message(message)
-        out.info(f'email send successfully to {emails}')
-    except Exception as e:
+        out.log.info(f'email send successfully to {emails}')
+    except Exception:
         # out.Logger.error(f"an issue occurred while sending an email to {emails}")
         # parse_email_exceptions(e)
-        out.exception()
+        out.log.exception()
+        raise
 
 
-async def notify_admin(subject: str, data: Dict[str, Any], template_name: str):
+async def notify_admin(subject: str, data, template_name: str):
     """ Notify the registered admin via email
 
     :param subject: <str> the email subject
@@ -124,7 +127,7 @@ async def notify_admin(subject: str, data: Dict[str, Any], template_name: str):
     )
     try:
         await fm.send_message(message, template_name=template_name)
-        out.Logger.info(f'email send successfully to {_settings.admin_email}')
+        out.log.info(f'email send successfully to {_settings.admin_email}')
     except Exception as e:
         parse_email_exceptions(e)
 

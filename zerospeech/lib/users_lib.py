@@ -1,10 +1,13 @@
 import hashlib
 import os
+from typing import Callable
+
+from zerospeech.db import models
 from zerospeech.lib import _fs
 
 # export functions
 update_user_data = _fs.users.update_user_data
-get_user_data = _fs.users.get_user_data
+get_user_data: Callable[[str], models.api.UserData] = _fs.users.get_user_data
 
 
 def hash_pwd(*, password: str, salt=None):

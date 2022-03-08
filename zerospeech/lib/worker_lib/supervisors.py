@@ -37,7 +37,7 @@ class Multiprocess:
         self.shutdown()
 
     def startup(self):
-        out.Logger.info(f"Started parent process [{self.pid}]")
+        out.log.info(f"Started parent process [{self.pid}]")
 
         for sig in HANDLED_SIGNALS:
             signal.signal(sig, self.signal_handler)
@@ -51,5 +51,5 @@ class Multiprocess:
         for process in self.processes:
             process.join()
 
-        out.Logger.info(f"Graceful shutdown completed !!")
-        out.Logger.info(f"Stopping parent process [{self.pid}]")
+        out.log.info(f"Graceful shutdown completed !!")
+        out.log.info(f"Stopping parent process [{self.pid}]")

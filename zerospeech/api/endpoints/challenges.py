@@ -65,7 +65,7 @@ async def upload_submission(
         file_data: UploadFile = File(...),
         current_user: schema.User = Depends(api_lib.get_current_active_user),
 ):
-    out.info(f"user: {current_user.username}")
+    out.console.info(f"user: {current_user.username}")
     challenge = await challengesQ.get_challenge(challenge_id=challenge_id)
     if challenge is None:
         return ValueError(f'challenge {challenge_id} not found or inactive')
@@ -76,7 +76,9 @@ async def upload_submission(
             # run the completion of the submission on the background
             background_tasks.add_task(submissions_lib.complete_submission, submission_id, with_eval=True)
 
-        return models.api.UploadSubmissionPartResponse(completed=is_completed, remaining=[n.file_name for n in remaining])
+        return models.api.UploadSubmissionPartResponse(
+            completed=is_completed, remaining=[n.file_name for n in remaining]
+        )
     except exc.ZerospeechException as e:
-        out.exception()
+        out.log.exception()
         raise e

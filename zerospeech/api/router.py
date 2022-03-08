@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import APIRouter
 
 from zerospeech.api.endpoints import (
@@ -14,11 +16,19 @@ api_router = APIRouter()
 @api_router.get("/")
 def index():
     """ API Index """
+    install_time = (Path.home() / '.zr-installation')
+    if install_time.is_file():
+        with install_time.open() as fp:
+            installation_datetime = fp.read()
+    else:
+        installation_datetime = ''
+
     return {
         "app": _settings.app_name,
         "version": _settings.version,
         "maintainers": _settings.maintainers,
-        "contact": _settings.admin_email
+        "contact": _settings.admin_email,
+        "installation_datetime": installation_datetime
     }
 
 

@@ -1,6 +1,6 @@
 """ Data Models used in the admin/cli functions """
 from datetime import date
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, AnyHttpUrl
 
@@ -24,4 +24,4 @@ class NewEvaluatorItem(BaseModel):
     executor: ExecutorsType
     host: Optional[str]
     script_path: str
-    base_arguments: Optional[str]
+    executor_arguments: Optional[str]

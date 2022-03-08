@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, List
 
-from zerospeech import get_settings
+from zerospeech import get_settings, out
 from zerospeech.lib.worker_lib import pika_utils
 from zerospeech.db.models.tasks import (
     SimpleLogMessage, SubmissionUpdateMessage,
@@ -41,10 +41,10 @@ async def send_update_message(*, submission_id: str, hostname: str, update_type:
     return await pika_utils.publish_message(msg=msg, queue_name=channel)
 
 
-async def send_eval_message(*, submission_id: str, executor: ExecutorsType,
+async def send_eval_message(*, submission_id: str, executor: ExecutorsType, executor_args: List[str],
                             bin_path: str, script_name: str, args: List[str], label: Optional[str] = None):
     if label is None:
-        label = make_label('echo-testing')
+        label = make_label('zr-eval')
 
     msg = SubmissionEvaluationMessage(
         label=label,
@@ -52,7 +52,9 @@ async def send_eval_message(*, submission_id: str, executor: ExecutorsType,
         submission_id=submission_id,
         bin_path=bin_path,
         script_name=script_name,
-        args=args
+        executor_args=executor_args,
+        cmd_args=args
     )
+
     channel = _settings.QUEUE_CHANNELS.get('eval')
     return await pika_utils.publish_message(msg=msg, queue_name=channel)

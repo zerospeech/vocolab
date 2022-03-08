@@ -1,12 +1,12 @@
 """ Routing for /users section of the API
 This section handles user data
 """
-
+import pydantic
 from fastapi import (
     APIRouter, Depends, Response
 )
 
-from zerospeech import exc
+from zerospeech import exc, out
 from zerospeech.lib import api_lib, users_lib, submissions_lib
 from zerospeech.db import schema, models
 from zerospeech.db.q import challengesQ, leaderboardQ
@@ -17,20 +17,18 @@ router = APIRouter()
 _settings = get_settings()
 
 
-@router.get("/")
-def get_user(current_user: schema.User = Depends(api_lib.get_current_active_user)):
-    # TODO maybe merge profile in base info
-    # profile = users_lib.get_user_data(current_user.username)
-    return {
-        "username": current_user.username,
-        "email": current_user.email,
-        "verified": current_user.verified
-    }
-
-
 @router.get("/profile")
-def get_profile(current_user: schema.User = Depends(api_lib.get_current_active_user)):
-    return users_lib.get_user_data(current_user.username)
+def get_profile(current_user: schema.User = Depends(api_lib.get_current_active_user)) -> models.api.UserProfileResponse:
+    try:
+        return models.api.UserProfileResponse(
+            verified=current_user.verified == "True",
+            email=current_user.email,
+            created=current_user.created_at,
+            **(users_lib.get_user_data(current_user.username).dict())
+        )
+    except pydantic.ValidationError:
+        out.log.error("Failed to validate profile data")
+        out.console.exception()
 
 
 @router.post("/profile")

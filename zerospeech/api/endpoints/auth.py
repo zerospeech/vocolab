@@ -27,7 +27,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """ Authenticate a user """
     try:
         _, token = await userQ.login_user(login=form_data.username, pwd=form_data.password)
-        out.inspect(form_data)
+        out.console.inspect(form_data)
         return models.api.LoggedItem(access_token=token, token_type="bearer")
     except ValueError:
         raise HTTPException(
@@ -40,6 +40,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 async def logout(token: schema.LoggedUser = Depends(api_lib.validate_token)):
     """ Delete a user's session """
     await userQ.delete_session(by_token=token.token)
+    out.log.info(f"session {token} closed !!")
     return Response(status_code=200)
 
 
@@ -67,7 +68,7 @@ async def post_signup(request: Request,
             redirect_label="go back to form",
             success=False
         )
-        out.Logger.error(f'This {e.data} is already in use, cannot recreate ({user})')
+        out.log.error(f'This {e.data} is already in use, cannot recreate ({user})')
     else:
         data = dict(
             image_dir=f"{request.base_url}static/img",
@@ -121,7 +122,7 @@ async def post_password_update(v: str, request: Request, html_response: bool = F
         user = await userQ.get_user(by_password_reset_session=v)
         await userQ.update_users_password(user=user, password=password, password_validation=password_validation)
     except ValueError as e:
-        out.Logger.error(
+        out.log.error(
             f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
 
         data = dict(

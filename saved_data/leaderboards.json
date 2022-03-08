@@ -84,8 +84,8 @@
      "challenge_id": 1,
      "path_to": "test-leaderboard.json",
      "entry_file": "test.json",
-     "external_entries": "zr2021-no-external",
+     "external_entries": null,
      "archived": false,
-     "static_files": true
+     "static_files": false
    }
  ]

@@ -1,9 +1,11 @@
 """
 Database functions that manipulate the leaderboard table
 """
+from pathlib import Path
 from typing import Any, List, Optional
 from zerospeech.db import schema, zrDB, exc as db_exc
 from zerospeech.lib import misc
+from zerospeech import out
 
 
 async def get_leaderboard(*, leaderboard_id: int) -> schema.LeaderBoard:
@@ -87,12 +89,20 @@ async def update_leaderboard_value(*, leaderboard_id, variable_name: str, value:
     if allow_parsing:
         value = misc.str2type(value, field.type_)
 
-    if not isinstance(value, field.type_):
-        raise ValueError(f"Leaderboard.{variable_name} should be of type {field.type_}")
+    if value is None:
+        if not field.allow_none:
+            raise ValueError(f'LeaderBoard.{variable_name} cannot be None/Null')
+    else:
+        if not isinstance(value, field.type_):
+            raise ValueError(f"Leaderboard.{variable_name} should be of type {field.type_}")
+
+        # Path is not supported by sqlite as a raw type
+        if field.type_ == Path:
+            value = str(value)
 
     query = schema.leaderboards_table.update().where(
         schema.leaderboards_table.c.id == leaderboard_id
-    ).values({f"{variable_name}": value})
+    ).values({f"{variable_name}": str(value)})
     try:
         await zrDB.execute(query)
     except Exception as e:

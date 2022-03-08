@@ -102,6 +102,7 @@ async def add_submission(*, new_submission: models.api.NewSubmission, evaluator_
     values["submit_date"] = datetime.now()
     values["status"] = schema.SubmissionStatus.uploading
     values["evaluator_id"] = evaluator_id
+    values["author_label"] = None  # default value for author_label is None
     await zrDB.execute(query=query, values=values)
     return submission_id
 
@@ -162,6 +163,48 @@ async def update_submission_status(*, by_id: str, status: schema.SubmissionStatu
     return await zrDB.execute(query)
 
 
+async def update_submission_evaluator(evaluator_id: int, *, by_id: Optional[str] = None, by_track: Optional[int] = None,
+                                      by_user: Optional[int] = None):
+    """ Update the set evaluator for a specific submission. """
+
+    if by_id:
+        query = schema.submissions_table.update().where(
+            schema.submissions_table.c.id == by_id
+        )
+    elif by_track:
+        query = schema.submissions_table.update().where(
+            schema.submissions_table.c.track_id == by_track
+        )
+    elif by_user:
+        query = schema.submissions_table.update().where(
+            schema.submissions_table.c.user_id == by_user
+        )
+    else:
+        raise ValueError(f'Selector not specified')
+
+    # execute query and update values on db
+    query = query.values(evaluator_id=evaluator_id)
+    return await zrDB.execute(query)
+
+
+async def update_submission_author_label(label: str, *, by_id: Optional[str] = None, by_user: Optional[int] = None):
+    """ Update or set """
+    if by_id:
+        query = schema.submissions_table.update().where(
+            schema.submissions_table.c.id == by_id
+        )
+    elif by_user:
+        query = schema.submissions_table.update().where(
+            schema.submissions_table.c.user_id == by_user
+        )
+    else:
+        raise ValueError(f'Selector not specified')
+
+    # execute query and update values on db
+    query = query.values(author_label=label)
+    return await zrDB.execute(query)
+
+
 async def drop_submission(*, by_id: str):
     """ Delete db entry of a submission """
     query = schema.submissions_table.delete().where(
@@ -205,7 +248,6 @@ async def get_evaluator(*, by_id: int) -> Optional[schema.EvaluatorItem]:
 
 async def add_evaluator(*, lst_eval: List[models.cli.NewEvaluatorItem]):
     """ Insert a list of evaluators into the database """
-    insert_query = schema.evaluators_table.insert()
     for i in lst_eval:
         query = schema.evaluators_table.select().where(
             schema.evaluators_table.c.label == i.label
@@ -213,12 +255,13 @@ async def add_evaluator(*, lst_eval: List[models.cli.NewEvaluatorItem]):
             schema.evaluators_table.c.host == i.host
         )
         res = await zrDB.fetch_one(query)
+
         if res is None:
-            await zrDB.execute(insert_query, i)
+            await zrDB.execute(schema.evaluators_table.insert(), i.dict())
         else:
             update_query = schema.evaluators_table.update().where(
                 schema.evaluators_table.c.id == res.id
-            ).values(executor=i.executor, script_path=i.script_path, base_arguments=i.base_arguments)
+            ).values(executor=i.executor, script_path=i.script_path, executor_arguments=i.executor_arguments)
             await zrDB.execute(update_query)
 
 
@@ -226,5 +269,5 @@ async def edit_evaluator_args(*, eval_id: int, arg_list: List[str]):
     """ update evaluator base arguments """
     query = schema.evaluators_table.update().where(
         schema.evaluators_table.c.id == eval_id
-    ).values(base_arguments=";".join(arg_list))
+    ).values(executor_arguments=";".join(arg_list))
     await zrDB.execute(query)

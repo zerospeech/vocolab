@@ -9,7 +9,6 @@ from zerospeech import get_settings, out
 from zerospeech.admin import cmd_lib
 
 _settings = get_settings()
-console = Console()
 
 settings_info_md = """
 ## Zerospeech - Admin Settings - Info
@@ -36,6 +35,8 @@ For examples of .env files see `example.env`
 
 For more information on all the variables & their usage see [docs folder](docs/settings.md)
 """
+
+console = out.cli.raw
 
 
 class SettingsCMD(cmd_lib.CMD):
@@ -95,4 +96,4 @@ class GenerateEnvFileCMD(cmd_lib.CMD):
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
         else:
-            out.console.out(self.template.render(**data))
+            console.out(self.template.render(**data))

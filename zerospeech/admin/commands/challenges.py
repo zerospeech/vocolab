@@ -54,7 +54,7 @@ class ChallengesCMD(cmd_lib.CMD):
                 f"{end_date_str}", f"{ch.evaluator}"
             )
         # print
-        out.print(table)
+        out.cli.print(table)
 
 
 class AddChallengeCMD(cmd_lib.CMD):
@@ -81,12 +81,12 @@ class AddChallengeCMD(cmd_lib.CMD):
                 obj_list = [models.cli.NewChallenge(**item) for item in obj]
 
             else:
-                out.print("Creating a new Challenge", style="bold purple")
-                label = out.console.input("[bold]label:[/bold] ")
-                url = out.console.input("[bold]URL:[/bold] ")
-                start_date = out.console.input("[bold]start date (dd/mm/yyyy):[/bold] ")
-                end_date = out.console.input("[bold]end date (dd/mm/yyyy or none):[/bold] ")
-                print("\n")
+                out.cli.print("Creating a new Challenge", style="bold purple")
+                label = out.cli.raw.input("[bold]label:[/bold] ")
+                url = out.cli.raw.input("[bold]URL:[/bold] ")
+                start_date = out.cli.raw.input("[bold]start date (dd/mm/yyyy):[/bold] ")
+                end_date = out.cli.raw.input("[bold]end date (dd/mm/yyyy or none):[/bold] ")
+                out.cli.print("\n")
 
                 if end_date == "none":
                     end_date = None
@@ -106,17 +106,17 @@ class AddChallengeCMD(cmd_lib.CMD):
             if not args.dry_run:
                 for item in obj_list:
                     asyncio.run(challengesQ.create_new_challenge(item))
-                    out.print(f"insertion of {item.label} was successful:white_check_mark:",
-                              style="bold green")
+                    out.cli.print(f"insertion of {item.label} was successful:white_check_mark:",
+                                  style="bold green")
             else:
-                out.inspect(obj_list)
+                out.cli.inspect(obj_list)
 
         except json.JSONDecodeError as e:
-            out.error(f":x:\tjson: {e}")
+            out.cli.error(f":x:\tjson: {e}")
         except ValidationError as e:
-            out.error(f":x:\t{e}")
+            out.cli.error(f":x:\t{e}")
         except ValueError as e:
-            out.error(f":x:\t{e}")
+            out.cli.error(f":x:\t{e}")
 
 
 class SetChallenge(cmd_lib.CMD):
@@ -141,4 +141,4 @@ class SetChallenge(cmd_lib.CMD):
                 allow_parsing=True
             )
         )
-        out.info(f"Field {args.field_name}={res} :white_check_mark:")
+        out.cli.info(f"Field {args.field_name}={res} :white_check_mark:")

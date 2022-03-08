@@ -1,7 +1,8 @@
 """ Input/Output Dataclass types for the /users section of the API """
+from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, EmailStr
 
 
 class UserData(BaseModel):
@@ -12,3 +13,9 @@ class UserData(BaseModel):
 
     class Config:
         extra = Extra.allow
+
+
+class UserProfileResponse(UserData):
+    verified: bool
+    email: EmailStr
+    created: Optional[datetime]

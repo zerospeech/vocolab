@@ -1,10 +1,12 @@
+from datetime import datetime
+
 import json
 import uuid
 from enum import Enum
 from shutil import which
-from typing import List, Union
+from typing import List, Union, Optional
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, Field, root_validator
 
 from zerospeech import out
 
@@ -16,8 +18,15 @@ class QueuesNames(str, Enum):
 
 class BrokerMessage(BaseModel):
     """ A Generic description of a Broker Message Object """
+    message_type: Optional[str]
     label: str
     job_id: str = str(uuid.uuid4())
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+    @root_validator(pre=True)
+    def set_message_type(cls, values):
+        values["message_type"] = str(cls.__name__)
+        return values
 
     def __repr__(self):
         """ Stringify the message for logging"""
@@ -41,13 +50,14 @@ class SubmissionEvaluationMessage(BrokerMessage):
     submission_id: str
     bin_path: str
     script_name: str
-    args: List[str]
+    executor_args: List[str]
+    cmd_args: List[str]
 
     def __repr__(self):
         """ Stringify the message for logging"""
         return f"{self.job_id} >> " \
                f"{self.submission_id}@{self.label}:: " \
-               f"{self.executor} {self.bin_path}/{self.script_name} {self.args} --"
+               f"{self.executor} {self.bin_path}/{self.script_name} {self.cmd_args} --"
 
 
 class UpdateType(str, Enum):
@@ -86,18 +96,27 @@ def message_from_bytes(byte_msg: bytes) -> Union[BrokerMessage,
     try:
         url_obj = json.loads(str(byte_msg.decode("utf-8")))
 
-        if list(url_obj.keys()) == list(BrokerMessage.__fields__.keys()):
-            return BrokerMessage(**url_obj)
-        elif list(url_obj.keys()) == list(SubmissionEvaluationMessage.__fields__.keys()):
+        message_type = url_obj.get('message_type', None)
+
+        # if type is not specified raise error
+        if message_type is None:
+            out.log.error(f"Message does not specify type: {str(byte_msg.decode('utf-8'))}")
+            raise ValueError(f"Message does not specify type: {str(byte_msg.decode('utf-8'))}")
+
+        # try and match type with known types
+        if message_type == "SubmissionEvaluationMessage":
             return SubmissionEvaluationMessage(**url_obj)
-        elif list(url_obj.keys()) == list(SubmissionUpdateMessage.__fields__.keys()):
+        elif message_type == "SubmissionUpdateMessage":
             return SubmissionUpdateMessage(**url_obj)
-        elif list(url_obj.keys()) == list(SimpleLogMessage.__fields__.keys()):
+        elif message_type == "SimpleLogMessage":
             return SimpleLogMessage(**url_obj)
-        else:
-            out.Logger.error(f"Unknown message type: {str(byte_msg.decode('utf-8'))}")
-            raise ValueError(f"Unknown message type {str(byte_msg.decode('utf-8'))}")
+        elif message_type == "BrokerMessage":
+            return BrokerMessage(**url_obj)
+
+        # raise error if matching failed
+        out.log.error(f"Unknown message type: {str(byte_msg.decode('utf-8'))}")
+        raise ValueError(f"Unknown message type {str(byte_msg.decode('utf-8'))}")
 
     except (json.JSONDecodeError, ValidationError):
-        out.Logger.error(f"error while parsing command: {str(byte_msg.decode('utf-8'))}")
+        out.log.error(f"error while parsing command: {str(byte_msg.decode('utf-8'))}")
         raise ValueError(f"command {str(byte_msg.decode('utf-8'))} not valid!!")

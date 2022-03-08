@@ -28,6 +28,8 @@ class UpdateTaskWorker(AbstractWorker):
     async def eval_function(msg: SubmissionUpdateMessage):
         """ Evaluate a function type BrokerCMD """
         with submissions_lib.SubmissionLogger(msg.submission_id) as lg:
+            out.log.debug(msg.dict())
+
             if msg.updateType == UpdateType.evaluation_complete:
                 await submissions_lib.complete_evaluation(
                     submission_id=msg.submission_id, hostname=msg.hostname,
@@ -50,7 +52,7 @@ class UpdateTaskWorker(AbstractWorker):
             if not isinstance(br, SubmissionUpdateMessage):
                 raise ValueError("Cannot process non SubmissionUpdateMessages")
 
-            out.Logger.info(f"Received update request for {br.submission_id}")
+            out.log.info(f"Received update request for {br.submission_id}")
 
             self.start_process(br.job_id, br.submission_id)
             await self.eval_function(br)
