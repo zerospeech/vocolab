@@ -1,4 +1,6 @@
-from zerospeech import get_settings
+import sys
+
+from zerospeech import get_settings, out
 from zerospeech.admin import cmd_lib, commands
 
 # settings
@@ -8,6 +10,7 @@ has_users = has_db and _settings.USER_DATA_DIR.is_dir()
 has_challenges = has_db
 has_submissions = _settings.SUBMISSION_DIR.is_dir()
 has_leaderboard = _settings.LEADERBOARD_LOCATION.is_dir()
+is_dev = _settings.DEBUG is True
 CMD_NAME = "zr"
 
 
@@ -27,7 +30,8 @@ def build_cli():
             commands.user.PasswordUserCMD(CMD_NAME, 'password', 'users'),
             commands.user.CheckPasswordCMD(CMD_NAME, 'check', 'users:password'),
             commands.user.ResetSessionsCMD(CMD_NAME, 'reset', 'users:password'),
-            commands.user.NotifyCMD(CMD_NAME, 'notify', 'users')
+            commands.user.NotifyCMD(CMD_NAME, 'notify', 'users'),
+            commands.user.DeleteUser(CMD_NAME, 'delete', 'users')
         )
 
     if has_challenges:
@@ -49,9 +53,15 @@ def build_cli():
     if has_db and has_submissions:
         tree.add_cmd_tree(
             commands.submissions.SubmissionCMD(CMD_NAME, 'submissions', ''),
-            commands.submissions.SetSubmissionCMD(CMD_NAME, 'set', 'submissions'),
+            commands.submissions.SetSubmissionCMD(CMD_NAME, 'status', 'submissions'),
             commands.submissions.CreateSubmissionCMD(CMD_NAME, 'create', 'submissions'),
-            commands.submissions.EvalSubmissionCMD(CMD_NAME, 'eval', 'submissions')
+            commands.submissions.EvalSubmissionCMD(CMD_NAME, 'eval', 'submissions'),
+            commands.submissions.DeleteSubmissionCMD(CMD_NAME, 'delete', 'submissions'),
+            commands.submissions.FetchSubmissionFromRemote(CMD_NAME, 'fetch', 'submissions'),
+            commands.submissions.UploadSubmissionToRemote(CMD_NAME, 'upload', 'submissions'),
+            commands.submissions.SubmissionSetEvaluator(CMD_NAME, 'evaluator', 'submissions'),
+            commands.submissions.SubmissionSetAuthorLabel(CMD_NAME, 'author_label', 'submissions'),
+            commands.submissions.ArchiveSubmissionCMD(CMD_NAME, 'archive', 'submissions')
         )
 
     if has_submissions:
@@ -93,6 +103,11 @@ def build_cli():
         commands.test.TestEmail(CMD_NAME, 'email', 'test')
     )
 
+    if is_dev:
+        tree.add_cmd_tree(
+            commands.test.TestDebugCMD(CMD_NAME, 'debug', 'test')
+        )
+
     # build all epilog info
     tree.build_epilogs()
 
@@ -106,5 +121,9 @@ def build_cli():
 
 def run_cli():
     """ Admin cli Entrypoint """
-    cli = build_cli()
-    cli.run()
+    try:
+        cli = build_cli()
+        cli.run()
+    except Exception: # noqa: broad thing allows for prettyprinting
+        out.cli.exception()  # cli pretty prints exceptions
+        sys.exit(1)

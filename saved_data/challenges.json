@@ -2,9 +2,9 @@
 	{
 		"id": 1,
 		"label": "test-challenge",
-		"start_date": "2021-03-31",
-		"end_date": "2060-01-01",
-		"url": "https://zerospeech.com/track/2021",
+		"start_date": "2022-02-21",
+		"end_date": null,
+		"url": "https://zerospeech.com/track/test",
 		"active": true,
 		"evaluator": null
 	},
@@ -48,16 +48,7 @@
 		"id": 6,
 		"label": "zr2021",
 		"start_date": "2020-12-12",
-		"end_date": "2021-03-31",
-		"url": "https://zerospeech.com/track/2021",
-		"active": false,
-		"evaluator": null
-	},
-	{
-		"id": 7,
-		"label": "zr2021-bis",
-		"start_date": "2021-03-31",
-		"end_date": "2022-01-01",
+		"end_date": null,
 		"url": "https://zerospeech.com/track/2021",
 		"active": true,
 		"evaluator": null

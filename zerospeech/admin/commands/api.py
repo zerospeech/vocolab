@@ -81,7 +81,7 @@ class ProdAPICMD(cmd_lib.CMD):
         args, extra_args = self.parser.parse_known_args(argv)
         conf_file = Path(args.configuration_file)
         if not conf_file.is_file():
-            out.error("Fail")
+            out.cli.error("Fail")
 
         executable = which('gunicorn')
         exec_args = [f'{executable}']
@@ -109,17 +109,17 @@ class APInitEnvironmentCMD(cmd_lib.CMD):
         _ = self.parser.parse_args(argv)
 
         # create data_folders
-        out.info(f"creating : {_settings.USER_DATA_DIR}")
+        out.cli.info(f"creating : {_settings.USER_DATA_DIR}")
         _settings.USER_DATA_DIR.mkdir(exist_ok=True, parents=True)
-        out.info(f"creating : {_settings.USER_DATA_DIR / 'submissions'}")
+        out.cli.info(f"creating : {_settings.USER_DATA_DIR / 'submissions'}")
         (_settings.USER_DATA_DIR / 'submissions').mkdir(exist_ok=True)
-        out.info(f"creating : {_settings.USER_DATA_DIR / 'profiles'}")
+        out.cli.info(f"creating : {_settings.USER_DATA_DIR / 'profiles'}")
         (_settings.USER_DATA_DIR / 'profiles').mkdir(exist_ok=True)
-        out.info(f"creating : {_settings.LEADERBOARD_LOCATION}")
+        out.cli.info(f"creating : {_settings.LEADERBOARD_LOCATION}")
         _settings.LEADERBOARD_LOCATION.mkdir(exist_ok=True)
 
         # create tables
-        out.info(f"creating : tables in database ...")
+        out.cli.info(f"creating : tables in database ...")
         create_db()
 
 
@@ -159,7 +159,7 @@ class GunicornConfigGeneration(cmd_lib.CMD):
                 fp.write(self.template.render(**data))
                 fp.write('\n')
         else:
-            out.console.out(self.template.render(**data))
+            out.cli.raw.out(self.template.render(**data))
 
 
 class SystemDSocketFileGeneration(cmd_lib.CMD):
@@ -177,7 +177,7 @@ class SystemDSocketFileGeneration(cmd_lib.CMD):
         if bind.scheme == 'unix':
             socket_file = bind.path
         else:
-            out.warning('There is no socket bind in configurations')
+            out.cli.warning('There is no socket bind in configurations')
             sys.exit(1)
 
         data = dict(
@@ -190,7 +190,7 @@ class SystemDSocketFileGeneration(cmd_lib.CMD):
                 fp.write(self.template.render(**data))
                 fp.write('\n')
         else:
-            out.console.out(self.template.render(**data))
+            out.cli.raw.out(self.template.render(**data))
 
 
 class SystemDUnitGeneration(cmd_lib.CMD):
@@ -208,7 +208,7 @@ class SystemDUnitGeneration(cmd_lib.CMD):
         gunicorn_cfg_file = Path(args.gunicorn_config_file)
 
         if not gunicorn_cfg_file.is_file():
-            out.error(f'Config given : {gunicorn_cfg_file} ! Error no such file found ')
+            out.cli.error(f'Config given : {gunicorn_cfg_file} ! Error no such file found ')
             sys.exit(1)
 
         bind = urlparse(_settings.bind)
@@ -228,7 +228,7 @@ class SystemDUnitGeneration(cmd_lib.CMD):
                 fp.write(self.template.render(**data))
                 fp.write('\n')
         else:
-            out.console.out(self.template.render(**data))
+            out.cli.raw.out(self.template.render(**data))
 
 
 class NginxConfigGeneration(cmd_lib.CMD):
@@ -255,4 +255,4 @@ class NginxConfigGeneration(cmd_lib.CMD):
                 fp.write(self.template.render(**data))
                 fp.write('\n')
         else:
-            out.console.out(self.template.render(**data))
+            out.cli.raw.out(self.template.render(**data))

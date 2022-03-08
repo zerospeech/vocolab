@@ -1,9 +1,13 @@
 import asyncio
+import string
 import sys
 from pathlib import Path
 
-from zerospeech import get_settings
+from pydantic import EmailStr
+
+from zerospeech import get_settings, out
 from zerospeech.admin import cmd_lib
+from zerospeech.db.models.misc import UserCreate
 from zerospeech.lib import notify
 
 _settings = get_settings()
@@ -47,3 +51,34 @@ class TestEmail(cmd_lib.CMD):
             content=body
         ))
 
+
+class TestDebugCMD(cmd_lib.CMD):
+    """ Test things as cmd """
+
+    def __init__(self, root, name, cmd_path):
+        super(TestDebugCMD, self).__init__(root, name, cmd_path)
+
+    def run(self, argv):
+        _ = self.parser.parse_args(argv)
+        out.cli.print("-- New User Info --", style="bold")
+        first_name = out.cli.raw.input("First Name: ")
+        last_name = out.cli.raw.input("Last Name: ")
+        email = out.cli.raw.input("Email: ")
+        affiliation = out.cli.raw.input("Affiliation: ")
+
+        clean_last_name = ''.join([i if i in string.ascii_letters else ' ' for i in last_name])
+        def_username = f"{first_name[0]}{clean_last_name.replace(' ', '')}".lower()
+        username = out.cli.raw.input(f"Username(default {def_username}): ")
+        username = username if username else def_username
+
+        password = out.cli.raw.input("Password: ", password=True)
+
+        user = UserCreate(
+            username=username,
+            email=EmailStr(email),
+            pwd=password,
+            first_name=first_name,
+            last_name=last_name,
+            affiliation=affiliation
+        )
+        out.cli.print(user)

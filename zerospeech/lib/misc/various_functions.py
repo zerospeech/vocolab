@@ -1,10 +1,13 @@
 import asyncio
+import base64
+import json
 import shutil
 import subprocess
 from collections import Callable
 from contextlib import contextmanager
 from datetime import datetime, date, time
-from typing import List, Tuple
+from pathlib import Path
+from typing import List, Tuple, Any
 
 from dateutil import parser
 
@@ -95,3 +98,23 @@ def execute(cmd: str, args: List[str]) -> Tuple[int, str]:
 
     return results.returncode, output
 
+
+class CustomTypesJsonEncoder(json.JSONEncoder):
+
+    def default(self, o):
+        if isinstance(o, Path):
+            return str(o)
+        elif isinstance(o, bytes):
+            return str(base64.b64encode(o))
+        elif isinstance(o, datetime):
+            return str(o.isoformat())
+        elif isinstance(o, date):
+            return str(o.isoformat())
+        elif isinstance(o, time):
+            return str(o.isoformat())
+        elif isinstance(o, set):
+            return list(o)
+        elif hasattr(o, "__dict__"):
+            return vars(o)
+        else:
+            return super().default(o)

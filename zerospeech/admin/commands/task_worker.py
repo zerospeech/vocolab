@@ -52,7 +52,7 @@ class EchoTaskWorkerCMD(cmd_lib.CMD):
         try:
             tasks_run(worker='echo', **args.__dict__)
         except Exception:
-            out.exception()
+            out.cli.exception()
             sys.exit(1)
 
 
@@ -72,7 +72,7 @@ class EvaluationTaskWorkerCMD(cmd_lib.CMD):
         try:
             tasks_run(worker='eval', **args.__dict__)
         except Exception:
-            out.exception()
+            out.cli.exception()
             sys.exit(1)
 
 
@@ -92,7 +92,7 @@ class UpdateTaskWorkerCMD(cmd_lib.CMD):
         try:
             tasks_run(worker='update', **args.__dict__)
         except Exception:
-            out.exception()
+            out.cli.exception()
             sys.exit(1)
 
 
@@ -122,7 +122,7 @@ class TestEchoWorker(cmd_lib.CMD):
                 label="cli-echo-testing"
             )
         )
-        out.info('Message delivered successfully !!')
+        out.cli.info('Message delivered successfully !!')
 
 
 class GenerateSystemDUnitCMD(cmd_lib.CMD):
@@ -155,4 +155,4 @@ class GenerateSystemDUnitCMD(cmd_lib.CMD):
             with Path(args.out_file).open("w") as fp:
                 fp.write(self.template.render(**data))
         else:
-            out.console.out(self.template.render(**data))
+            out.cli.raw.out(self.template.render(**data))

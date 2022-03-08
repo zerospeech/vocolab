@@ -42,10 +42,20 @@ async def build_leaderboard(*, leaderboard_id: int):
             # skip not completed submissions
             if sub.status != schema.SubmissionStatus.completed:
                 continue
+
             # append submission to leaderboard
             sub_location = _fs.submissions.get_submission_dir(sub.id)
-            leaderboard_entries.append(_fs.leaderboards.load_entry_from_sub(sub.id, leaderboard.entry_file))
+            leaderboard_entry = _fs.leaderboards.load_entry_from_sub(sub.id, leaderboard.entry_file)
+
+            # if author_label is set use database value over local
+            if sub.author_label and len(leaderboard_entry) > 0:
+                leaderboard_entry['author_label'] = sub.author_label
+
+            # append to leaderboard
+            leaderboard_entries.append(leaderboard_entry)
+
             # grab all static files
+            # todo: check is static file section is obsolete ?
             if leaderboard.static_files and (sub_location / 'static').is_dir():
                 _fs.commons.copy_all_contents(sub_location / 'static', static_location)
 
@@ -67,17 +77,20 @@ async def get_leaderboard(*, leaderboard_id) -> Dict:
 
 async def create(*, challenge_id, label, entry_file, external_entries, static_files, path_to, archived):
     """ Create a new leaderboard """
+    if external_entries is not None:
+        external_entries = (_fs.leaderboards.get_leaderboard_archive_location() / external_entries)
+
     ld = schema.LeaderBoard(
         challenge_id=challenge_id,
         label=label,
         entry_file=entry_file,
         archived=archived,
-        external_entries=(_fs.leaderboards.get_leaderboard_archive_location() / external_entries),
+        external_entries=external_entries,
         path_to=(_fs.leaderboards.get_leaderboard_location() / path_to),
         static_files=static_files
     )
     lead_id = await leaderboardQ.create_leaderboard(lead_data=ld)
-    # fixme do we want auto-build on creation ?
+    # issue: do we want auto-build on creation ?
     await build_leaderboard(leaderboard_id=lead_id)
     return lead_id
 

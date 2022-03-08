@@ -14,7 +14,7 @@ _settings = get_settings()
 
 
 async def create_user(*, usr: models.misc.UserCreate):
-    """ Create a new user entry in the users database. """
+    """ Create a new user entry in the users' database."""
 
     hashed_pswd, salt = users_lib.hash_pwd(password=usr.pwd)
     verification_code = secrets.token_urlsafe(8)
@@ -170,6 +170,15 @@ async def get_user_list() -> List[schema.User]:
     return [schema.User(**usr) for usr in user_list]
 
 
+async def delete_user(*, uid: int):
+    """ Deletes all  password reset sessions from the password_reset_users table """
+    query = schema.users_table.delete().where(
+        schema.users_table.c.id == uid
+    )
+    # returns number of deleted entries
+    return await zrDB.execute(query)
+
+
 async def get_logged_user_list() -> List[schema.User]:
     """ Return a list of all users """
     query = schema.logged_users_table.join(schema.users_table).select().where(
@@ -245,7 +254,7 @@ async def admin_login(*, by_uid: int = Optional[int]):
     return usr, user_token
 
 
-async def delete_session(*, by_token: Optional[str] = None, by_uid: Optional[str] = None,
+async def delete_session(*, by_token: Optional[str] = None, by_uid: Optional[int] = None,
                          clear_all: bool = False):
     """ Delete a specific user session """
     if by_token:
@@ -358,6 +367,15 @@ async def clear_expired_password_reset_sessions():
     """ Deletes all expired password reset sessions from the password_reset_users table """
     query = schema.password_reset_table.delete().where(
         schema.password_reset_table.c.expiration_date <= datetime.now()
+    )
+    # returns number of deleted entries
+    return await zrDB.execute(query)
+
+
+async def clear_password_reset_sessions(*, by_uid: int):
+    """ Deletes all  password reset sessions from the password_reset_users table """
+    query = schema.password_reset_table.delete().where(
+        schema.password_reset_table.c.user_id == by_uid
     )
     # returns number of deleted entries
     return await zrDB.execute(query)

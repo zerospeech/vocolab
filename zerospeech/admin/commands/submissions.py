@@ -5,12 +5,16 @@ from pathlib import Path
 
 from rich.table import Table
 
-from zerospeech import out
+from zerospeech import out, get_settings
 from zerospeech.admin import cmd_lib
 from zerospeech.db.models.api import NewSubmissionRequest, NewSubmission
-from zerospeech.db.q import challenges as ch_queries, users as usr_queries
+from zerospeech.db.q import challengesQ, userQ
 from zerospeech.db.schema import challenges as db_challenges
 from zerospeech.lib import submissions_lib
+
+
+# api settings
+_settings = get_settings()
 
 
 class SubmissionCMD(cmd_lib.CMD):
@@ -39,7 +43,7 @@ class SubmissionCMD(cmd_lib.CMD):
         if args.status:
             fn_args['by_status'] = args.status
 
-        items = asyncio.run(ch_queries.list_submission(**fn_args))
+        items = asyncio.run(challengesQ.list_submission(**fn_args))
 
         # Prepare output
         table = Table(show_header=True, header_style="bold magenta")
@@ -49,14 +53,15 @@ class SubmissionCMD(cmd_lib.CMD):
         table.add_column("Date")
         table.add_column("Status")
         table.add_column("Evaluator ID")
+        table.add_column("Author Label")
 
         for i in items:
             table.add_row(
                 f"{i.id}", f"{i.user_id}", f"{i.track_id}", f"{i.submit_date.strftime('%d/%m/%Y')}",
-                f"{i.status}", f"{i.evaluator_id}"
+                f"{i.status}", f"{i.evaluator_id}", f"{i.author_label}"
             )
         # print
-        out.print(table)
+        out.cli.print(table)
 
 
 class SetSubmissionCMD(cmd_lib.CMD):
@@ -73,24 +78,10 @@ class SetSubmissionCMD(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        asyncio.run(ch_queries.update_submission_status(
+        submission_fs = submissions_lib.get_submission_dir(args.submission_id, as_obj=True)
+        submission_fs.clean_all_locks()
+        asyncio.run(challengesQ.update_submission_status(
             by_id=args.submission_id, status=args.status
-        ))
-
-
-class DeleteSubmissionCMD(cmd_lib.CMD):
-    """ Delete a submission """
-
-    def __init__(self, root, name, cmd_path):
-        super(DeleteSubmissionCMD, self).__init__(root, name, cmd_path)
-
-        # custom arguments
-        self.parser.add_argument("submission_id")
-
-    def run(self, argv):
-        args = self.parser.parse_args(argv)
-        asyncio.run(ch_queries.drop_submission(
-            by_id=args.submission_id,
         ))
 
 
@@ -108,24 +99,24 @@ class CreateSubmissionCMD(cmd_lib.CMD):
         archive = Path(args.archive)
 
         if not archive.is_file():
-            out.error(f'Requested file {archive} does not exist')
+            out.cli.error(f'Requested file {archive} does not exist')
 
         async def create_submission(ch_id, user_id):
             try:
-                _challenge = await ch_queries.get_challenge(challenge_id=ch_id)
-                _user = await usr_queries.get_user(by_uid=user_id)
+                _challenge = await challengesQ.get_challenge(challenge_id=ch_id)
+                _user = await userQ.get_user(by_uid=user_id)
 
                 if not _user.enabled:
-                    out.error(f'User {_user.username} is not allowed to perform this action')
+                    out.cli.error(f'User {_user.username} is not allowed to perform this action')
                     sys.exit(1)
 
-                _submission_id = await ch_queries.add_submission(new_submission=NewSubmission(
+                _submission_id = await challengesQ.add_submission(new_submission=NewSubmission(
                     user_id=_user.id,
                     track_id=_challenge.id
                 ), evaluator_id=_challenge.evaluator)
                 return _challenge, _user, _submission_id
             except ValueError:
-                out.exception()
+                out.cli.exception()
                 sys.exit(1)
 
         # fetch db items
@@ -148,7 +139,7 @@ class CreateSubmissionCMD(cmd_lib.CMD):
         # set status
         (folder / 'upload.lock').unlink()
         asyncio.run(
-            ch_queries.update_submission_status(by_id=submission_id, status=db_challenges.SubmissionStatus.uploaded)
+            challengesQ.update_submission_status(by_id=submission_id, status=db_challenges.SubmissionStatus.uploaded)
         )
 
 
@@ -174,13 +165,172 @@ class EvalSubmissionCMD(cmd_lib.CMD):
         else:
             extra_arguments = []
 
-        submission: db_challenges.ChallengeSubmission = asyncio.run(ch_queries.get_submission(by_id=args.submission_id))
+        submission: db_challenges.ChallengeSubmission = asyncio.run(challengesQ.get_submission(by_id=args.submission_id))
 
         if submission.status in self.no_eval:
-            out.print(f"Cannot evaluate a submission that has status : {submission.status}")
+            out.cli.print(f"Cannot evaluate a submission that has status : {submission.status}")
             sys.exit(1)
 
         asyncio.run(
             # todo check if status is correctly set.
             submissions_lib.evaluate(submission_id=submission.id, extra_args=extra_arguments)
         )
+
+
+class FetchSubmissionFromRemote(cmd_lib.CMD):
+    """ Fetch submission from a remote server (uses rsync) """
+
+    def __init__(self, root, name, cmd_path):
+        super(FetchSubmissionFromRemote, self).__init__(root, name, cmd_path)
+        self.parser.add_argument("hostname")
+        self.parser.add_argument("submission_id")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        if args.hostname not in list(_settings.REMOTE_STORAGE.keys()):
+            out.cli.warning(f"Host {args.hostname} is not a valid remote storage host!\n")
+            out.cli.warning(f"aborting transfer...")
+            sys.exit(1)
+
+        try:
+            _ = asyncio.run(challengesQ.get_submission(by_id=args.submission_id))
+        except ValueError:
+            out.cli.warning(f"Submission id is not valid !!")
+            out.cli.warning(f"aborting transfer...")
+            sys.exit(1)
+
+        # transferring
+        submissions_lib.fetch_submission_from_remote(host=args.hostname, submission_id=args.submission_id)
+
+
+class UploadSubmissionToRemote(cmd_lib.CMD):
+    """ Upload a submission to a remote server (uses rsync) """
+
+    def __init__(self, root, name, cmd_path):
+        super(UploadSubmissionToRemote, self).__init__(root, name, cmd_path)
+        self.parser.add_argument("hostname")
+        self.parser.add_argument("submission_id")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+
+        if args.hostname not in list(_settings.REMOTE_STORAGE.keys()):
+            out.cli.warning(f"Host {args.hostname} is not a valid remote storage host!\n")
+            out.cli.warning(f"aborting transfer...")
+            sys.exit(1)
+
+        try:
+            _ = asyncio.run(challengesQ.get_submission(by_id=args.submission_id))
+        except ValueError:
+            out.cli.warning(f"Submission id is not valid !!")
+            out.cli.warning(f"aborting transfer...")
+            sys.exit(1)
+
+        # transferring
+        submissions_lib.transfer_submission_to_remote(host=args.hostname, submission_id=args.submission_id)
+
+
+class DeleteSubmissionCMD(cmd_lib.CMD):
+    """ Deletes a submission """
+    
+    def __init__(self, root, name, cmd_path):
+        super(DeleteSubmissionCMD, self).__init__(root, name, cmd_path)
+        # parameters
+        self.parser.add_argument("delete_by", choices=['by_id', 'by_user', 'by_track'],
+                                 help="the id/status of the submission to delete")
+        self.parser.add_argument('selector', help="Item to select submission by")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+
+        if args.delete_by == 'by_id':
+            del_id = asyncio.run(submissions_lib.delete_submission(by_id=args.selector))
+            submissions_lib.delete_submission_files(del_id[0])
+            out.cli.info(f"Successfully deleted: {args.selector}")
+        elif args.delete_by == 'by_user':
+            deleted = asyncio.run(submissions_lib.delete_submission(by_user=int(args.selector)))
+
+            for d in deleted:
+                submissions_lib.delete_submission_files(d)
+                out.cli.info(f"Successfully deleted: {d}")
+
+        elif args.delete_by == 'by_track':
+            deleted = asyncio.run(submissions_lib.delete_submission(by_track=int(args.selector)))
+
+            for d in deleted:
+                submissions_lib.delete_submission_files(d)
+                out.cli.info(f"Successfully deleted: {d}")
+        else:
+            out.cli.error("Error type of deletion unknown")
+            sys.exit(1)
+
+
+class SubmissionSetEvaluator(cmd_lib.CMD):
+    """ Update or set the evaluator of a submission"""
+    
+    def __init__(self, root, name, cmd_path):
+        super(SubmissionSetEvaluator, self).__init__(root, name, cmd_path)
+        self.parser.add_argument("submission_id", type=str)
+        self.parser.add_argument("evaluator_id", type=int)
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+
+        asyncio.run(challengesQ.update_submission_evaluator(
+            args.evaluator_id, by_id=args.submission_id
+        ))
+
+
+class SubmissionSetAuthorLabel(cmd_lib.CMD):
+    """ Update or set the author_label of a submission """
+
+    def __init__(self, root, name, cmd_path):
+        super(SubmissionSetAuthorLabel, self).__init__(root, name, cmd_path)
+        self.parser.add_argument("submission_id", type=str)
+        self.parser.add_argument("author_label", type=str)
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+
+        asyncio.run(challengesQ.update_submission_author_label(
+            args.author_label, by_id=args.submission_id
+        ))
+
+
+class ArchiveSubmissionCMD(cmd_lib.CMD):
+    """ Archive submissions """
+
+    def __init__(self, root, name, cmd_path):
+        super(ArchiveSubmissionCMD, self).__init__(root, name, cmd_path)
+        # parameters
+        self.parser.add_argument("selector", help="the id/status of the submission to delete")
+        self.parser.add_argument('-t', '--type', choices=['by_id', 'by_user', 'by_track'],
+                                 help='deletion method', default='by_id')
+
+    @staticmethod
+    async def archive_submission(*args):
+        for submission_id in args:
+            # archive leaderboard entry
+            await submissions_lib.archive_leaderboard_entries(submission_id)
+            # remove submission from db
+            await submissions_lib.delete_submission(by_id=submission_id)
+            # zip & archive files
+            submissions_lib.archive_submission_files(submission_id)
+
+            out.cli.info(f"Successfully archived: {submission_id}")
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+
+        if args.type == 'by_id':
+            asyncio.run(self.archive_submission(args.selector))
+        elif args.type == 'by_user':
+            submissions = asyncio.run(challengesQ.list_submission(by_user=int(args.selector)))
+            asyncio.run(self.archive_submission([sub.id for sub in submissions]))
+        elif args.type == 'by_track':
+            submissions = asyncio.run(challengesQ.list_submission(by_track=int(args.selector)))
+            asyncio.run(self.archive_submission([sub.id for sub in submissions]))
+        else:
+            out.cli.error("Error type of deletion unknown")
+            sys.exit(1)
+

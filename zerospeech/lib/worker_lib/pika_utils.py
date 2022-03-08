@@ -58,7 +58,7 @@ async def message_dispatch(loop, queue_name: str, process_fn):
 
     # Maximum message count which will be
     # processing at the same time.
-    await channel.set_qos(prefetch_count=5)
+    await channel.set_qos(prefetch_count=1)
 
     # Declaring queue
     queue = await channel.declare_queue(queue_name)

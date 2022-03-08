@@ -61,9 +61,9 @@ async def password_update_page(v: str, request: Request):
     try:
         user = await userQ.get_user(by_password_reset_session=v)
     except ValueError as e:
-        out.Logger.error(
+        out.log.error(
             f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')
-        out.exception()
+        out.log.exception()
 
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

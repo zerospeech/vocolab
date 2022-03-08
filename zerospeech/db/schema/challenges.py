@@ -74,6 +74,7 @@ class ChallengeSubmission(BaseModel):
     submit_date: datetime
     status: SubmissionStatus
     evaluator_id: Optional[int]
+    author_label: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -87,8 +88,8 @@ submissions_table = sqlalchemy.Table(
     sqlalchemy.Column("track_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("challenges.id")),
     sqlalchemy.Column("submit_date", sqlalchemy.DateTime),
     sqlalchemy.Column("status", sqlalchemy.String),
-    sqlalchemy.Column("evaluator_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("evaluators.id"))
-
+    sqlalchemy.Column("evaluator_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("evaluators.id")),
+    sqlalchemy.Column("author_label", sqlalchemy.String)
 )
 
 
@@ -98,7 +99,7 @@ class EvaluatorItem(BaseModel):
     executor: ExecutorsType
     host: Optional[str]
     script_path: str
-    base_arguments: str
+    executor_arguments: str
 
     class Config:
         orm_mode = True
@@ -112,7 +113,7 @@ evaluators_table = sqlalchemy.Table(
     sqlalchemy.Column("host", sqlalchemy.String),
     sqlalchemy.Column("executor", sqlalchemy.String),
     sqlalchemy.Column("script_path", sqlalchemy.String),
-    sqlalchemy.Column("base_arguments", sqlalchemy.String)
+    sqlalchemy.Column("executor_arguments", sqlalchemy.String)
 )
 
 
@@ -123,7 +124,7 @@ class LeaderBoard(BaseModel):
     path_to: Path  # Path to build result
     entry_file: str  # filename in submission results
     archived: bool  # is_archived
-    external_entries: Path  # Location of external entries (baselines, toplines, archived)
+    external_entries: Optional[Path]  # Location of external entries (baselines, toplines, archived)
     static_files: bool  # has static files
 
     @classmethod

@@ -5,6 +5,7 @@ import time
 import traceback
 
 from fastapi import FastAPI, Request, status
+from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import JSONResponse
@@ -16,28 +17,35 @@ from zerospeech.exc import ZerospeechException
 
 _settings = settings.get_settings()
 
+middleware = [
+    Middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
+]
+
+
 app = FastAPI(
     title=f"{_settings.app_name}",
     description=f"{_settings.doc_description}",
     version=f"{_settings.version}",
-    swagger_static={"favicon": _settings.favicon}
+    swagger_static={"favicon": _settings.favicon},
+    middleware=middleware
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_settings.origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     # allow_origin_regex=_settings.origin_regex,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     idem = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-    out.Logger.info(
+    out.log.info(
         f'\[rid={idem}] {request.client.host}:{request.client.port} "{request.method} {request.url.path}"')
-    out.Logger.debug(f"\[rid={idem}] params={request.path_params}, {request.query_params}")
+    out.log.debug(f"\[rid={idem}] params={request.path_params}, {request.query_params}")
 
     start_time = time.time()
 
@@ -45,7 +53,7 @@ async def log_requests(request: Request, call_next):
 
     process_time = (time.time() - start_time) * 1000
     formatted_process_time = '{0:.2f}'.format(process_time)
-    out.Logger.info(
+    out.log.info(
         f"\[rid={idem}] completed_in={formatted_process_time}ms status_code={response.status_code}")
 
     return response
