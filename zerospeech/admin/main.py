@@ -67,13 +67,10 @@ def build_cli():
     if has_submissions:
         tree.add_cmd_tree(
             commands.task_worker.TaskWorkerCMD(CMD_NAME, 'worker', ''),
-            commands.task_worker.RunTaskWorkerCMD(CMD_NAME, 'run', 'worker'),
-            commands.task_worker.EchoTaskWorkerCMD(CMD_NAME, 'echo', 'worker:run'),
-            commands.task_worker.EvaluationTaskWorkerCMD(CMD_NAME, 'eval', 'worker:run'),
-            commands.task_worker.UpdateTaskWorkerCMD(CMD_NAME, 'update', 'worker:run'),
-            commands.task_worker.TestTaskWorkerCMD(CMD_NAME, 'test', 'worker'),
-            commands.task_worker.TestEchoWorker(CMD_NAME, 'echo', 'worker:test'),
-            commands.task_worker.GenerateSystemDUnitCMD(CMD_NAME, 'daemon_config', 'worker')
+            commands.task_worker.SendEchoMessage(CMD_NAME, 'test_echo', 'worker'),
+            commands.task_worker.GenerateWorkerCMD(CMD_NAME, 'generate', 'worker'),
+            commands.task_worker.GenerateWorkerSettings(CMD_NAME, 'settings', 'worker:generate'),
+            commands.task_worker.GenerateSystemDUnit(CMD_NAME, 'systemD', 'worker:generate')
         )
 
     tree.add_cmd_tree(

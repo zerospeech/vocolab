@@ -67,7 +67,7 @@ def rsync(*, src_host: Optional[str] = None, src: Path, dest_host: Optional[str]
         dest_path = f"{dest_host}:{dest}"
 
     cmd = f"{which('rsync')} -{flags}e ssh " \
-          f"--delete --exclude=*.log --exclude=*.lock " \
+          f"--delete --exclude=*.log --exclude=*.lock --exclude=*.zip " \
           f"{source_path}/ {dest_path}/"
 
     out.log.debug(f"> {cmd}")

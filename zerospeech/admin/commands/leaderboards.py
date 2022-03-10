@@ -35,12 +35,13 @@ class LeaderboardCMD(cmd_lib.CMD):
         table.add_column('Challenge ID')
         table.add_column('EntryFile', no_wrap=False, overflow='fold')
         table.add_column('LeaderboardFile', no_wrap=False, overflow='fold')
+        table.add_column('Key', no_wrap=False, overflow='fold')
 
         for entry in leaderboards:
             table.add_row(
                 f"{entry.id}", f"{entry.label}", f"{entry.archived}",
                 f"{entry.external_entries}", f"{entry.static_files}", f"{entry.challenge_id}",
-                f"{entry.entry_file}", f"{entry.path_to}"
+                f"{entry.entry_file}", f"{entry.path_to}", f"{entry.sorting_key}"
             )
         # print table
         out.cli.print(table, no_wrap=False)
