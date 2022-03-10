@@ -7,11 +7,22 @@ from collections import Callable
 from contextlib import contextmanager
 from datetime import datetime, date, time
 from pathlib import Path
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Dict
 
 from dateutil import parser
 
 __FALSE_VALUES__ = ['false', '0', 'f', 'n', 'no', 'nope', 'none', 'nan', 'not']
+
+
+def key_to_value(obj: Dict, *,  key: str):
+    keys = key.split('.')
+    curr = obj
+    for k in keys:
+        curr = curr.get(k, None)
+        if curr is None:
+            raise KeyError(f"{key} @ {k}: not found in {obj}")
+
+    return curr
 
 
 def str2type(value: str, m_type):

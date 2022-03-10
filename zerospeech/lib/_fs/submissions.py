@@ -197,11 +197,11 @@ class SubmissionDir:
 
     def clean_all_locks(self):
         """ Remove all lock files in submission"""
-        self.upload_lock.unlink()
-        self.eval_lock.unlink()
-        self.error_lock.unlink()
-        self.interrupted_lock.unlink()
-        self.clean_lock.unlink()
+        self.upload_lock.unlink(missing_ok=True)
+        self.eval_lock.unlink(missing_ok=True)
+        self.error_lock.unlink(missing_ok=True)
+        self.interrupted_lock.unlink(missing_ok=True)
+        self.clean_lock.unlink(missing_ok=True)
 
     def get_log_handler(self) -> SubmissionLogger:
         """ build the SubmissionLogger class that allows to log submission relative events """

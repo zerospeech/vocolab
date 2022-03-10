@@ -126,6 +126,7 @@ class LeaderBoard(BaseModel):
     archived: bool  # is_archived
     external_entries: Optional[Path]  # Location of external entries (baselines, toplines, archived)
     static_files: bool  # has static files
+    sorting_key: Optional[str]  # path to the item to use as sorting key
 
     @classmethod
     def get_field_names(cls):
@@ -146,5 +147,6 @@ leaderboards_table = sqlalchemy.Table(
     sqlalchemy.Column('archived', sqlalchemy.Boolean),
     sqlalchemy.Column('external_entries', sqlalchemy.String),
     sqlalchemy.Column('static_files', sqlalchemy.Boolean),
+    sqlalchemy.Column('sorting_key', sqlalchemy.String),
 )
 

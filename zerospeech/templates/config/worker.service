@@ -1,15 +1,25 @@
 [Unit]
-Description=zr worker server
+Description=ZR WORKER DAEMON
 After=network.target
-After=syslog.target
 
 [Service]
-Type=simple
+Type=forking
 User={{user}}
 Group={{group}}
-Environment=ZR_ENV_FILE={{settings_file}}
-WorkingDirectory={{run_dir}}
-ExecStart={{cmd}}
+EnvironmentFile={{environmentFile}}
+WorkingDirectory={{workDirectory}}
+ExecStart=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} multi start ${CELERYD_NODES} \
+    --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+    --loglevel="${CELERYD_LOG_LEVEL}" --pool=${CELERYD_POOL_TYPE} --concurrency=${CELERYD_CONCURRENCY}\
+    -Q ${CELERYD_QUEUE_NAME} ${CELERYD_OPTS}'
+ExecStop=/bin/sh -c '${CELERY_BIN} multi stopwait $CELERYD_NODES \
+    --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+    --loglevel="${CELERYD_LOG_LEVEL}"'
+ExecReload=/bin/sh -c '${CELERY_BIN} -A ${CELERY_APP} multi restart ${CELERYD_NODES} \
+    --pidfile=${CELERYD_PID_FILE} --logfile=${CELERYD_LOG_FILE} \
+    --loglevel="${CELERYD_LOG_LEVEL}" --pool=${CELERYD_POOL_TYPE} --concurrency=${CELERYD_CONCURRENCY}\
+    -Q ${CELERYD_QUEUE_NAME} ${CELERYD_OPTS}'
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

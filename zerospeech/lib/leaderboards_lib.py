@@ -5,13 +5,24 @@ from typing import Dict
 from zerospeech import out, get_settings
 from zerospeech.db import schema
 from zerospeech.db.q import leaderboardQ, challengesQ
-from zerospeech.lib import _fs
+from zerospeech.lib import _fs, misc
 
 _settings = get_settings()
 
 
 def get_static_location(label: str):
     return _settings.STATIC_DIR / 'leaderboards' / label
+
+
+def rebuild_leaderboard_index(leaderboard_entries, *, key):
+    """ sort entries by using a specific key and re-write the index with the new ordering """
+
+    leaderboard_entries = sorted(leaderboard_entries, key=lambda x: misc.key_to_value(x, key=key))
+
+    for i, entry in enumerate(leaderboard_entries, 1):
+        entry['index'] = i
+
+    return leaderboard_entries
 
 
 async def build_leaderboard(*, leaderboard_id: int):
@@ -59,6 +70,12 @@ async def build_leaderboard(*, leaderboard_id: int):
             if leaderboard.static_files and (sub_location / 'static').is_dir():
                 _fs.commons.copy_all_contents(sub_location / 'static', static_location)
 
+    if leaderboard.sorting_key:
+        try:
+            leaderboard_entries = rebuild_leaderboard_index(leaderboard_entries, key=leaderboard.sorting_key)
+        except KeyError:
+            out.log.error(f"Failed to build index for leaderboard={leaderboard.label} "
+                          f"with sorting_key: {leaderboard.sorting_key}")
     # Export to file
     with (_settings.LEADERBOARD_LOCATION / leaderboard.path_to).open('w') as fp:
         json.dump(dict(

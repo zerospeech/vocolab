@@ -5,10 +5,10 @@ from fastapi import UploadFile
 from pathlib import Path
 from typing import List, Optional
 
-from zerospeech import exc, out
+from zerospeech import exc, out, worker
 from zerospeech.db import models, schema
 from zerospeech.db.q import challengesQ, leaderboardQ
-from zerospeech.lib import _fs, leaderboards_lib, worker_lib
+from zerospeech.lib import _fs, leaderboards_lib
 from zerospeech.settings import get_settings
 
 _settings = get_settings()
@@ -114,14 +114,17 @@ async def evaluate(submission_id: str, extra_args: Optional[List[str]] = None):
         location = get_submission_dir(submission_id)
 
     # send message to worker to launch evaluation
-    await worker_lib.send_eval_message(
-        label=f"{track.label}-eval",
-        submission_id=submission_id,
-        executor=evaluator.executor,
-        bin_path=str(Path(evaluator.script_path).parent),
-        script_name=str(Path(evaluator.script_path).name),
-        args=[*extra_args, str(location)],
-        executor_args=shlex.split(evaluator.executor_arguments)
+    out.cli.debug("sending message to queue")
+    worker.evaluate.delay(
+        models.tasks.SubmissionEvaluationMessage(
+            label=f"{track.label}-eval",
+            submission_id=submission_id,
+            executor=evaluator.executor,
+            bin_path=str(Path(evaluator.script_path).parent),
+            script_name=str(Path(evaluator.script_path).name),
+            executor_args=shlex.split(evaluator.executor_arguments),
+            cmd_args=[*extra_args, str(location)]
+        ).dict()
     )
     # add eval lock
     submission_fs.eval_lock.touch()

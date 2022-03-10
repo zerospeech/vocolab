@@ -77,7 +77,8 @@
      "entry_file": "leaderboard.json",
      "external_entries": "",
      "archived": false,
-     "static_files": false
+     "static_files": false,
+     "sorting_key": "more.description.submitted_at"
    },
    {
      "label": "test",
@@ -86,6 +87,7 @@
      "entry_file": "test.json",
      "external_entries": null,
      "archived": false,
-     "static_files": false
+     "static_files": false,
+     "sorting_key": "date"
    }
  ]

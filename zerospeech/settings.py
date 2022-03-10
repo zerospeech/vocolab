@@ -1,3 +1,5 @@
+import shutil
+
 import os
 import platform
 from datetime import timedelta
@@ -6,8 +8,16 @@ from pathlib import Path
 from typing import List, Union, Set, Dict, Optional
 
 from pydantic import (
-    BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork
+    BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork, BaseModel
 )
+
+
+class CeleryWorkerOptions(BaseModel):
+    celery_bin: Path = Path(shutil.which('celery'))
+    celery_nodes: Dict[str, str] = {'eval': 'zr-evaluate-node', 'update': 'zr-update-node'}
+    celery_app: str = 'zerospeech.worker.server:app'
+    celery_pool_type: str = "prefork"
+    celery_worker_number: int = 2
 
 
 class _ZerospeechSettings(BaseSettings):
@@ -44,10 +54,12 @@ class _ZerospeechSettings(BaseSettings):
     RPC_USERNAME: str = "admin"
     RPC_PASSWORD: str = "123"
     RPC_HOST: Union[IPvAnyNetwork, str] = "localhost"
+    RPC_VHOST: str = "zerospeech"
     RPC_PORT: int = 5672
     RPC_CHANNELS: Dict[str, str] = dict(
         eval="zerospeech-eval", update="zerospeech-update", echo="zerospeech-msg"
     )
+    celery_options: CeleryWorkerOptions = CeleryWorkerOptions()
 
     # Remote Settings
     HOSTS: Set[str] = set()
@@ -68,9 +80,9 @@ class _ZerospeechSettings(BaseSettings):
     ]
     # Queue Channels
     QUEUE_CHANNELS: Dict[str, str] = {
-        "eval": 'zr-evaluation-channel',
-        'update': 'zr-update-channel',
-        'echo': 'zr-echo-channel'
+        "eval": 'evaluation-queue',
+        'update': 'update-queue',
+        'echo': 'echo-queue'
     }
     origin_regex: List[str] = [
         # local debug urls

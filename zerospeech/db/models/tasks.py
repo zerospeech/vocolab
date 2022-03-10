@@ -64,6 +64,7 @@ class UpdateType(str, Enum):
     evaluation_complete = "evaluation_complete"
     evaluation_failed = "evaluation_failed"
     evaluation_canceled = "evaluation_canceled"
+    evaluation_undefined = "evaluation_undefined"
 
 
 class SubmissionUpdateMessage(BrokerMessage):
