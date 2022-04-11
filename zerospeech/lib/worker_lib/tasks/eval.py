@@ -1,6 +1,5 @@
 import shlex
 import subprocess
-from celery import Celery
 from pathlib import Path
 from typing import List
 
@@ -89,7 +88,7 @@ def post_eval_update(status: int, sem: tasks.SubmissionEvaluationMessage):
         sum_.updateType = UpdateType.evaluation_failed
 
     # send update to channel
-    update.delay(sum_.dict())
+    update.delay(sum_=sum_.dict())
 
 
 def evaluate_submission_fn(sem: tasks.SubmissionEvaluationMessage):

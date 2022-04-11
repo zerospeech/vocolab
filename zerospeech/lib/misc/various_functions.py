@@ -14,6 +14,11 @@ from dateutil import parser
 __FALSE_VALUES__ = ['false', '0', 'f', 'n', 'no', 'nope', 'none', 'nan', 'not']
 
 
+def strip_from_dict(data: Dict, values: List[str]):
+    for v in values:
+        del data[v]
+
+
 def key_to_value(obj: Dict, *,  key: str):
     keys = key.split('.')
     curr = obj

@@ -3,6 +3,8 @@ import json
 from zerospeech import get_settings, exc
 from zerospeech.db import models
 
+from ..misc import strip_from_dict
+
 _settings = get_settings()
 
 
@@ -12,7 +14,7 @@ def get_user_data(username: str) -> models.api.UserData:
         raise exc.UserNotFound('user requested has no data entry')
     with db_file.open() as fp:
         raw_data = json.load(fp)
-        return models.api.UserData(**raw_data)
+    return models.api.UserData(**raw_data)
 
 
 def update_user_data(username: str, data: models.api.UserData):

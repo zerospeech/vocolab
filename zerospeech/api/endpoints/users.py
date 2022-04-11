@@ -7,7 +7,7 @@ from fastapi import (
 )
 
 from zerospeech import exc, out
-from zerospeech.lib import api_lib, users_lib, submissions_lib
+from zerospeech.lib import api_lib, users_lib, submissions_lib, misc
 from zerospeech.db import schema, models
 from zerospeech.db.q import challengesQ, leaderboardQ
 from zerospeech.settings import get_settings
@@ -20,11 +20,15 @@ _settings = get_settings()
 @router.get("/profile")
 def get_profile(current_user: schema.User = Depends(api_lib.get_current_active_user)) -> models.api.UserProfileResponse:
     try:
+        user_data = users_lib.get_user_data(current_user.username).dict(
+            exclude={'verified', 'email', 'created'}
+        )
+
         return models.api.UserProfileResponse(
             verified=current_user.verified == "True",
             email=current_user.email,
             created=current_user.created_at,
-            **(users_lib.get_user_data(current_user.username).dict())
+            **user_data
         )
     except pydantic.ValidationError:
         out.log.error("Failed to validate profile data")
