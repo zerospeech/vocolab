@@ -9,10 +9,8 @@ from zerospeech.db.models import tasks
 from zerospeech.lib import worker_lib
 
 # """""""""""""""""""""""""""""""""""""
-# todo: run a couple of evals to test
 # todo: read up on what is the best pool/supervisor
 # todo: estimate best concurrency number and thread vs process
-# todo: [FINAL] merge in master branch
 # """""""""""""""""""""""""""""""""""""
 _settings = get_settings()
 app = Celery(f"zr-worker-{str(uuid4())}")

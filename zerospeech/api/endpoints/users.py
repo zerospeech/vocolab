@@ -1,6 +1,8 @@
 """ Routing for /users section of the API
 This section handles user data
 """
+from typing import Dict, List
+
 import pydantic
 from fastapi import (
     APIRouter, Depends, Response
@@ -17,13 +19,19 @@ router = APIRouter()
 _settings = get_settings()
 
 
+def drop_keys(data: Dict, keys: List[str]):
+    for k in keys:
+        try:
+            del data[k]
+        except KeyError:
+            pass
+
+
 @router.get("/profile")
 def get_profile(current_user: schema.User = Depends(api_lib.get_current_active_user)) -> models.api.UserProfileResponse:
     try:
-        user_data = users_lib.get_user_data(current_user.username).dict(
-            exclude={'verified', 'email', 'created'}
-        )
-
+        user_data = users_lib.get_user_data(current_user.username).dict()
+        drop_keys(user_data, ['verified', 'email', 'created'])
         return models.api.UserProfileResponse(
             verified=current_user.verified == "True",
             email=current_user.email,
