@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from zerospeech import get_settings
+from vocolab import get_settings
 
 
 @pytest.fixture(scope="session")
@@ -20,18 +20,7 @@ def large_binary_file():
 
 
 @pytest.fixture(scope="session")
-def api_settings():
-    return get_settings(settings_type="queue_worker")
-
-
-@pytest.fixture(scope="session")
-def queue_settings():
-    return get_settings(settings_type="api")
-
-
-@pytest.fixture(scope="session")
-def cli_settings():
-    return get_settings(settings_type="cli")
-
+def settings():
+    return get_settings()
 
 

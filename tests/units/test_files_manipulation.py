@@ -1,4 +1,4 @@
-from zerospeech.utils.misc import split_zip, merge_zip
+from vocolab.lib._fs.file_spilt import split_zip, merge_zip
 
 
 def test_zip_split_merge(large_binary_file):

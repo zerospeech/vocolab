@@ -1,6 +1,6 @@
 import pytest
 
-from zerospeech.db import zrDB, create_db
+from vocolab.db import zrDB, create_db
 
 
 @pytest.fixture(scope="session")
