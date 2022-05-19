@@ -149,4 +149,3 @@ leaderboards_table = sqlalchemy.Table(
     sqlalchemy.Column('static_files', sqlalchemy.Boolean),
     sqlalchemy.Column('sorting_key', sqlalchemy.String),
 )
-

@@ -14,31 +14,31 @@ from pydantic import (
 
 class CeleryWorkerOptions(BaseModel):
     celery_bin: Path = Path(shutil.which('celery'))
-    celery_nodes: Dict[str, str] = {'eval': 'zr-evaluate-node', 'update': 'zr-update-node'}
-    celery_app: str = 'zerospeech.worker.server:app'
+    celery_nodes: Dict[str, str] = {'eval': 'vc-evaluate-node', 'update': 'vc-update-node'}
+    celery_app: str = 'vocolab.worker.server:app'
     celery_pool_type: str = "prefork"
     celery_worker_number: int = 2
 
 
-class _ZerospeechSettings(BaseSettings):
+class _VocoLabSettings(BaseSettings):
     """ Base Settings for module """
     # Globals
-    app_name: str = "Zerospeech Challenge API"
+    app_name: str = "VocoLab Challenge API"
     app_home: DirectoryPath = Path(__file__).parent
     version: str = "v0.1"
     maintainers: str = "CoML Team, INRIA, ENS, EHESS, CNRS"
     admin_email: EmailStr = EmailStr("contact@zerospeech.com")
     hostname: str = platform.node()
     DATA_FOLDER: DirectoryPath = Path('data/')
-    API_BASE_URL: str = "https://api.zerospeech.com"
+    API_BASE_URL: str = "https://api.vocolab.com"
 
     # Databases
-    db_file: str = 'zerospeech.db'
+    db_file: str = 'vocolab.db'
 
     # Documentation
-    doc_title: str = "Zerospeech Challenge API"
-    doc_version: str = 'v0'
-    doc_description: str = 'A documentation of the API for the Zerospeech Challenge back-end !'
+    doc_title: str = "VocoLab Challenge API"
+    doc_version: str = 'v0.5'
+    doc_description: str = 'A documentation of the API for the VocoLab Challenge back-end !'
 
     # Console & Logging
     DEBUG: bool = True
@@ -54,10 +54,10 @@ class _ZerospeechSettings(BaseSettings):
     RPC_USERNAME: str = "admin"
     RPC_PASSWORD: str = "123"
     RPC_HOST: Union[IPvAnyNetwork, str] = "localhost"
-    RPC_VHOST: str = "zerospeech"
+    RPC_VHOST: str = "vocolab"
     RPC_PORT: int = 5672
     RPC_CHANNELS: Dict[str, str] = dict(
-        eval="zerospeech-eval", update="zerospeech-update", echo="zerospeech-msg"
+        eval="vocolab-eval", update="vocolab-update", echo="vocolab-msg"
     )
     celery_options: CeleryWorkerOptions = CeleryWorkerOptions()
 
@@ -67,23 +67,17 @@ class _ZerospeechSettings(BaseSettings):
     REMOTE_BIN: Dict[str, Path] = dict()
 
     # FastAPI settings
-    favicon: str = 'https://api.zerospeech.com/static/favicon.ico'
+    favicon: str = 'https://api.vocolab.com/static/favicon.ico'
     origins: List[str] = [
         # local debug urls
-        "http://zerospeech.test",
-        "http://api.zerospeech.test",
+        "http://vocolab.test",
+        "http://api.vocolab.test",
         # staging urls
         "https://*.cognitive-ml.fr/*"
         # production urls
         "https://zerospeech.com",
         "https://api.zerospeech.com",
     ]
-    # Queue Channels
-    QUEUE_CHANNELS: Dict[str, str] = {
-        "eval": 'evaluation-queue',
-        'update': 'update-queue',
-        'echo': 'echo-queue'
-    }
     origin_regex: List[str] = [
         # local debug urls
         "http://*.test"
@@ -92,10 +86,19 @@ class _ZerospeechSettings(BaseSettings):
         # production urls
         "https://*zerospeech.com/*"
     ]
+    # Queue Channels
+    QUEUE_CHANNELS: Dict[str, str] = {
+        "eval": 'evaluation-queue',
+        'update': 'update-queue',
+        'echo': 'echo-queue'
+    }
 
     # Users
     session_expiry_delay: timedelta = timedelta(days=7)
     password_reset_expiry_delay: timedelta = timedelta(minutes=45)
+    # submission quotas
+    max_submissions: int = 1
+    submission_interval: timedelta = timedelta(days=1)
 
     # Data Locations [ defaults are set by a factory function ]
     STATIC_DIR: Optional[Path] = None
@@ -111,9 +114,9 @@ class _ZerospeechSettings(BaseSettings):
     CONFIG_TEMPLATE_DIR: Path = TEMPLATES_DIR / 'config'
 
     # Mattermost
-    mattermost_url: HttpUrl = 'https://mattermost.cognitive-ml.fr/hooks'
-    mattermost_username: str = 'AdminBot'
-    mattermost_channel: str = 'engineering-private'  # todo change to zerospeech channel
+    MATTERMOST_URL: HttpUrl = 'https://mattermost.vocolab.com/hooks'
+    MATTERMOST_USERNAME: str = 'AdminBot'
+    MATTERMOST_CHANNEL: str = 'vocolab-channel'
     MATTERMOST_API_KEY: str = 'super-secret-key'
 
     # Email related settings
@@ -152,25 +155,25 @@ class _ZerospeechSettings(BaseSettings):
         factory('SUBMISSION_ARCHIVE_DIR', 'submissions/archive')
 
     class Config:
-        env_prefix = 'ZR_'
+        env_prefix = 'VC_'
         env_file = '.env'
         env_file_encoding = 'utf-8'
 
 
 @lru_cache()
-def get_settings() -> _ZerospeechSettings:
+def get_settings() -> _VocoLabSettings:
     """ Getter for api settings
 
     :info uses cache policy for faster loading
     :returns Settings object
     """
     # external settings override from .env file
-    env_file = os.environ.get('ZR_ENV_FILE', None)
+    env_file = os.environ.get('VOCO_ENV_FILE', None)
 
     if env_file:
-        st = _ZerospeechSettings(_env_file=env_file, _env_file_encoding='utf-8')
+        st = _VocoLabSettings(_env_file=env_file, _env_file_encoding='utf-8')
     else:
-        st = _ZerospeechSettings()
+        st = _VocoLabSettings()
 
     # set dependent folders
     st.__folder_factory__()

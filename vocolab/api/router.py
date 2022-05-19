@@ -2,11 +2,11 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
-from zerospeech.api.endpoints import (
+from vocolab.api.endpoints import (
     users, auth, challenges, leaderboards
 )
-from zerospeech.api.pages import users as user_pages
-from zerospeech.settings import get_settings
+from vocolab.api.pages import users as user_pages
+from vocolab.settings import get_settings
 
 _settings = get_settings()
 
@@ -16,7 +16,7 @@ api_router = APIRouter()
 @api_router.get("/")
 def index():
     """ API Index """
-    install_time = (Path.home() / '.zr-installation')
+    install_time = (Path.home() / '.voco-installation')
     if install_time.is_file():
         with install_time.open() as fp:
             installation_datetime = fp.read()

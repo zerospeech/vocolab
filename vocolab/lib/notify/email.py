@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import List, Any, Dict
 
 from fastapi_mail import FastMail, ConnectionConfig, MessageSchema
@@ -25,7 +24,7 @@ fm = FastMail(email_cgf)
 
 
 def parse_email_exceptions(e: Exception):
-    from fastapi_mail.errors import ConnectionErrors, WrongFile, TemplateFolderDoesNotExist
+    from fastapi_mail.errors import ConnectionErrors
 
     if isinstance(e, ConnectionErrors):
         out.console.error("issues with connections ?")

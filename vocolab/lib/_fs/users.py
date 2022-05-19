@@ -3,8 +3,6 @@ import json
 from vocolab import get_settings, exc
 from vocolab.db import models
 
-from ..misc import strip_from_dict
-
 _settings = get_settings()
 
 

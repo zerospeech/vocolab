@@ -104,7 +104,7 @@ async def get_submission(submissions_id: str, current_user: schema.User = Depend
 
     if submission.evaluator_id is not None:
         evaluator = await challengesQ.get_evaluator(by_id=submission.evaluator_id)
-        evaluator_cmd = f"{evaluator.executor} {evaluator.script_path} {evaluator.base_arguments.replace(';', ' ')}"
+        evaluator_cmd = f"{evaluator.executor} {evaluator.script_path} {evaluator.executor_arguments.replace(';', ' ')}"
         evaluator_label = evaluator.label
     else:
         evaluator_cmd = ""

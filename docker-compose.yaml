@@ -1,91 +1,71 @@
 version: "3.3"
 services:
-  api:
-    restart: unless-stopped
-    stop_grace_period: 30s
-    image: "api:latest"
-    container_name: zerospeech_api
-    depends_on:
-      - queue
-    build:
-      context: .
-      dockerfile: app.Dockerfile
-    env_file:
-#      - .env
-      - test.env
-#      - prod.env
-    environment:
-      # DOCKER PATH ENV
-      ZR_API_BASE_URL: "https://api.zerospeech.com"
-      ZR_DATA_FOLDER: "/app-data/_static"
-      ZR_MATTERMOST_API_KEY: "XXXXXXXX"
-      ZR_MAIL_USERNAME: "XXXXXXXX"
-      ZR_MAIL_PASSWORD: "XXXXXXXX"
-      ZR_MAIL_FROM: "XXXXXXXX"
-      ZR_MAIL_FROM_NAME: "Zerospeech Challenge"
-      ZR_MAIL_PORT: "XXXXXXXX"
-      ZR_MAIL_SERVER: "XXXXXXXX"
-      ZR_MAIL_TLS: True
-      ZR_MAIL_SSL: False
-      ZR_HOSTS: '["oberon","flores","pl738-pro"]'
-      ZR_REMOTE_STORAGE: '{"oberon":"/zerospeech/submissions"}'
-      ZR_REMOTE_BIN: '{"oberon":"/zerospeech/bin"}'
-      # RabbitMQ
-      ZR_RPC_USERNAME: "zerospeech-api"
-      ZR_RPC_PASSWORD: "XXXXXXX"
-      ZR_RPC_HOST: "localhost"
-      ZR_RPC_POST: 5672
-    volumes:
-      - app-data:/app-data
-    command: sleep infinity
 
+  # message queue container
   queue:
     image: rabbitmq:3-management-alpine
-    container_name: zerospeech_queue
+    container_name: vocolab_queue
     ports:
-      - 5672:5672
-      - 15672:15672
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: 123
 
-
-  dispatch:
+  # API container
+  api:
     restart: unless-stopped
-    stop_grace_period: 60s
-    image: "dispatch:latest"
-    container_name: zerospeech_dispatch
+    stop_grace_period: 30s
+    image: "voco-api:latest"
+    container_name: vocolab_api
     depends_on:
       - queue
     build:
       context: .
-      dockerfile: dispatch.Dockerfile
+      dockerfile: containers/api.Dockerfile
     env_file:
-      - test.env
+      - containers/dockerconfig/docker.env
     environment:
-      ZR_API_BASE_URL: "https://api.zerospeech.com"
-      ZR_DATA_FOLDER: "/data/_static"
-      ZR_MATTERMOST_API_KEY: "XXXXXXXX"
-      ZR_MAIL_USERNAME: "XXXXXXXX"
-      ZR_MAIL_PASSWORD: "XXXXXXXX"
-      ZR_MAIL_FROM: "XXXXXXXX"
-      ZR_MAIL_FROM_NAME: "Zerospeech Challenge"
-      ZR_MAIL_PORT: "XXXXXXXX"
-      ZR_MAIL_SERVER: "XXXXXXXX"
-      ZR_MAIL_TLS: True
-      ZR_MAIL_SSL: False
-      ZR_HOSTS: '["oberon","flores","pl738-pro"]'
-      ZR_REMOTE_STORAGE: '{"oberon":"/zerospeech/submissions"}'
-      ZR_REMOTE_BIN: '{"oberon":"/zerospeech/bin"}'
-      # RabbitMQ
-      ZR_RPC_USERNAME: "zerospeech-api"
-      ZR_RPC_PASSWORD: "XXXXXXX"
-      ZR_RPC_HOST: "localhost"
-      ZR_RPC_POST: 5672
+      # DOCKER PATH ENV
+      VC_API_BASE_URL: "https://api.zerospeech.com"
     volumes:
       - app-data:/app-data
-    command: sleep infinity
 
+  # Evaluation worker
+  eval_worker:
+    restart: unless-stopped
+    stop_grace_period: 180s
+    image: "voco-worker:latest"
+    container_name: vocolab_evaluation_worker
+    depends_on:
+      - queue
+    build:
+      context: .
+      dockerfile: containers/worker.Dockerfile
+    env_file:
+      - containers/dockerconfig/docker.env
+    environment:
+      ZR_API_BASE_URL: "https://api.zerospeech.com"
+    volumes:
+      - app-data:/app-data
+
+  # Evaluation worker
+  update_worker:
+    restart: unless-stopped
+    stop_grace_period: 180s
+    image: "voco-worker:latest"
+    container_name: vocolab_update_worker
+    depends_on:
+      - queue
+    build:
+      context: .
+      dockerfile: containers/update-worker.Dockerfile
+    env_file:
+      - containers/dockerconfig/docker.env
+    environment:
+      ZR_API_BASE_URL: "https://api.zerospeech.com"
+    volumes:
+      - app-data:/app-data
 
 volumes:
   app-data:

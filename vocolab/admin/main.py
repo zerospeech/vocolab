@@ -11,7 +11,7 @@ has_challenges = has_db
 has_submissions = _settings.SUBMISSION_DIR.is_dir()
 has_leaderboard = _settings.LEADERBOARD_LOCATION.is_dir()
 is_dev = _settings.DEBUG is True
-CMD_NAME = "zr"
+CMD_NAME = "voco"
 
 
 def build_cli():

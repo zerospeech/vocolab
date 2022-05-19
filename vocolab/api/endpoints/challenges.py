@@ -1,7 +1,6 @@
 """ Routing for /challenges section of the API
 This section handles challenge data
 """
-from datetime import datetime
 from typing import List
 
 from fastapi import (
@@ -10,7 +9,7 @@ from fastapi import (
 
 from vocolab import out, exc
 from vocolab.db import schema, models
-from vocolab.db.q import challengesQ, leaderboardQ
+from vocolab.db.q import challengesQ
 from vocolab.lib import api_lib, submissions_lib
 from vocolab.settings import get_settings
 
@@ -79,6 +78,6 @@ async def upload_submission(
         return models.api.UploadSubmissionPartResponse(
             completed=is_completed, remaining=[n.file_name for n in remaining]
         )
-    except exc.ZerospeechException as e:
+    except exc.VocoLabException as e:
         out.log.exception()
         raise e

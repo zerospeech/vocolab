@@ -4,7 +4,7 @@ from typing import Any, Optional
 from starlette import status as http_status
 
 
-class ZerospeechException(Exception):
+class VocoLabException(Exception):
     """ Generic Base Exception definition for the Zerospeech API """
     __http_status__: int = http_status.HTTP_400_BAD_REQUEST
 
@@ -18,7 +18,7 @@ class ZerospeechException(Exception):
 
         self.message = msg
         self.data = data
-        super(ZerospeechException, self).__init__(msg)
+        super(VocoLabException, self).__init__(msg)
 
     @property
     def status(self):
@@ -29,12 +29,12 @@ class ZerospeechException(Exception):
         return f"{self.__class__.__name__}: {self.message}"
 
 
-class OptionMissing(ZerospeechException):
+class OptionMissing(VocoLabException):
     """ Generic Exception used when a function was called with incorrect or missing arguments """
     pass
 
 
-class UserError(ZerospeechException):
+class UserError(VocoLabException):
     """ Generic Exception for actions on users """
     pass
 
@@ -49,31 +49,31 @@ class UserNotFound(UserError):
     pass
 
 
-class ActionNotValid(ZerospeechException):
+class ActionNotValid(VocoLabException):
     """ Error you are performing a useless or invalid action"""
     pass
 
 
-class ValueNotValid(ZerospeechException):
+class ValueNotValid(VocoLabException):
     """ Error one of the values used was not valid """
     pass
 
 
-class InvalidRequest(ZerospeechException):
+class InvalidRequest(VocoLabException):
     """ Error the request made was not valid """
     pass
 
 
-class ResourceRequestedNotFound(ZerospeechException):
+class ResourceRequestedNotFound(VocoLabException):
     """ Error the request made was not valid """
     pass
 
 
-class SecurityError(ZerospeechException):
+class SecurityError(VocoLabException):
     """ Error for not allowed actions """
     pass
 
 
-class ServerError(ZerospeechException):
+class ServerError(VocoLabException):
     """ Error with the starting of a server/service """
     pass

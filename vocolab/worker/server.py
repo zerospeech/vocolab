@@ -13,7 +13,7 @@ from vocolab.lib import worker_lib
 # todo: estimate best concurrency number and thread vs process
 # """""""""""""""""""""""""""""""""""""
 _settings = get_settings()
-app = Celery(f"zr-worker-{str(uuid4())}")
+app = Celery(f"vc-worker-{str(uuid4())}")
 
 app.conf.update({
     "broker_url": worker_lib.utils.build_broker_url(),
