@@ -1,15 +1,11 @@
-# Proposed new name for the module 
+# VocoLab
 
-voco : call in latin (call --> challenge)
-
-# Zerospeech Admin
-
-![VERSION](https://img.shields.io/badge/Zerospeech--Admin-V0.5--alpha-orange)
+![VERSION](https://img.shields.io/badge/VocoLab-V0.5--alpha-orange)
 ![LICENCE](https://img.shields.io/badge/LICENCE-GPL%20%3E=%20V3-green)
-![BUILD](https://img.shields.io/badge/BUILD-PASS-brightgreen)
+![BUILD](https://img.shields.io/badge/BUILD-FAIL-red)
 ![TESTS](https://img.shields.io/badge/TESTS-No-red)
 
-A module containing various tools to launch and administrate Zerospeech Challenges.
+A module allowing administration of challenges.
 
 
 ## Environment & Configuration
@@ -24,7 +20,7 @@ To run this project, you will need to add the following environment :
 ### Configuration
 
 To configure your environment a .env file is used. you need to specify an 
-environment variable named `ZR_ENV_FILE` configured, so the module knows were 
+environment variable named `VC_ENV_FILE` configured, so the module knows were 
 load variables from.
 
 For an example on the minimum setup see [example.env](example.env)
@@ -118,7 +114,7 @@ For more information on tests see [docs/testing](docs/testing.md)
   
 ## License
 
-zerospeech-admin module 
+vocolab module 
 
 Copyright (C) 2021 Nicolas Hamilakis, CoML TEAM, École Normale Supérieure Paris, Inria Paris Research
 This program and all its files are licenced under the GNU GENERAL PUBLIC LICENSE Version 3;
