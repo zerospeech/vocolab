@@ -1,11 +1,22 @@
-wsgi_app = "vocolab.api:app"
-# bind as unix:socket or ip:port
-bind = 'unix:/run/gunicorn.socket'
+import os
+
+
+def from_env(key: str, default_value):
+    if key in os.environ:
+        return os.environ[key]
+    else:
+        return default_value
+
+
+# Path to wsgi app object
+wsgi_app = from_env('VC_WSGI_APP', "vocolab.api:app")
+# server bind point
+bind = from_env('VC_SERVER_BIND', "0.0.0.0:8000")
 # backlog size (number of pending connections)
 backlog = 2048
 # Number of processes to create
-workers = 4
-worker_class = "uvicorn.workers.UvicornWorker"
+workers = from_env('VC_GUNICORN_WORKERS', 4)
+worker_class = from_env('VC_GUNICORN_WORKER_CLASS', "uvicorn.workers.UvicornWorker")
 worker_connections = 1000
 timeout = 30
 keepalive = 2
@@ -15,7 +26,7 @@ spew = False
 daemon = False
 # Environment variables to set for processes
 raw_env = [
-    'VOCO_ENV_FILE=/etc/vocolab/api-prod.env',
+    'VOCO_ENV_FILE=/etc/vocolab/docker.env',
 ]
 # The path to a pid file to write (None: use system default).
 pidfile = None

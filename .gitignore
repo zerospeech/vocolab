@@ -26,6 +26,7 @@ MANIFEST
 *.db
 *.env
 !example.env
+!docker.env
 data/
 *.bin
 

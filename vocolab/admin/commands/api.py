@@ -151,7 +151,7 @@ class GunicornConfigGeneration(cmd_lib.CMD):
             zr_env_file=os.environ.get('ZR_ENV_FILE', ''),
             worker_class=_settings.GUNICORN_WORKER_CLASS,
             nb_workers=_settings.GUNICORN_WORKERS,
-            bind_point=_settings.bind
+            bind_point=_settings.SERVER_BIND
         )
         # export
         if args.out_file:
@@ -173,7 +173,7 @@ class SystemDSocketFileGeneration(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        bind = urlparse(_settings.bind)
+        bind = urlparse(_settings.SERVER_BIND)
         if bind.scheme == 'unix':
             socket_file = bind.path
         else:

@@ -28,11 +28,10 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
-MANIFEST.in
 # Project files
 *.env
 !example.env
+!docker.env
 *.log
 *.bin
 

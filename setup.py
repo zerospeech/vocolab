@@ -16,6 +16,6 @@ setuptools.setup(
     install_requires=requirements,
     # include_package_data=True,
     package_data={
-        '': ['*.jinja2', '*.service', '*.socket', '*.wsgi', '*.conf', '*.env']
+        '': ['*.jinja2', '*.service', '*.socket', '*.wsgi', '*.conf', '*.env', '*.config']
     },
 )

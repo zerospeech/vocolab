@@ -7,19 +7,19 @@ RUN pip install --no-cache-dir --upgrade pip
 
 # Base to install python dependencies
 FROM base as install
-COPY requirements.txt /src
-COPY requirements-dev.txt /src
+COPY ../requirements.txt /src
+COPY ../requirements-dev.txt /src
 # install dependencies
 RUN pip install --no-cache-dir -r /src/requirements-dev.txt
 RUN pip install --no-cache-dir -r /src/requirements.txt
 
 FROM install as vocolab
 # Project files
-COPY vocolab /src/vocolab
-COPY setup.py /src/
-COPY setup.cfg /src/
-COPY MANIFEST.cfg /src/
-COPY README.md /src/
+COPY ../vocolab /src/vocolab
+COPY ../setup.py /src/
+COPY ../setup.cfg /src/
+COPY ../MANIFEST.cfg /src/
+COPY ../README.md /src/
 
 # Install vocolab
 WORKDIR /src

@@ -9,8 +9,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: 123
+      RABBITMQ_DEFAULT_USER: vocolab
+      RABBITMQ_DEFAULT_PASS: admin
 
   # API container
   api:
@@ -23,11 +23,25 @@ services:
     build:
       context: .
       dockerfile: containers/api.Dockerfile
+    ports:
+      - "8000:8000"
     env_file:
       - containers/dockerconfig/docker.env
     environment:
       # DOCKER PATH ENV
-      VC_API_BASE_URL: "https://api.zerospeech.com"
+      VC_GUNICORN_WORKERS: 4
+      VC_API_BASE_URL: "https://api.vocolab.com"
+      VC_version: "v0.5"
+      VC_maintainers: "CoML Team, INRIA, ENS, EHESS, CNRS"
+      VC_admin_email: "contact@zerospeech.com"
+      VC_MAIL_USERNAME: "noreply@vocolab.com"
+      VC_MAIL_PASSWORD: "XXXXXXX"
+      VC_MAIL_FROM: "noreply@vocolab.com"
+      VC_MAIL_FROM_NAME: "Vocolab Challenges"
+      VC_MAIL_PORT: 25
+      VC_MAIL_SERVER: "mail.vocolab.com"
+      VC_MAIL_TLS: "True"
+      VC_MAIL_SSL: "False"
     volumes:
       - app-data:/app-data
 

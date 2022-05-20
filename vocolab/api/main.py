@@ -13,7 +13,7 @@ from starlette.responses import JSONResponse
 from vocolab import settings, out
 from vocolab.api import router as v1_router
 from vocolab.db import zrDB, create_db
-from vocolab.exc import ZerospeechException
+from vocolab.exc import VocoLabException
 
 _settings = settings.get_settings()
 
@@ -76,8 +76,8 @@ async def value_error_reformatting(request: Request, exc: ValueError):
     )
 
 
-@app.exception_handler(ZerospeechException)
-async def zerospeech_error_formatting(request: Request, exc: ZerospeechException):
+@app.exception_handler(VocoLabException)
+async def zerospeech_error_formatting(request: Request, exc: VocoLabException):
     if exc.data:
         content = dict(message=f"{str(exc)}", data=str(exc.data))
     else:
@@ -105,10 +105,13 @@ async def startup():
     with (_settings.DATA_FOLDER / 'password_reset.path').open('w') as fp:
         fp.write(app.url_path_for("password_update_page"))
 
+    out.log.info("API loaded successfully")
+
 
 @app.on_event("shutdown")
 async def shutdown():
     # clean up db connection pool
+    out.log.info("shutdown of api server")
     await zrDB.disconnect()
 
 

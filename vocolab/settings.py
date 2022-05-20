@@ -131,7 +131,7 @@ class _VocoLabSettings(BaseSettings):
     MAIL_TEMPLATE_DIR: Path = TEMPLATES_DIR / 'emails'
 
     # Deployment Variables
-    bind: str = "unix:/run/gunicorn.socket"
+    SERVER_BIND: str = "unix:/run/gunicorn.socket"
     NGINX_USER = "www-data"
     SERVICE_USER: str = "api-user"
     SERVICE_GROUP: str = "api-user"
