@@ -2,33 +2,38 @@ FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8 as base
 LABEL maintainer="Nicolas Hamilakis <nicolas.hamilakis@ens.fr>"
 LABEL copyright="GPL3, CoML Team, ENS, INRIA, EHESS"
 
-RUN pip install --no-cache-dir --upgrade pip
-
-
 # Base to install python dependencies
 FROM base as install
-COPY ../requirements.txt /src
-COPY ../requirements-dev.txt /src
+COPY requirements.txt /src/
+COPY requirements-dev.txt /src/
 # install dependencies
+RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r /src/requirements-dev.txt
 RUN pip install --no-cache-dir -r /src/requirements.txt
 
+
 FROM install as vocolab
 # Project files
-COPY ../vocolab /src/vocolab
-COPY ../setup.py /src/
-COPY ../setup.cfg /src/
-COPY ../MANIFEST.cfg /src/
-COPY ../README.md /src/
+COPY vocolab /src/vocolab
+COPY setup.py /src/
+COPY setup.cfg /src/
+COPY MANIFEST.in /src/
+COPY README.md /src/
+COPY LICENCE.txt /src/
+COPY docs /docs/
 
 # Install vocolab
 WORKDIR /src
 RUN pip install .
 
 # Setup env
-COPY dockerconfig /etc/vocolab/
-RUN bash /etc/vocolab/env-setup.sh "worker"
+COPY containers/app-data /var/app-data/
+COPY containers/dockerconfig /etc/vocolab/
+COPY containers/scripts /usr/local/share/vocolab/
+RUN bash /usr/local/share/vocolab/env-setup.sh "worker"
 
 # Executing
 FROM vocolab
-# CMD ["celery", "-A",  "worker", "worker", "--autoscale", "10", "--loglevel=info"]
+COPY containers/init.sh /
+WORKDIR /root
+ENTRYPOINT ["/bin/bash", "/init.sh", "celery", "-A", "vocolab.worker.server:app"]

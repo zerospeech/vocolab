@@ -3,7 +3,6 @@ LABEL maintainer="Nicolas Hamilakis <nicolas.hamilakis@ens.fr>"
 LABEL copyright="GPL3, CoML Team, ENS, INRIA, EHESS"
 
 
-
 # Base to install python dependencies
 FROM base as install
 COPY requirements.txt /src/

@@ -5,12 +5,15 @@ services:
   queue:
     image: rabbitmq:3-management-alpine
     container_name: vocolab_queue
+    logging:
+      driver: none
     ports:
       - "127.0.0.1:5672:5672"
       - "127.0.0.1:15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: vocolab
       RABBITMQ_DEFAULT_PASS: admin
+      RABBITMQ_DEFAULT_VHOST: vocolab
 
   # API container
   api:
@@ -50,7 +53,19 @@ services:
     restart: unless-stopped
     stop_grace_period: 180s
     image: "voco-worker:latest"
-    container_name: vocolab_evaluation_worker
+    container_name: vocolab_eval_worker
+    command:
+      # worker type
+      - "worker"
+      # log-level
+      - '--loglevel=INFO'
+      # process pool type
+      - "--pool=prefork"
+      # number of concurrent processes
+      - "--concurrency=2"
+      # name of queue
+      - "-Q"
+      - "eval-queue"
     depends_on:
       - queue
     build:
@@ -59,7 +74,10 @@ services:
     env_file:
       - containers/dockerconfig/docker.env
     environment:
-      ZR_API_BASE_URL: "https://api.zerospeech.com"
+      VC_API_BASE_URL: "https://api.vocolab.com"
+      VC_RPC_USERNAME: "vocolab"
+      VC_RPC_PASSWORD: "admin"
+      VC_RPC_HOST: "vocolab_queue"
     volumes:
       - app-data:/app-data
 
@@ -69,15 +87,30 @@ services:
     stop_grace_period: 180s
     image: "voco-worker:latest"
     container_name: vocolab_update_worker
+    command:
+      # worker type
+      - "worker"
+      # log-level
+      - '--loglevel=INFO'
+      # process pool type
+      - "--pool=prefork"
+      # number of concurrent processes
+      - "--concurrency=2"
+      # name of queue
+      - "-Q"
+      - "update-queue"
     depends_on:
       - queue
     build:
       context: .
-      dockerfile: containers/update-worker.Dockerfile
+      dockerfile: containers/worker.Dockerfile
     env_file:
       - containers/dockerconfig/docker.env
     environment:
-      ZR_API_BASE_URL: "https://api.zerospeech.com"
+      VC_API_BASE_URL: "https://api.vocolab.com"
+      VC_RPC_USERNAME: "vocolab"
+      VC_RPC_PASSWORD: "admin"
+      VC_RPC_HOST: "vocolab_queue"
     volumes:
       - app-data:/app-data
 

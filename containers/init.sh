@@ -1,9 +1,10 @@
 #!/bin/bash
+set -o errexit
 
 APPDATA=${VC_DATA_FOLDER:-"/app-data"}
 ROOT_APPDATA="/var/app-data"
 
-echo "INITIALIZE API"
+echo "Initializing Environment..."
 
 if [ ! -f "${APPDATA}/.init" ]; then
   echo "APPDATA FOLDER NOT INITIALIZED..."
@@ -43,5 +44,10 @@ if [ ! -f "${APPDATA}/.init" ]; then
   touch "${APPDATA}/.init"
 fi
 
-
-exec "$@"
+if [ $# -eq 0 ]; then
+  echo "no command given; sleeping"
+  while true; do sleep 10000; done
+else
+  echo ">>> $@"
+  exec "$@"
+fi

@@ -14,7 +14,9 @@ from pydantic import (
 
 class CeleryWorkerOptions(BaseModel):
     celery_bin: Path = Path(shutil.which('celery'))
-    celery_nodes: Dict[str, str] = {'eval': 'vc-evaluate-node', 'update': 'vc-update-node'}
+    celery_nodes: Dict[str, str] = {
+        'eval': 'vc-evaluate-node', 'update': 'vc-update-node', 'echo': 'vc-echo-node'
+    }
     celery_app: str = 'vocolab.worker.server:app'
     celery_pool_type: str = "prefork"
     celery_worker_number: int = 2
