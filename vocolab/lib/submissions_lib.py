@@ -80,7 +80,6 @@ def complete_submission(submission_id: str, with_eval: bool = True):
     )
 
     # start eval task
-    # todo: add check to auto-eval column in database
     if with_eval:
         asyncio.run(
             evaluate(submission_id)
@@ -101,7 +100,10 @@ async def evaluate(submission_id: str, extra_args: Optional[List[str]] = None):
         logger.log(f'challenge {submission_db.track_id} has not configured evaluators !')
         return None
 
-    # todo check if auto-eval in enabled
+    if not submission_db.auto_eval:
+        await challengesQ.update_submission_status(by_id=submission_id, status=schema.SubmissionStatus.no_auto_eval)
+        logger.log(f'challenge {submission_db.track_id} has disabled auto evaluation, skipping...')
+        return None
 
     # set status to evaluating
     await challengesQ.update_submission_status(by_id=submission_id, status=schema.SubmissionStatus.evaluating)

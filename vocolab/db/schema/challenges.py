@@ -60,6 +60,7 @@ class SubmissionStatus(str, Enum):
     canceled = 'canceled'
     failed = 'failed'
     no_eval = 'no_eval'
+    no_auto_eval = 'no_auto_eval'
     excluded = 'excluded'
 
     @classmethod
@@ -73,6 +74,7 @@ class ChallengeSubmission(BaseModel):
     track_id: int
     submit_date: datetime
     status: SubmissionStatus
+    auto_eval: bool = False
     evaluator_id: Optional[int]
     author_label: Optional[str] = None
 
@@ -88,6 +90,7 @@ submissions_table = sqlalchemy.Table(
     sqlalchemy.Column("track_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("challenges.id")),
     sqlalchemy.Column("submit_date", sqlalchemy.DateTime),
     sqlalchemy.Column("status", sqlalchemy.String),
+    sqlalchemy.Column("auto_eval", sqlalchemy.Boolean),
     sqlalchemy.Column("evaluator_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("evaluators.id")),
     sqlalchemy.Column("author_label", sqlalchemy.String)
 )
