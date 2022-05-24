@@ -70,7 +70,10 @@ def build_cli():
             commands.task_worker.SendEchoMessage(CMD_NAME, 'test_echo', 'worker'),
             commands.task_worker.GenerateWorkerCMD(CMD_NAME, 'generate', 'worker'),
             commands.task_worker.GenerateWorkerSettings(CMD_NAME, 'settings', 'worker:generate'),
-            commands.task_worker.GenerateSystemDUnit(CMD_NAME, 'systemD', 'worker:generate')
+            commands.task_worker.GenerateSystemDUnit(CMD_NAME, 'systemD', 'worker:generate'),
+            commands.messaging.MessagingCMD(CMD_NAME, 'messaging', ''),
+            commands.messaging.UpdateMessageCMD(CMD_NAME, 'update', 'messaging'),
+            commands.messaging.EchoMessageCMD(CMD_NAME, 'echo', 'messaging')
         )
 
     tree.add_cmd_tree(

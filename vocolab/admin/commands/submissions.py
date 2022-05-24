@@ -334,3 +334,4 @@ class ArchiveSubmissionCMD(cmd_lib.CMD):
             out.cli.error("Error type of deletion unknown")
             sys.exit(1)
 
+

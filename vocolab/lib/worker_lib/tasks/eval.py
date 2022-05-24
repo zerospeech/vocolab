@@ -73,8 +73,8 @@ def eval_subprocess(_cmd: tasks.SubmissionEvaluationMessage):
 
 def post_eval_update(status: int, sem: tasks.SubmissionEvaluationMessage):
     """ Send message to update queue that evaluation is completed. """
-    from zerospeech.worker.server import update
-    from zerospeech.db.models.tasks import SubmissionUpdateMessage, UpdateType
+    from vocolab.worker.server import update
+    from vocolab.db.models.tasks import SubmissionUpdateMessage, UpdateType
 
     sum_ = SubmissionUpdateMessage(
         label=f"{_settings.hostname}-completed-{sem.submission_id}",
