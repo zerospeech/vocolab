@@ -1,0 +1,12 @@
+evaluators:
+  test:
+    executor: bash
+    script_path: /app-data/evaluators/test_eval.sh
+    executor_arguments:
+      - "-x" # run verbose mode
+
+  test2:
+    executor: python
+    script_path: /app-data/evaluators/test_eval.py
+    executor_arguments:
+      - "-OO" # run with optimizations

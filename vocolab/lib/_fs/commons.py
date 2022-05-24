@@ -103,6 +103,23 @@ def zip_folder(archive_file: Path, location: Path):
             zip_obj.write(file, str(file.relative_to(location)))
 
 
+def execute(cmd: List[str]) -> Tuple[int, str]:
+    """ Execute a command on system
+
+    :param cmd List containing command & arguments to execute on remote host
+    :returns return_code<int>, output<str>
+    :output is stdout if return code is success or stderr otherwise
+    """
+    exe = which(cmd[0])
+    if not exe:
+        raise EnvironmentError(f'{cmd[0]} was not found on system')
+
+    result = subprocess.run(cmd, capture_output=True)
+    if result.returncode == 0:
+        return result.returncode, result.stdout.decode()
+    return result.returncode, result.stderr.decode()
+
+
 def ssh_exec(host, cmd: List[str]) -> Tuple[int, str]:
     """ Execute a command remotely via ssh
 
@@ -117,10 +134,7 @@ def ssh_exec(host, cmd: List[str]) -> Tuple[int, str]:
         raise EnvironmentError('SSH was not found on system')
 
     cmd = [ssh_cmd, f"{host}", *cmd]
-    result = subprocess.run(cmd, capture_output=True)
-    if result.returncode == 0:
-        return result.returncode, result.stdout.decode()
-    return result.returncode, result.stderr.decode()
+    return execute(cmd)
 
 
 def check_host(host):

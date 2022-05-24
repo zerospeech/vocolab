@@ -6,8 +6,8 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: vocolab_queue
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: vocolab
       RABBITMQ_DEFAULT_PASS: admin
@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: containers/api.Dockerfile
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     env_file:
       - containers/dockerconfig/docker.env
     environment:

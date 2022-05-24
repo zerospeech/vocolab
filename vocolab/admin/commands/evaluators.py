@@ -62,7 +62,7 @@ class ListHostsEvaluatorsCMD(cmd_lib.CMD):
             if host not in _settings.REMOTE_BIN:
                 continue
             try:
-                if _settings.hostname == host:
+                if host in ("localhost", "127.0.0.1", _settings.hostname):
                     status = "[blue]:house:[/blue]"
                 else:
                     status = "[green]:heavy_check_mark:[/green]"

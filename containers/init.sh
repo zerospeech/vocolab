@@ -28,6 +28,14 @@ if [ ! -f "${APPDATA}/.init" ]; then
       mkdir -p "${APPDATA}/_static"
   fi
 
+  # copy evaluators files
+  if [ -d "${ROOT_APPDATA}/evaluators" ]; then
+    cp -r "${ROOT_APPDATA}/evaluators" "${APPDATA}/evaluators"
+  else
+      # or create the empty dir
+      mkdir -p "${APPDATA}/evaluators"
+  fi
+
   # clean file duplicates
   rm -rf "${ROOT_APPDATA}"
 
