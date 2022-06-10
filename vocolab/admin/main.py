@@ -80,7 +80,7 @@ def build_cli():
         commands.settings.SettingsCMD(CMD_NAME, 'settings', ''),
         commands.settings.GenerateEnvFileCMD(CMD_NAME, 'template', 'settings'),
         commands.api.APICMD(CMD_NAME, 'api', ''),
-        commands.api.DebugAPICMD(CMD_NAME, 'debug', 'api'),
+        commands.api.DebugAPICMD(CMD_NAME, 'serve', 'api'),
         commands.api.APInitEnvironmentCMD(CMD_NAME, 'init', 'api'),
         commands.api.ConfigFiles(CMD_NAME, 'config', 'api'),
         commands.api.GunicornConfigGeneration(CMD_NAME, 'gunicorn', 'api:config'),

@@ -1,5 +1,5 @@
 
-# Zerospeech CLI Admin tool
+# VocoLab CLI Admin tool
 
 A command line tool to visualise & administrate data used by the Zerospeech API 
 

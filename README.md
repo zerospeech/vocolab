@@ -119,6 +119,10 @@ Install the package locally
 
 Now you can run the following commands :
 
+```bash
+ voco api:init
+```
+
 * `voco` : CLI with all the admin tools.
 * `voco api:serve` : run the api in debug mode locally.
 * `voco worker:run -t eval` : run the evaluation worker.

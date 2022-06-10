@@ -51,17 +51,17 @@ class DebugAPICMD(cmd_lib.CMD):
         args, extra_args = self.parser.parse_known_args(argv)
 
         executable = which('uvicorn')
-        exec_args = [f'{executable}']
+        exec_args = []
 
         if args.uvicorn_options:
             # run help on the uvicorn command
             exec_args.extend(['--help'])
         elif args.uvicorn:
             # run with custom uvicorn options
-            exec_args.extend(['zerospeech.api:app', *extra_args])
+            exec_args.extend(['vocolab.api:app', *extra_args])
         else:
             # run default debug version
-            exec_args.extend(['zerospeech.api:app', '--reload', '--debug', '--no-access-log'])
+            exec_args.extend(['vocolab.api:app', '--reload', '--debug', '--no-access-log'])
 
         execv(executable, exec_args)
 
