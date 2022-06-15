@@ -1,0 +1,26 @@
+[
+  {
+    "username": "admin",
+    "email": "admin@vocolab.com",
+    "password": "123",
+    "first_name": "Admin",
+    "last_name": "Admin",
+    "affiliation": "ENS"
+  },
+  {
+    "username": "user1",
+    "email": "user1@vocolab.com",
+    "password": "123",
+    "first_name": "User",
+    "last_name": "One",
+    "affiliation": "ENS"
+  },
+  {
+    "username": "user2",
+    "email": "user2@vocolab.com",
+    "password": "123",
+    "first_name": "User",
+    "last_name": "Two",
+    "affiliation": "ENS"
+  }
+]

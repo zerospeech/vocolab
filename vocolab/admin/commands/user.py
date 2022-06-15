@@ -23,7 +23,8 @@ class UsersCMD(cmd_lib.CMD):
 
     def __init__(self, root, name, cmd_path):
         super(UsersCMD, self).__init__(root, name, cmd_path)
-        self.parser.add_argument("-m", "--mail-list", action='store_true')
+        self.parser.add_argument("-m", "--mail-list", action='store_true',
+                                 help="List active users in a CSV (username, email) format")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)

@@ -20,13 +20,13 @@ class MessagingCMD(cmd_lib.CMD):
         self.parser.print_help()
 
 
-class UpdateMessageCMD(cmd_lib):
+class UpdateMessageCMD(cmd_lib.CMD):
     """ Send an update message """
 
     def __init__(self, root, name, cmd_path):
         super(UpdateMessageCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('submission_id')
-        self.parser.add_argument('update_type', choice=[t.value for t in UpdateType])
+        self.parser.add_argument('update_type', choices=[t.value for t in UpdateType])
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -47,7 +47,7 @@ class UpdateMessageCMD(cmd_lib):
         message_server.update.delay(sum_=sum_.dict())
 
 
-class EchoMessageCMD(cmd_lib):
+class EchoMessageCMD(cmd_lib.CMD):
     """ Send an echo message """
 
     def __init__(self, root, name, cmd_path):
@@ -65,7 +65,7 @@ class EchoMessageCMD(cmd_lib):
         message_server.echo.delay(slm=slm)
 
 
-class EvalMessageCMD(cmd_lib):
+class EvalMessageCMD(cmd_lib.CMD):
     """ Send an eval message """
 
     def __init__(self, root, name, cmd_path):

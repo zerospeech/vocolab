@@ -126,25 +126,24 @@ Now you can run the following commands :
 * `voco` : CLI with all the admin tools.
 * `voco api:serve` : run the api in debug mode locally.
 * `voco worker:run -t eval` : run the evaluation worker.
-* `zr worker:run -t update`: run the update worker.
+* `voco worker:run -t update`: run the update worker.
 
 ## Documentation ![WIP](https://img.shields.io/badge/-WORK%20IN%20PROGRESS-orange)
 
 More detailed documentation of each component and how it works can be found
-in the [docs](docs) folder.
+in the [docs](docs/) folder.
 
 The [samples folder](samples/) contains some examples of challenges/users & leaderboards to allow illustration of 
 how the tool works.
 
 > The samples folder is a ![WIP](https://img.shields.io/badge/-WORK%20IN%20PROGRESS-orange)
 
-1. [Global Settings & Environment Setup](docs/settings.md)
-2. [API reference & documentation](docs/api.md)
-3. [Admin cli (`voco`)](docs/admin-cli.md)
-4. [Database setup & architecture](docs/database.md)
-5. [Evaluation Workers & Message Queue](docs/workers.md)
-6. [Testing](docs/testing.md)
-7. [dockerisation](docs/dockerisation.md)
+1. [Installation & Setup](docs/1_setup.md)
+2. [Quick Start](docs/2_quickstart.md)
+3. [Administration](docs/3_administration.md)
+4. [Configurations](docs/4_configuration.md)
+5. [Examples](docs/5_examples.md)
+6. [Evaluations](docs/6_evaluations.md)
 
 ## Testing ![WIP](https://img.shields.io/badge/-TODO-red)
 

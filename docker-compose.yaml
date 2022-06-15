@@ -15,6 +15,15 @@ services:
       RABBITMQ_DEFAULT_PASS: admin
       RABBITMQ_DEFAULT_VHOST: vocolab
 
+  sqlite3:
+    image: nouchka/sqlite3
+    profiles:
+      - debug
+    container_name: sqlite3_cli
+    command: /app-data/vocolab.db
+    volumes:
+      - app-data:/app-data
+
   # API container
   api:
     restart: unless-stopped
@@ -47,6 +56,7 @@ services:
       VC_MAIL_SSL: "False"
     volumes:
       - app-data:/app-data
+      - ./samples/:/samples
 
   # Evaluation worker
   eval_worker:

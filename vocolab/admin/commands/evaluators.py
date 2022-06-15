@@ -79,18 +79,14 @@ class ListHostsEvaluatorsCMD(cmd_lib.CMD):
 
 
 class DiscoverEvaluatorsCMD(cmd_lib.CMD):
-    """ Command to list all challenges"""
+    """ Command to discover & register evaluators """
 
     def __init__(self, root, name, cmd_path):
         super(DiscoverEvaluatorsCMD, self).__init__(root, name, cmd_path)
-        self.parser.add_argument('--local', action='store_true')
         self.parser.add_argument('host')
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-
-        if args.local and Path(args.host).is_dir():
-            raise NotImplemented('import of local evaluators is not implemented yet !!')
 
         if args.host not in _settings.HOSTS:
             out.cli.print(":x: Error specified host was not found", style="red")
