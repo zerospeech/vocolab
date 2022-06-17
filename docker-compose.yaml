@@ -80,7 +80,7 @@ services:
       - "--concurrency=2"
       # name of queue
       - "-Q"
-      - "eval-queue"
+      - "evaluation-queue"
     depends_on:
       - queue
     build:
