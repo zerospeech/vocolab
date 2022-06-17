@@ -5,6 +5,8 @@ from fastapi import UploadFile
 from pathlib import Path
 from typing import List, Optional
 
+from rich import inspect
+
 from vocolab import exc, out, worker
 from vocolab.db import models, schema
 from vocolab.db.q import challengesQ, leaderboardQ
@@ -105,12 +107,12 @@ async def evaluate(submission_id: str, extra_args: Optional[List[str]] = None):
         logger.log(f'challenge {submission_db.track_id} has disabled auto evaluation, skipping...')
         return None
 
-    # set status to evaluating
-    await challengesQ.update_submission_status(by_id=submission_id, status=schema.SubmissionStatus.evaluating)
-
     if submission_fs.eval_lock.is_file():
         out.log.warning(f"submission {submission_id} is already being evaluated")
         return None
+
+    # set status to evaluating
+    await challengesQ.update_submission_status(by_id=submission_id, status=schema.SubmissionStatus.evaluating)
 
     # Transfer submission to host if remote
     if evaluator.host != _settings.hostname:

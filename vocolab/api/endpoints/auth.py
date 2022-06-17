@@ -27,7 +27,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """ Authenticate a user """
     try:
         _, token = await userQ.login_user(login=form_data.username, pwd=form_data.password)
-        out.console.inspect(form_data)
         return models.api.LoggedItem(access_token=token, token_type="bearer")
     except ValueError:
         raise HTTPException(

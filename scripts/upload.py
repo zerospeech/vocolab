@@ -17,7 +17,8 @@ from rich import print, inspect
 from rich.progress import Progress
 from rich.prompt import Prompt
 
-SERVER_LOCATION: str = "http://127.0.0.1:8000/v1"
+SERVER_LOCATION: str = "http://localhost:8000"
+CHALLENGE_ID: int = 1
 CLIENT_ID: str = "cli_uploader"
 CLIENT_SECRET: str = 'cli_uploader'
 NB_RETRY_ATTEMPTS: int = 2
@@ -35,7 +36,7 @@ class ManifestFileIndexItem:
     file_hash: Optional[str] = None
 
     def dict(self):
-        return {f"{x}": getattr(self, x) for x in self.__dataclass_fields__.keys()}
+        return {f"{x}": getattr(self, x) for x in self.__dataclass_fields__.keys()}  # noqa: __dataclass_fields__ is dynamicly set
 
     @classmethod
     def from_dict(cls, data):
@@ -54,7 +55,7 @@ class SplitManifest:
     completed: int = 0
 
     def dict(self):
-        data = {f"{x}": f"{getattr(self, x)}" for x in self.__dataclass_fields__.keys()}
+        data = {f"{x}": f"{getattr(self, x)}" for x in self.__dataclass_fields__.keys()} # noqa: __dataclass_fields__ is dynamicly set
         if "index" in data.keys():
             data["index"] = [
                 item.dict() for item in self.index
@@ -208,22 +209,6 @@ def login():
     return response.json().get("access_token")
 
 
-def select_challenge():
-    """..."""
-    response = requests.get(
-        f"{SERVER_LOCATION}/challenges/", params={"include_inactive": "true"})
-    if response.status_code != 200:
-        raise ValueError('Request to server Failed !!')
-
-    challenges = response.json()
-    choices = [ch.get('label') for ch in challenges]
-    name = Prompt.ask("Choose one of the available challenges: ",
-                      choices=choices, default="zr2021")
-    return next((
-        (v.get('id'), v.get('label'))
-        for v in challenges if v.get('label') == name), None)
-
-
 def create_multipart_submission(challenge_id: int, file_meta: dict, _token: str):
     """..."""
     data = {
@@ -248,6 +233,7 @@ def create_single_part_submission(challenge_id: int, filename: Path, _hash: str,
         json={
             "filename": f"{filename}",
             "hash": _hash,
+            "multipart": False
         },
         headers={
             'Authorization': f'Bearer {_token}'
@@ -335,7 +321,7 @@ def multipart_upload(challenge_id: int, zipfile: Path, _token: str, checkpoint: 
     if "submission_id" in file_list.metadata:
         submission_id = file_list.metadata.get('submission_id')
     else:
-        response = create_multipart_submission(ch_id, file_list.metadata, token)
+        response = create_multipart_submission(challenge_id, file_list.metadata, token)
         if response.status_code != 200:
             print(f'[red]:x:[/red][bold]Submission Creation Failed with code [red] {response.status_code}[/red][/bold]')
             inspect(response.json())
@@ -379,7 +365,7 @@ def single_part_upload(challenge_id: int, zipfile: Path, _token: str):
         inspect(response.json())
         sys.exit(1)
 
-    submission_id = response.text
+    submission_id = response.text.replace('"', '').replace("'", '')
     response = submission_upload(challenge_id, submission_id, zipfile, _token)
 
     if response.status_code != 200:
@@ -399,13 +385,10 @@ if __name__ == '__main__':
     checkpoint_file = archive_path.parents[0] / f"{archive_path.stem}.checkpoint.json"
     if not ask_resume(checkpoint_file):
         token = login()
-        ch_id, _ = select_challenge()
     else:
         token = ''
-        ch_id = ''
 
     if multipart:
-        multipart_upload(ch_id, archive_path, token, checkpoint_file)
+        multipart_upload(CHALLENGE_ID, archive_path, token, checkpoint_file)
     else:
-        single_part_upload(ch_id, archive_path, token)
-
+        single_part_upload(CHALLENGE_ID, archive_path, token)

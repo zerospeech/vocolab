@@ -103,6 +103,8 @@ async def add_submission(*, new_submission: models.api.NewSubmission, evaluator_
     values["status"] = schema.SubmissionStatus.uploading
     values["evaluator_id"] = evaluator_id
     values["author_label"] = None  # default value for author_label is None
+    # todo: check if this should be fetched from challenge entry ?
+    values["auto_eval"] = _settings.AUTO_EVAL  # auto eval default from settings
     await zrDB.execute(query=query, values=values)
     return submission_id
 

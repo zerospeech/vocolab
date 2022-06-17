@@ -74,7 +74,7 @@ class ChallengeSubmission(BaseModel):
     track_id: int
     submit_date: datetime
     status: SubmissionStatus
-    auto_eval: bool = False
+    auto_eval: bool
     evaluator_id: Optional[int]
     author_label: Optional[str] = None
 

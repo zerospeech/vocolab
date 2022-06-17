@@ -2,7 +2,6 @@ FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8 as base
 LABEL maintainer="Nicolas Hamilakis <nicolas.hamilakis@ens.fr>"
 LABEL copyright="GPL3, CoML Team, ENS, INRIA, EHESS"
 
-
 # Base to install python dependencies
 FROM base as install
 COPY requirements.txt /src/
@@ -20,7 +19,6 @@ COPY setup.cfg /src/
 COPY MANIFEST.in /src/
 COPY README.md /src/
 COPY LICENCE.txt /src/
-COPY docs /docs/
 
 # Install vocolab
 WORKDIR /src

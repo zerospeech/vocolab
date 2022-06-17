@@ -23,10 +23,15 @@ class SubmissionLogger:
     def log_filename(cls):
         return 'submission.log'
 
+    @classmethod
+    def eval_log_file(cls):
+        return 'evaluation.log'
+
     def __init__(self, submission_id):
         self.id = submission_id
         self.submission_dir = get_submission_dir(submission_id)
         self.submission_log = self.submission_dir / self.log_filename()
+        self.eval_log = self.submission_dir / self.eval_log_file()
         self.slurm_logfile = self.submission_dir / "slurm.log"
         self.fp = None
 
@@ -58,7 +63,7 @@ class SubmissionLogger:
         return []
 
     def append_eval(self, eval_output):
-        with self.submission_log.open('a') as fp:
+        with self.eval_log.open('a') as fp:
             fp.write(f"-------- start of evaluation output --------\n")
             fp.write(f"---> {datetime.now().isoformat()}")
             fp.write(f"{eval_output.rstrip()}\n")
@@ -83,7 +88,7 @@ class SubmissionLogger:
         return []
 
     def fetch_remote(self, host, remote_submission_location):
-        return_code, result = ssh_exec(host, [f'cat', f'{remote_submission_location}/{self.log_filename()}'])
+        return_code, result = ssh_exec(host, [f'cat', f'{remote_submission_location}/{self.eval_log_file()}'])
         if return_code == 0:
             self.log(result, append=True)
         else:

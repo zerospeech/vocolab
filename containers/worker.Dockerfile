@@ -20,7 +20,6 @@ COPY setup.cfg /src/
 COPY MANIFEST.in /src/
 COPY README.md /src/
 COPY LICENCE.txt /src/
-COPY docs /docs/
 
 # Install vocolab
 WORKDIR /src

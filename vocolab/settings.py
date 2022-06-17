@@ -67,6 +67,7 @@ class _VocoLabSettings(BaseSettings):
     HOSTS: Set[str] = set()
     REMOTE_STORAGE: Dict[str, Path] = dict()
     REMOTE_BIN: Dict[str, Path] = dict()
+    AUTO_EVAL: bool = True
 
     # FastAPI settings
     favicon: str = 'https://api.vocolab.com/static/favicon.ico'

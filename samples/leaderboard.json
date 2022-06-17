@@ -1,0 +1,9 @@
+[{
+     "label": "test-leaderboard",
+     "challenge_id": 1,
+     "path_to": "test-leaderboard.json",
+     "entry_file": "entry.json",
+     "external_entries": "/app-data/archive/test-archives",
+     "archived": false,
+     "static_files": false
+}]

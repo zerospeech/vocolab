@@ -46,17 +46,22 @@ services:
       VC_version: "v0.5"
       VC_maintainers: "CoML Team, INRIA, ENS, EHESS, CNRS"
       VC_admin_email: "contact@zerospeech.com"
-      VC_MAIL_USERNAME: "noreply@vocolab.com"
-      VC_MAIL_PASSWORD: "XXXXXXX"
-      VC_MAIL_FROM: "noreply@vocolab.com"
-      VC_MAIL_FROM_NAME: "Vocolab Challenges"
-      VC_MAIL_PORT: 25
-      VC_MAIL_SERVER: "mail.vocolab.com"
+      VC_MAIL_USERNAME: "noreply@zerospeech.com"
+      VC_MAIL_PASSWORD: "Bootphon2021"
+      VC_MAIL_FROM: "noreply@zerospeech.com"
+      VC_MAIL_FROM_NAME: "Zerospeech Challenge"
+      VC_MAIL_PORT: 587
+      VC_MAIL_SERVER: "ssl0.ovh.net"
       VC_MAIL_TLS: "True"
       VC_MAIL_SSL: "False"
+      VC_RPC_USERNAME: "vocolab"
+      VC_RPC_PASSWORD: "admin"
+      VC_RPC_HOST: "vocolab_queue"
+
     volumes:
       - app-data:/app-data
       - ./samples/:/samples
+      - ./containers/app-data/evaluators:/evaluators
 
   # Evaluation worker
   eval_worker:
@@ -90,6 +95,7 @@ services:
       VC_RPC_HOST: "vocolab_queue"
     volumes:
       - app-data:/app-data
+      - ./containers/app-data/evaluators:/evaluators
 
   # Evaluation worker
   update_worker:

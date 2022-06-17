@@ -3,7 +3,6 @@ import argparse
 import os
 # import pydoc
 import sys
-from io import StringIO
 from pathlib import Path
 
 from rich.console import Console
@@ -14,14 +13,14 @@ console = Console()
 try:
     DOC_LOCATION = Path(os.environ.get('DOC_LOCATION'))
 except TypeError:
-    console.print(f"DOC_LOCATION environment variable is not set.")
-    sys.exit()
+    DOC_LOCATION = Path('/docs')
+
 
 if not DOC_LOCATION.is_dir():
     console.print(f"Failed to load documentation DOC_LOCATION: {DOC_LOCATION} does not exist.")
     sys.exit(1)
 
-DOCUMENTS = [x.stem for x in DOC_LOCATION.glob("*.md")]
+DOCUMENTS = [x.stem for x in DOC_LOCATION.glob("*.md") if not x.stem.startswith('_')]
 
 
 def view_document(name: str):

@@ -2,7 +2,7 @@
 
 A module allowing administration of challenges.
 
-![VERSION](https://img.shields.io/badge/VocoLab-V0.5--beta-orange) ![LICENCE](https://img.shields.io/badge/LICENCE-GPL%20%3E=%20V3-green)![BUILD](https://img.shields.io/badge/BUILD-OK-green)![TESTS](https://img.shields.io/badge/TESTS-Not%20Setup-red)
+![VERSION](https://img.shields.io/badge/VocoLab-V0.5--beta-orange) ![LICENCE](https://img.shields.io/badge/LICENCE-GPL%20%3E=%20V3-green) ![BUILD](https://img.shields.io/badge/BUILD-OK-green) ![TESTS](https://img.shields.io/badge/TESTS-Not%20Setup-red)
 
 VocoLab is a module that allows administration of various challenges, it includes :
 
