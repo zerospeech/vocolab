@@ -1,0 +1,60 @@
+[project]
+name = "vocolab"
+readme = "README.md"
+description = "Tool for administration of Challenges (Users, Submissions, Evaluations, Result Leaderboards)"
+authors = [
+    {name = "Nicolas Hamilakis", email="nicolas.hamilakis@ens.psl.eu"},
+    {name = "CoML Team", email = "dev@zerospeech.com"}
+]
+license = {file = "LICENSE.txt"}
+requires-python = ">=3.8"
+keywords = [
+    "speech", "machine-learning", "challenges",
+    "research-tool", "benchmark-speech", "zerospeech"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Intended Audience :: Science/Research"
+]
+dynamic = ["dependencies", "version"]
+
+[project.urls]
+documentation = "https://github.com/zerospeech/vocolab/wiki"
+homepage = "https://zerospeech.com/"
+repository = "https://github.com/zerospeech/vocolab"
+
+[project.scripts]
+voco = "vocolab.admin.main:run_cli"
+
+[project.optional-dependencies]
+dev = [
+   "zerospeech-benchmarks[abx,tde]",
+    "ipython",
+    "jupyterlab",
+    "pytest",
+    "twine",
+    "build",
+    "icecream"
+]
+
+
+
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["vocolab*"]
+exclude = ["tests*", "scripts*", "containers*", "samples*"]
+
+[tool.setuptools.package-data]
+vocolab = ['*.jinja2', '*.service', '*.socket', '*.wsgi', '*.conf', '*.env', '*.config']
+
+
+[tool.setuptools_scm]
