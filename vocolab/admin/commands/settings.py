@@ -82,10 +82,11 @@ class GenerateEnvFileCMD(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(GenerateEnvFileCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
+        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir))\
             .get_template("example.env")
 
     def run(self, argv):
+        # todo: update this to generate a TOML file (is more readable)
         args = self.parser.parse_args(argv)
         args_dict = vars(args)
         data = dict()

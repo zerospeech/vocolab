@@ -12,7 +12,6 @@ from vocolab.db.q import challengesQ, userQ
 from vocolab.db.schema import challenges as db_challenges
 from vocolab.lib import submissions_lib
 
-
 # api settings
 _settings = get_settings()
 
@@ -72,9 +71,9 @@ class SetSubmissionCMD(cmd_lib.CMD):
 
         # custom arguments
         self.parser.add_argument("submission_id")
-        self.parser.add_argument('status',
-                                 choices=[str(el.value) for el in db_challenges.SubmissionStatus]
-                                 )
+        self.parser.add_argument(
+            'status', choices=[str(el.value) for el in db_challenges.SubmissionStatus]  # noqa: enum has value attribute
+        )
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -165,7 +164,8 @@ class EvalSubmissionCMD(cmd_lib.CMD):
         else:
             extra_arguments = []
 
-        submission: db_challenges.ChallengeSubmission = asyncio.run(challengesQ.get_submission(by_id=args.submission_id))
+        submission: db_challenges.ChallengeSubmission = asyncio.run(
+            challengesQ.get_submission(by_id=args.submission_id))
 
         if submission.status in self.no_eval:
             out.cli.print(f"Cannot evaluate a submission that has status : {submission.status}")
@@ -187,7 +187,7 @@ class FetchSubmissionFromRemote(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        if args.hostname not in list(_settings.REMOTE_STORAGE.keys()):
+        if args.hostname not in list(_settings.task_queue_options.REMOTE_STORAGE.keys()):
             out.cli.warning(f"Host {args.hostname} is not a valid remote storage host!\n")
             out.cli.warning(f"aborting transfer...")
             sys.exit(1)
@@ -214,7 +214,7 @@ class UploadSubmissionToRemote(cmd_lib.CMD):
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
-        if args.hostname not in list(_settings.REMOTE_STORAGE.keys()):
+        if args.hostname not in list(_settings.task_queue_options.REMOTE_STORAGE.keys()):
             out.cli.warning(f"Host {args.hostname} is not a valid remote storage host!\n")
             out.cli.warning(f"aborting transfer...")
             sys.exit(1)
@@ -232,7 +232,7 @@ class UploadSubmissionToRemote(cmd_lib.CMD):
 
 class DeleteSubmissionCMD(cmd_lib.CMD):
     """ Deletes a submission """
-    
+
     def __init__(self, root, name, cmd_path):
         super(DeleteSubmissionCMD, self).__init__(root, name, cmd_path)
         # parameters
@@ -267,7 +267,7 @@ class DeleteSubmissionCMD(cmd_lib.CMD):
 
 class SubmissionSetEvaluator(cmd_lib.CMD):
     """ Update or set the evaluator of a submission"""
-    
+
     def __init__(self, root, name, cmd_path):
         super(SubmissionSetEvaluator, self).__init__(root, name, cmd_path)
         self.parser.add_argument("submission_id", type=str)
@@ -333,5 +333,3 @@ class ArchiveSubmissionCMD(cmd_lib.CMD):
         else:
             out.cli.error("Error type of deletion unknown")
             sys.exit(1)
-
-

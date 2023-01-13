@@ -12,7 +12,7 @@ _settings = get_settings()
 
 def verify_bin(bin_path):
     """ Verifies that bin_path is in the registered bin folder of the current host """
-    my_bin = _settings.REMOTE_BIN.get(_settings.hostname, None)
+    my_bin = _settings.task_queue_options.REMOTE_BIN.get(_settings.app_options.hostname, None)
     all_parents = [p.resolve() for p in bin_path.parents]
     if my_bin.resolve() not in [bin_path.resolve(), *all_parents]:
         raise exc.SecurityError(f'attempting to execute a file not in authorized directory {bin_path}')
@@ -20,9 +20,9 @@ def verify_bin(bin_path):
 
 def verify_host_bin():
     """ Verifies that the current host has a valid bin directory """
-    my_bin = _settings.REMOTE_BIN.get(_settings.hostname, None)
+    my_bin = _settings.task_queue_options.REMOTE_BIN.get(_settings.app_options.hostname, None)
     if my_bin is None:
-        raise exc.ServerError(f"No bin directory configured for current host {_settings.hostname}")
+        raise exc.ServerError(f"No bin directory configured for current host {_settings.app_options.hostname}")
 
 
 def build_cmd(_cmd: tasks.SubmissionEvaluationMessage) -> List[str]:
@@ -77,10 +77,10 @@ def post_eval_update(status: int, sem: tasks.SubmissionEvaluationMessage):
     from vocolab.db.models.tasks import SubmissionUpdateMessage, UpdateType
 
     sum_ = SubmissionUpdateMessage(
-        label=f"{_settings.hostname}-completed-{sem.submission_id}",
+        label=f"{_settings.app_options.hostname}-completed-{sem.submission_id}",
         submission_id=sem.submission_id,
         updateType=UpdateType.evaluation_undefined,
-        hostname=f"{_settings.hostname}"
+        hostname=f"{_settings.app_options.hostname}"
     )
     if status == 0:
         sum_.updateType = UpdateType.evaluation_complete

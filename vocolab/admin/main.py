@@ -5,12 +5,12 @@ from vocolab.admin import cmd_lib, commands
 
 # settings
 _settings = get_settings()
-has_db = (_settings.DATA_FOLDER / _settings.db_file).is_file()
-has_users = has_db and _settings.USER_DATA_DIR.is_dir()
+has_db = (_settings.DATA_FOLDER / _settings.database_options.db_file).is_file()
+has_users = has_db and _settings.user_data_dir.is_dir()
 has_challenges = has_db
-has_submissions = _settings.SUBMISSION_DIR.is_dir()
-has_leaderboard = _settings.LEADERBOARD_LOCATION.is_dir()
-is_dev = _settings.DEBUG is True
+has_submissions = _settings.submission_dir.is_dir()
+has_leaderboard = _settings.leaderboard_dir.is_dir()
+is_dev = _settings.console_options.DEBUG is True
 CMD_NAME = "voco"
 
 

@@ -1,7 +1,5 @@
 import asyncio
-import shlex
 import sys
-from pathlib import Path
 
 from rich.prompt import Confirm
 from rich.table import Table
@@ -58,11 +56,11 @@ class ListHostsEvaluatorsCMD(cmd_lib.CMD):
         table.add_column("BIN Dir")
         table.add_column("CONNECT")
 
-        for host in _settings.HOSTS:
-            if host not in _settings.REMOTE_BIN:
+        for host in _settings.task_queue_options.HOSTS:
+            if host not in _settings.task_queue_options.REMOTE_BIN:
                 continue
             try:
-                if host in ("localhost", "127.0.0.1", _settings.hostname):
+                if host in ("localhost", "127.0.0.1", _settings.app_options.hostname):
                     status = "[blue]:house:[/blue]"
                 else:
                     status = "[green]:heavy_check_mark:[/green]"
@@ -71,7 +69,7 @@ class ListHostsEvaluatorsCMD(cmd_lib.CMD):
                 status = "[red]:x:[/red]"
 
             table.add_row(
-                f"{host}", f"{_settings.REMOTE_BIN[host]}", status,
+                f"{host}", f"{_settings.task_queue_options.REMOTE_BIN[host]}", status,
             )
 
         # print
@@ -88,11 +86,11 @@ class DiscoverEvaluatorsCMD(cmd_lib.CMD):
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
-        if args.host not in _settings.HOSTS:
+        if args.host not in _settings.task_queue_options.HOSTS:
             out.cli.print(":x: Error specified host was not found", style="red")
             sys.exit(1)
 
-        remote_dir = _settings.REMOTE_BIN.get(args.host, None)
+        remote_dir = _settings.task_queue_options.REMOTE_BIN.get(args.host, None)
         if remote_dir is None:
             out.cli.print(":x: Error specified host does not have a known bin dir", style="red")
             sys.exit(2)

@@ -26,7 +26,7 @@ class UpdateMessageCMD(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(UpdateMessageCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('submission_id')
-        self.parser.add_argument('update_type', choices=[t.value for t in UpdateType])
+        self.parser.add_argument('update_type', choices=[t.value for t in UpdateType]) # noqa: enum has value attribute
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -37,10 +37,10 @@ class UpdateMessageCMD(cmd_lib.CMD):
             update_type = UpdateType.evaluation_undefined
 
         sum_ = SubmissionUpdateMessage(
-            label=f"{_settings.hostname}-completed-{submission_id}",
+            label=f"{_settings.app_options.hostname}-completed-{submission_id}",
             submission_id=submission_id,
             updateType=update_type,
-            hostname=f"{_settings.hostname}"
+            hostname=f"{_settings.app_options.hostname}"
         )
 
         # send update to channel

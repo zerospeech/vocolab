@@ -78,7 +78,7 @@ def get_event_loop():
 def run_with_loop(fn: Callable, *args, **kwargs):
     try:
         loop = asyncio.get_running_loop()
-    except RuntimeError:  # if cleanup: 'RuntimeError: There is no current event loop..'
+    except RuntimeError:  # if cleanup: 'RuntimeError: There is no current event loop.'
         loop = None
 
     if loop and loop.is_running():

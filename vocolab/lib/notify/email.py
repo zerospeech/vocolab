@@ -1,6 +1,6 @@
 from typing import List, Any, Dict
 
-from fastapi_mail import FastMail, ConnectionConfig, MessageSchema
+from fastapi_mail import FastMail, ConnectionConfig, MessageSchema, MessageType
 from jinja2 import Environment, FileSystemLoader
 from pydantic import EmailStr
 
@@ -9,15 +9,17 @@ from vocolab import get_settings, out
 _settings = get_settings()
 
 email_cgf = ConnectionConfig(
-    MAIL_USERNAME=_settings.MAIL_USERNAME,
-    MAIL_PASSWORD=_settings.MAIL_PASSWORD,
-    MAIL_FROM=_settings.MAIL_FROM,
-    MAIL_FROM_NAME=_settings.MAIL_FROM_NAME,
-    MAIL_PORT=_settings.MAIL_PORT,
-    MAIL_SERVER=_settings.MAIL_SERVER,
-    MAIL_TLS=_settings.MAIL_TLS,
-    MAIL_SSL=_settings.MAIL_SSL,
-    TEMPLATE_FOLDER=_settings.MAIL_TEMPLATE_DIR
+    MAIL_USERNAME=_settings.notify_options.MAIL_USERNAME,
+    MAIL_PASSWORD=_settings.notify_options.MAIL_PASSWORD,
+    MAIL_FROM=_settings.notify_options.MAIL_FROM,
+    MAIL_FROM_NAME=_settings.notify_options.MAIL_FROM_NAME,
+    MAIL_PORT=_settings.notify_options.MAIL_PORT,
+    MAIL_SERVER=_settings.notify_options.MAIL_SERVER,
+    # todo: investigate why this changed to MAIL_SSL_TLS and if it still works
+    # MAIL_TLS=_settings.notify_options.MAIL_TLS,
+    # MAIL_SSL=_settings.notify_options.MAIL_SSL,
+    MAIL_SSL_TLS=_settings.notify_options.MAIL_SSL_TLS,
+    TEMPLATE_FOLDER=_settings.email_templates_dir
 )
 
 fm = FastMail(email_cgf)
@@ -44,7 +46,7 @@ async def simple_html_email(emails: List[EmailStr], subject: str, content: str):
         subject=subject,
         recipients=emails,  # List of recipients, as many as you can pass
         body=content,
-        subtype="html"
+        subtype=MessageType.html
     )
     try:
         await fm.send_message(message)
@@ -65,7 +67,7 @@ async def template_email1(emails: List[EmailStr], subject: str, data, template_n
         subject=subject,
         recipients=emails,
         body=data,
-        subtype="html"
+        subtype=MessageType.html
     )
     out.console.ic(message)
     try:
@@ -86,7 +88,7 @@ async def template_email2(emails: List[EmailStr], subject: str, data: Dict[str, 
     :param data: <Dict[str, Any]> data to be processed into the template
     :param template_name: <str> the filename of the template
     """
-    template = Environment(loader=FileSystemLoader(_settings.MAIL_TEMPLATE_DIR), trim_blocks=True) \
+    template = Environment(loader=FileSystemLoader(_settings.email_templates_dir), trim_blocks=True) \
         .get_template(template_name)
 
     body = template.render(body=data)
@@ -95,7 +97,7 @@ async def template_email2(emails: List[EmailStr], subject: str, data: Dict[str, 
         subject=subject,
         recipients=emails,
         body=body,
-        subtype="html"
+        subtype=MessageType.html
     )
     out.console.ic(message)
     try:
@@ -120,13 +122,13 @@ async def notify_admin(subject: str, data, template_name: str):
     """
     message = MessageSchema(
         subject=subject,
-        recipients=[_settings.admin_email],
+        recipients=[_settings.app_options.admin_email],
         body=data,
-        subtype="html"
+        subtype=MessageType.html
     )
     try:
         await fm.send_message(message, template_name=template_name)
-        out.log.info(f'email send successfully to {_settings.admin_email}')
+        out.log.info(f'email send successfully to {_settings.app_options.admin_email}')
     except Exception as e:
         parse_email_exceptions(e)
 

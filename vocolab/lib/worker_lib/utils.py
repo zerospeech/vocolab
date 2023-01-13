@@ -5,11 +5,11 @@ _settings = get_settings()
 
 def build_broker_url(backend: str = "rabbitmq"):  # noqa: unused => future proofing
     """ Build url to connect to broker server"""
-    user = _settings.RPC_USERNAME
-    password = _settings.RPC_PASSWORD
-    host = _settings.RPC_HOST
-    vhost = _settings.RPC_VHOST
-    port = _settings.RPC_PORT
+    user = _settings.task_queue_options.RPC_USERNAME
+    password = _settings.task_queue_options.RPC_PASSWORD
+    host = _settings.task_queue_options.RPC_HOST
+    vhost = _settings.task_queue_options.RPC_VHOST
+    port = _settings.task_queue_options.RPC_PORT
     if vhost:
         vhost = f"{vhost}"
     else:

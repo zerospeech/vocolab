@@ -26,7 +26,7 @@ class TestCMD(cmd_lib.CMD):
 
 
 class TestEmail(cmd_lib.CMD):
-    """ Send an email to test SMTP Parameters """
+    """ Send email to test SMTP Parameters """
 
     def __init__(self, root, name, cmd_path):
         super(TestEmail, self).__init__(root, name, cmd_path)

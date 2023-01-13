@@ -23,10 +23,10 @@ middleware = [
 
 
 app = FastAPI(
-    title=f"{_settings.app_name}",
-    description=f"{_settings.doc_description}",
-    version=f"{_settings.version}",
-    swagger_static={"favicon": _settings.favicon},
+    title=f"{_settings.app_options.app_name}",
+    description=f"{_settings.documentation_options.doc_description}",
+    version=f"{_settings.app_options.version}",
+    swagger_static={"favicon": _settings.api_options.favicon},
     middleware=middleware
 )
 
@@ -61,7 +61,7 @@ async def log_requests(request: Request, call_next):
 
 @app.exception_handler(ValueError)
 async def value_error_reformatting(request: Request, exc: ValueError):
-    if _settings.DEBUG:
+    if _settings.console_options.DEBUG:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={
@@ -96,9 +96,9 @@ async def startup():
     # pool connection to databases
     await zrDB.connect()
     # create data_folders
-    _settings.USER_DATA_DIR.mkdir(exist_ok=True, parents=True)
-    _settings.LEADERBOARD_LOCATION.mkdir(exist_ok=True)
-    _settings.SUBMISSION_DIR.mkdir(exist_ok=True, parents=True)
+    _settings.user_data_dir.mkdir(exist_ok=True, parents=True)
+    _settings.leaderboard_dir.mkdir(exist_ok=True)
+    _settings.submission_dir.mkdir(exist_ok=True, parents=True)
     # write location of email-verification path
     with (_settings.DATA_FOLDER / 'email_verification.path').open('w') as fp:
         fp.write(app.url_path_for("email_verification"))
@@ -117,4 +117,4 @@ async def shutdown():
 
 # sub applications
 app.include_router(v1_router.api_router)
-app.mount("/static", StaticFiles(directory=str(_settings.STATIC_DIR)), name="static")
+app.mount("/static", StaticFiles(directory=str(_settings.static_files_directory)), name="static")

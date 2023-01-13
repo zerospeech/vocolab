@@ -5,8 +5,6 @@ from fastapi import UploadFile
 from pathlib import Path
 from typing import List, Optional
 
-from rich import inspect
-
 from vocolab import exc, out, worker
 from vocolab.db import models, schema
 from vocolab.db.q import challengesQ, leaderboardQ
@@ -115,7 +113,7 @@ async def evaluate(submission_id: str, extra_args: Optional[List[str]] = None):
     await challengesQ.update_submission_status(by_id=submission_id, status=schema.SubmissionStatus.evaluating)
 
     # Transfer submission to host if remote
-    if evaluator.host != _settings.hostname:
+    if evaluator.host != _settings.app_options.hostname:
         location = _fs.submissions.transfer_submission_to_remote(host=evaluator.host, submission_id=submission_id)
     else:
         location = get_submission_dir(submission_id)
@@ -138,11 +136,11 @@ async def evaluate(submission_id: str, extra_args: Optional[List[str]] = None):
 
 
 async def cancel_evaluation(submission_id: str, hostname: str, logger: SubmissionLogger):
-    is_remote = hostname != _settings.hostname
+    is_remote = hostname != _settings.app_options.hostname
     submission_fs = get_submission_dir(submission_id, as_obj=True)
 
     if is_remote:
-        transfer_location = _settings.REMOTE_STORAGE.get(hostname)
+        transfer_location = _settings.task_queue_options.REMOTE_STORAGE.get(hostname)
         remote_submission_location = transfer_location / f"{submission_id}"
         logger.fetch_remote(hostname, remote_submission_location)
 
@@ -152,12 +150,12 @@ async def cancel_evaluation(submission_id: str, hostname: str, logger: Submissio
 
 
 async def fail_evaluation(submission_id: str, hostname: str, logger: SubmissionLogger):
-    is_remote = hostname != _settings.hostname
+    is_remote = hostname != _settings.app_options.hostname
     submission_fs = get_submission_dir(submission_id, as_obj=True)
 
     # fetch results
     if is_remote:
-        transfer_location = _settings.REMOTE_STORAGE.get(hostname)
+        transfer_location = _settings.task_queue_options.REMOTE_STORAGE.get(hostname)
         remote_submission_location = transfer_location / f"{submission_id}"
         logger.fetch_remote(hostname, remote_submission_location)
 
@@ -168,7 +166,7 @@ async def fail_evaluation(submission_id: str, hostname: str, logger: SubmissionL
 
 
 async def complete_evaluation(submission_id: str, hostname: str, logger: SubmissionLogger):
-    is_remote = hostname != _settings.hostname
+    is_remote = hostname != _settings.app_options.hostname
     out.log.debug(f"fetching items from remote: {is_remote}")
     submission_fs = get_submission_dir(submission_id, as_obj=True)
 

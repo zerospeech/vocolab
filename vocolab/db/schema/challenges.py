@@ -65,7 +65,7 @@ class SubmissionStatus(str, Enum):
 
     @classmethod
     def get_values(cls):
-        return [el.value for el in cls]
+        return [el.value for el in cls]  # noqa enum has attr values
 
 
 class ChallengeSubmission(BaseModel):

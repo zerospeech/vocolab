@@ -79,7 +79,7 @@ class GenerateWorkerSettings(cmd_lib.CMD):
         super(GenerateWorkerSettings, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--output-file', type=str, help="File to output result config")
         self.parser.add_argument('worker_type', choices=['eval', 'update'])
-        self.config_file = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR)) \
+        self.config_file = Environment(loader=FileSystemLoader(_settings.config_template_dir)) \
             .get_template("worker.config")
 
     def run(self, argv):
@@ -87,10 +87,10 @@ class GenerateWorkerSettings(cmd_lib.CMD):
 
         if args.worker_type == 'eval':
             node_name = _settings.celery_options.celery_nodes.get('eval')
-            queue_name = _settings.QUEUE_CHANNELS.get('eval')
+            queue_name = _settings.task_queue_options.QUEUE_CHANNELS.get('eval')
         else:
             node_name = _settings.celery_options.celery_nodes['update']
-            queue_name = _settings.QUEUE_CHANNELS.get('update')
+            queue_name = _settings.task_queue_options.QUEUE_CHANNELS.get('update')
 
         config_data = dict(
             node_name=node_name,
@@ -120,7 +120,7 @@ class GenerateSystemDUnit(cmd_lib.CMD):
         super(GenerateSystemDUnit, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--output-file', type=str, help="File to output result config")
         self.parser.add_argument('config_location')
-        self.unit_template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR)) \
+        self.unit_template = Environment(loader=FileSystemLoader(_settings.config_template_dir)) \
             .get_template("worker.service")
 
     def run(self, argv):
@@ -133,8 +133,8 @@ class GenerateSystemDUnit(cmd_lib.CMD):
             sys.exit(1)
 
         systemd_unit_data = dict(
-            user=_settings.SERVICE_USER,
-            group=_settings.SERVICE_GROUP,
+            user=_settings.server_options.SERVICE_USER,
+            group=_settings.server_options.SERVICE_GROUP,
             workDirectory=_settings.DATA_FOLDER,
             environmentFile=str(config_location)
         )

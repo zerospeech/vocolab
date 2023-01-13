@@ -26,7 +26,3 @@ class SplitManifest(BaseModel):
     received: Optional[List[ManifestIndexItem]] = []
     multipart: bool = True
     hashed_parts: bool = True
-
-
-
-

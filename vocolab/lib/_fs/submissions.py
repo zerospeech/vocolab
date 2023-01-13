@@ -107,7 +107,7 @@ class SubmissionDir:
         self.__submission_root = root_dir
 
     @property
-    def root(self):
+    def root(self) -> Path:
         """ Root directory of submission """
         return self.__submission_root
 
@@ -216,8 +216,8 @@ class SubmissionDir:
 def get_submission_dir(submission_id: str, as_obj: bool = False) -> Union[Path, SubmissionDir]:
     """ Returns the directory containing the submission data based on the given id"""
     if as_obj:
-        return SubmissionDir(_settings.SUBMISSION_DIR / submission_id)
-    return _settings.SUBMISSION_DIR / submission_id
+        return SubmissionDir(_settings.submission_dir / submission_id)
+    return _settings.submission_dir / submission_id
 
 
 def make_submission_on_disk(submission_id: str, username: str, track: str, meta: models.api.NewSubmissionRequest):
@@ -369,11 +369,11 @@ def singlepart_add(submission_id: str, filename: str, data: UploadFile):
 def transfer_submission_to_remote(host: str, submission_id: str):
     """ Transfer a submission to worker storage """
     # build variables
-    is_remote = host != _settings.hostname
-    transfer_location = _settings.REMOTE_STORAGE.get(host)
+    is_remote = host != _settings.app_options.hostname
+    transfer_location = _settings.task_queue_options.REMOTE_STORAGE.get(host)
     local_folder = get_submission_dir(submission_id)
 
-    if (not is_remote) and (transfer_location == _settings.SUBMISSION_DIR):
+    if (not is_remote) and (transfer_location == _settings.submission_dir):
         return local_folder
 
     logger = SubmissionLogger(submission_id)
@@ -400,11 +400,11 @@ def transfer_submission_to_remote(host: str, submission_id: str):
 def fetch_submission_from_remote(host: str, submission_id: str):
     """ Download a submission from worker storage """
     # build variables
-    is_remote = host != _settings.hostname
-    transfer_location = _settings.REMOTE_STORAGE.get(host)
+    is_remote = host != _settings.app_options.hostname
+    transfer_location = _settings.task_queue_options.REMOTE_STORAGE.get(host)
     local_folder = get_submission_dir(submission_id)
 
-    if (not is_remote) and (transfer_location == _settings.SUBMISSION_DIR):
+    if (not is_remote) and (transfer_location == _settings.submission_dir):
         return local_folder
 
     logger = SubmissionLogger(submission_id)
@@ -427,7 +427,7 @@ def fetch_submission_from_remote(host: str, submission_id: str):
 
 def archive_submission_files(submission_id: str) -> Path:
     """ Archive submission files as a zipped archive """
-    archive_location = _settings.SUBMISSION_ARCHIVE_DIR
+    archive_location = _settings.submission_archive_dir
     submission_location = get_submission_dir(submission_id)
 
     # create archive of submission in archive dir

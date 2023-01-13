@@ -109,15 +109,12 @@ class APInitEnvironmentCMD(cmd_lib.CMD):
         _ = self.parser.parse_args(argv)
 
         # create data_folders
-        out.cli.info(f"creating : {_settings.USER_DATA_DIR}")
-        _settings.USER_DATA_DIR.mkdir(exist_ok=True, parents=True)
-        out.cli.info(f"creating : {_settings.USER_DATA_DIR / 'submissions'}")
-        (_settings.USER_DATA_DIR / 'submissions').mkdir(exist_ok=True)
-        out.cli.info(f"creating : {_settings.USER_DATA_DIR / 'profiles'}")
-        (_settings.USER_DATA_DIR / 'profiles').mkdir(exist_ok=True)
-        out.cli.info(f"creating : {_settings.LEADERBOARD_LOCATION}")
-        _settings.LEADERBOARD_LOCATION.mkdir(exist_ok=True)
-
+        out.cli.info(f"creating : {_settings.user_data_dir}")
+        _settings.user_data_dir.mkdir(exist_ok=True, parents=True)
+        out.cli.info(f"creating : {_settings.submission_dir}")
+        _settings.submission_dir.mkdir(exist_ok=True)
+        out.cli.info(f"creating : {_settings.leaderboard_dir}")
+        _settings.leaderboard_dir.mkdir(exist_ok=True)
         # create tables
         out.cli.info(f"creating : tables in database ...")
         create_db()
@@ -140,18 +137,18 @@ class GunicornConfigGeneration(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(GunicornConfigGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
+        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir))\
             .get_template("gunicorn_app.wsgi")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
         data = dict(
-            wsgi_app=_settings.WSGI_APP,
-            zr_env_file=os.environ.get('ZR_ENV_FILE', ''),
-            worker_class=_settings.GUNICORN_WORKER_CLASS,
-            nb_workers=_settings.GUNICORN_WORKERS,
-            bind_point=_settings.SERVER_BIND
+            wsgi_app=_settings.server_options.WSGI_APP,
+            zr_env_file=os.environ.get('VOCO_CFG', ''),
+            worker_class=_settings.server_options.GUNICORN_WORKER_CLASS,
+            nb_workers=_settings.server_options.GUNICORN_WORKERS,
+            bind_point=_settings.server_options.SERVER_BIND
         )
         # export
         if args.out_file:
@@ -168,12 +165,12 @@ class SystemDSocketFileGeneration(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(SystemDSocketFileGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR))\
+        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir))\
             .get_template("gunicorn.socket")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        bind = urlparse(_settings.SERVER_BIND)
+        bind = urlparse(_settings.server_options.SERVER_BIND)
         if bind.scheme == 'unix':
             socket_file = bind.path
         else:
@@ -181,7 +178,7 @@ class SystemDSocketFileGeneration(cmd_lib.CMD):
             sys.exit(1)
 
         data = dict(
-            socket_user=_settings.NGINX_USER,
+            socket_user=_settings.server_options.NGINX_USER,
             socket_file=socket_file
         )
         # export
@@ -200,7 +197,7 @@ class SystemDUnitGeneration(cmd_lib.CMD):
         super(SystemDUnitGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
         self.parser.add_argument('gunicorn_config_file', type=str, help="File to configure gunicorn with")
-        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR), trim_blocks=True)\
+        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir), trim_blocks=True)\
             .get_template("api.service")
 
     def run(self, argv):
@@ -211,12 +208,12 @@ class SystemDUnitGeneration(cmd_lib.CMD):
             out.cli.error(f'Config given : {gunicorn_cfg_file} ! Error no such file found ')
             sys.exit(1)
 
-        bind = urlparse(_settings.bind)
+        bind = urlparse(_settings.server_options.SERVER_BIND)
         has_socket = bind.scheme == "unix"
 
         data = dict(
-            user=_settings.SERVICE_USER,
-            group=_settings.SERVICE_GROUP,
+            user=_settings.server_options.SERVICE_USER,
+            group=_settings.server_options.SERVICE_GROUP,
             run_dir=_settings.DATA_FOLDER,
             gunicorn_exe=shutil.which('gunicorn'),
             gunicorn_cmd=f"-c {gunicorn_cfg_file.resolve()}",
@@ -237,7 +234,7 @@ class NginxConfigGeneration(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(NginxConfigGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.template = Environment(loader=FileSystemLoader(_settings.CONFIG_TEMPLATE_DIR), trim_blocks=True)\
+        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir), trim_blocks=True)\
             .get_template("nginx.conf")
 
     def run(self, argv):
@@ -245,7 +242,7 @@ class NginxConfigGeneration(cmd_lib.CMD):
         default_url = urlparse(_settings.API_BASE_URL)
         data = dict(
             url=f"{default_url.netloc}{default_url.path}",
-            bind_url=_settings.bind,
+            bind_url=_settings.server_options.SERVER_BIND,
             access_log=f"/var/log/nginx/api_access.log",
             error_log=f"/var/log/nginx/api_error.log"
         )

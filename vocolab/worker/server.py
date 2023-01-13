@@ -18,9 +18,9 @@ app = Celery(f"vc-worker-{str(uuid4())}")
 app.conf.update({
     "broker_url": worker_lib.utils.build_broker_url(),
     'task_routes': {
-        'echo-task': {'queue': _settings.QUEUE_CHANNELS['echo']},
-        'update-task': {'queue': _settings.QUEUE_CHANNELS['update']},
-        'eval-task': {'queue': _settings.QUEUE_CHANNELS['eval']}
+        'echo-task': {'queue': _settings.task_queue_options.QUEUE_CHANNELS['echo']},
+        'update-task': {'queue': _settings.task_queue_options.QUEUE_CHANNELS['update']},
+        'eval-task': {'queue': _settings.task_queue_options.QUEUE_CHANNELS['eval']}
     },
     'task_ignore_result': True
 })

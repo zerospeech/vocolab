@@ -218,7 +218,7 @@ async def login_user(*, login: str, pwd: str):
 
     # Log user in
     user_token = secrets.token_urlsafe(64)
-    token_best_by = datetime.now() + _settings.session_expiry_delay
+    token_best_by = datetime.now() + _settings.user_options.session_expiry_delay
     query = schema.logged_users_table.insert().values(
         token=user_token,
         user_id=usr.id,
@@ -244,7 +244,7 @@ async def admin_login(*, by_uid: int = Optional[int]):
     usr = schema.User(**usr)
     # Log user in
     user_token = secrets.token_urlsafe(64)
-    token_best_by = datetime.now() + _settings.session_expiry_delay
+    token_best_by = datetime.now() + _settings.user_options.session_expiry_delay
     query = schema.logged_users_table.insert().values(
         token=user_token,
         user_id=usr.id,
@@ -294,7 +294,7 @@ async def create_password_reset_session(*, username: str, email: str) -> schema.
         raise exc.ValueNotValid("username provided does not match email")
 
     user_token = secrets.token_urlsafe(64)
-    token_best_by = datetime.now() + _settings.password_reset_expiry_delay
+    token_best_by = datetime.now() + _settings.user_options.password_reset_expiry_delay
     query = schema.password_reset_table.insert().values(
         token=user_token,
         user_id=user.id,

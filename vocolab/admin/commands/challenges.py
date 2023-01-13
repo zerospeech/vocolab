@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from pydantic import ValidationError
+from pydantic import ValidationError, parse_obj_as, AnyHttpUrl
 from rich.table import Table
 
 from vocolab import out
@@ -96,7 +96,7 @@ class AddChallengeCMD(cmd_lib.CMD):
                 obj = models.cli.NewChallenge(
                     label=label,
                     active=False,
-                    url=url,
+                    url=parse_obj_as(AnyHttpUrl, url),
                     evaluator=None,
                     start_date=datetime.strptime(start_date, '%d/%m/%Y').date(),
                     end_date=end_date,

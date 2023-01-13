@@ -7,7 +7,7 @@ _settings = get_settings()
 
 
 def get_leaderboard_location():
-    return _settings.LEADERBOARD_LOCATION
+    return _settings.leaderboard_dir
 
 
 def get_leaderboard_archive_location():

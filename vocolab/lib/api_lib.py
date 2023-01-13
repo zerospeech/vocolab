@@ -61,7 +61,7 @@ async def get_current_active_user(current_user: schema.User = Depends(get_user))
 
 def generate_html_response(data: Dict[str, Any], template_name: str) -> str:
     """ Render an html template using values from data"""
-    env = Environment(loader=FileSystemLoader(_settings.HTML_TEMPLATE_DIR))
+    env = Environment(loader=FileSystemLoader(_settings.html_templates_dir))
     template = env.get_template(template_name)
     return template.render(**data)
 
@@ -73,7 +73,7 @@ async def signup(request: Request, user: models.misc.UserCreate):
         'username': user.username,
         # todo check if url needs update
         'url': f"{request.url_for('email_verification')}?v={verification_code}&username={user.username}",
-        'admin_email': _settings.admin_email
+        'admin_email': _settings.app_options.admin_email
     }
     # run in the background
     loop = asyncio.get_running_loop()

@@ -168,4 +168,3 @@ def copy_all_contents(source: Path, target: Path, *, prefix: Optional[str] = Non
             shutil.copyfile(file, target / f"{prefix}_{file.name}")
         else:
             shutil.copyfile(file, target / file.name)
-

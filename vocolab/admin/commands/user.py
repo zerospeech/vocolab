@@ -237,7 +237,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                     subject='[Zerospeech] Account Verification',
                     data=dict(
                         username=user.username,
-                        admin_email=_settings.admin_email,
+                        admin_email=_settings.app_options.admin_email,
                         url=f"{_settings.API_BASE_URL}{verification_path}?v={user.verified}&username={user.username}"
                     ),
                     template_name='email_validation.jinja2'
@@ -263,7 +263,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                         subject='[Zerospeech] Account Verification',
                         data=dict(
                             username=u.username,
-                            admin_email=_settings.admin_email,
+                            admin_email=_settings.app_options.admin_email,
                             url=f"{_settings.API_BASE_URL}{verification_path}?v={u.verified}&username={u.username}"
                         ),
                         template_name='email_validation.jinja2'
@@ -335,7 +335,7 @@ class PasswordUserCMD(cmd_lib.CMD):
                 data=dict(
                     username=user.username,
                     url=f"{_settings.API_BASE_URL}{password_reset_path}?v={session.token}",
-                    admin_email=_settings.admin_email
+                    admin_email=_settings.app_options.admin_email
                 ),
                 template_name='password_reset.jinja2'
             ))

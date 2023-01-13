@@ -24,10 +24,10 @@ def index():
         installation_datetime = ''
 
     return {
-        "app": _settings.app_name,
-        "version": _settings.version,
-        "maintainers": _settings.maintainers,
-        "contact": _settings.admin_email,
+        "app": _settings.app_options.app_name,
+        "version": _settings.app_options.version,
+        "maintainers": _settings.app_options.maintainers,
+        "contact": _settings.app_options.admin_email,
         "installation_datetime": installation_datetime
     }
 

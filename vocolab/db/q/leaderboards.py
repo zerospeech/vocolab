@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, List, Optional
 from vocolab.db import schema, zrDB, exc as db_exc
 from vocolab.lib import misc
-from vocolab import out
 
 
 async def get_leaderboard(*, leaderboard_id: int) -> schema.LeaderBoard:
@@ -39,7 +38,7 @@ async def get_leaderboards(*, by_challenge_id: Optional[int] = None) -> List[sch
         raise ValueError("No parameter given")
 
     lst_ld = await zrDB.fetch_all(query)
-    return [ schema.LeaderBoard(**ld) for ld in lst_ld]
+    return [schema.LeaderBoard(**ld) for ld in lst_ld]
 
 
 async def list_leaderboards() -> List[schema.LeaderBoard]:
@@ -57,7 +56,7 @@ async def list_leaderboards() -> List[schema.LeaderBoard]:
 
 
 async def create_leaderboard(*, lead_data: schema.LeaderBoard) -> int:
-    """ Create an new leaderboard entry in database from item object
+    """ Create a new leaderboard entry in database from item object
 
     :returns the id of the leaderboard created
     """

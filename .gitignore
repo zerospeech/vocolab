@@ -33,3 +33,4 @@ data/
 # custom shortcut files
 .pytest_cache/
 .ipynb_checkpoints/
+test-env.toml

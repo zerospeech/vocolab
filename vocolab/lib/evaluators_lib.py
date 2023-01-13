@@ -19,7 +19,7 @@ def discover_evaluators(hostname: str, bin_location) -> List[models.cli.NewEvalu
     """ Connects to a host & builds a list of evaluators from the index.yml file """
 
     cmd = shlex.split(f'cat {bin_location}/index.yml')
-    if hostname not in ('localhost', '127.0.0.1', _settings.hostname):
+    if hostname not in ('localhost', '127.0.0.1', _settings.app_options.hostname):
         code, res = _fs.commons.ssh_exec(hostname, cmd)
     else:
         code, res = _fs.commons.execute(cmd)

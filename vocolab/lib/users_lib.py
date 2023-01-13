@@ -14,9 +14,9 @@ def hash_pwd(*, password: str, salt=None):
     """ Creates a hash of the given password.
         If salt is None generates a random salt.
 
-        :arg password<str> the password to hash
-        :arg salt<bytes> a value to salt the hashing
-        :returns hashed_password, salt
+    :arg password<str> the password to hash
+    :arg salt<bytes> a value to salt the hashing
+    :returns hashed_password, salt
     """
 
     if salt is None:

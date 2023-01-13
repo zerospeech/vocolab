@@ -61,14 +61,14 @@ class _out_config_cls:  # noqa: lowercase class as internal objects
 
     def __init__(self):
         _settings = get_settings()
-        self.VERBOSE = _settings.VERBOSE
-        self.ROTATING_LOGS = _settings.ROTATING_LOGS
-        self.LOG_FILE = _settings.LOG_FILE
-        self.ERROR_LOG_FILE = _settings.ERROR_LOG_FILE
-        self.ALLOW_PRINTS = _settings.ALLOW_PRINTS
-        self.QUIET = _settings.QUIET
-        self.DEBUG = _settings.DEBUG
-        self.COLORS = _settings.COLORS
+        self.VERBOSE = _settings.console_options.VERBOSE
+        self.ROTATING_LOGS = _settings.console_options.ROTATING_LOGS
+        self.LOG_FILE = _settings.console_options.LOG_FILE
+        self.ERROR_LOG_FILE = _settings.console_options.ERROR_LOG_FILE
+        self.ALLOW_PRINTS = _settings.console_options.ALLOW_PRINTS
+        self.QUIET = _settings.console_options.QUIET
+        self.DEBUG = _settings.console_options.DEBUG
+        self.COLORS = _settings.console_options.COLORS
 
     @property
     def log_to_file(self):

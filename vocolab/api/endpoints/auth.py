@@ -48,7 +48,7 @@ async def post_signup(request: Request,
                       first_name: str = Form(...), last_name: str = Form(...),
                       affiliation: str = Form(...), email: EmailStr = Form(...),
                       username: str = Form(...), password: str = Form(...)):
-    """ Create a new user via the HTML form  (returns an html page) """
+    """ Create a new user via the HTML form  (returns a html page) """
     user = models.misc.UserCreate(
         username=username,
         email=email,
@@ -88,7 +88,7 @@ async def password_reset_request(
     data = {
         'username': username,
         'url': f"{api_lib.url_for(request, 'password_update_page')}?v={session.token}",
-        'admin_email': _settings.admin_email
+        'admin_email': _settings.app_options.admin_email
     }
 
     # run in the background

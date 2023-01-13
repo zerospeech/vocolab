@@ -11,7 +11,8 @@ _settings = get_settings()
 
 
 def get_static_location(label: str):
-    return _settings.STATIC_DIR / 'leaderboards' / label
+    # todo: check why this is in static files ?
+    return _settings.static_files_directory / 'leaderboards' / label
 
 
 def rebuild_leaderboard_index(leaderboard_entries, *, key):
@@ -77,19 +78,19 @@ async def build_leaderboard(*, leaderboard_id: int):
             out.log.error(f"Failed to build index for leaderboard={leaderboard.label} "
                           f"with sorting_key: {leaderboard.sorting_key}")
     # Export to file
-    with (_settings.LEADERBOARD_LOCATION / leaderboard.path_to).open('w') as fp:
+    with (_settings.leaderboard_dir / leaderboard.path_to).open('w') as fp:
         json.dump(dict(
             updatedOn=datetime.now().isoformat(),
             data=leaderboard_entries
         ), fp)
 
-    return _settings.LEADERBOARD_LOCATION / leaderboard.path_to
+    return _settings.leaderboard_dir / leaderboard.path_to
 
 
 async def get_leaderboard(*, leaderboard_id) -> Dict:
     """ Load leaderboard object file """
     leaderboard = await leaderboardQ.get_leaderboard(leaderboard_id=leaderboard_id)
-    return _fs.commons.load_dict_file(_settings.LEADERBOARD_LOCATION / leaderboard.path_to)
+    return _fs.commons.load_dict_file(_settings.leaderboard_dir / leaderboard.path_to)
 
 
 async def create(*, challenge_id, label, entry_file, external_entries, static_files, path_to, archived):

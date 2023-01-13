@@ -9,7 +9,7 @@ from fastapi import (
 )
 
 from vocolab import exc, out
-from vocolab.lib import api_lib, users_lib, submissions_lib, misc
+from vocolab.lib import api_lib, users_lib, submissions_lib
 from vocolab.db import schema, models
 from vocolab.db.q import challengesQ, leaderboardQ
 from vocolab.settings import get_settings
@@ -75,7 +75,8 @@ async def submissions_list(current_user: schema.User = Depends(api_lib.get_curre
 
 
 @router.get('/submissions/tracks/{track_id}')
-async def submissions_list_by_track(track_id: int, current_user: schema.User = Depends(api_lib.get_current_active_user)):
+async def submissions_list_by_track(
+        track_id: int, current_user: schema.User = Depends(api_lib.get_current_active_user)):
     """ Return a list of all user submissions """
     track = await challengesQ.get_challenge(challenge_id=track_id)
     submissions = await challengesQ.get_user_submissions(user_id=current_user.id)
@@ -125,7 +126,8 @@ async def get_submission(submissions_id: str, current_user: schema.User = Depend
 
 
 @router.get('/submissions/{submissions_id}/status')
-async def get_submission_status(submissions_id: str, current_user: schema.User = Depends(api_lib.get_current_active_user)):
+async def get_submission_status(
+        submissions_id: str, current_user: schema.User = Depends(api_lib.get_current_active_user)):
     """ Return status of a submission """
     submission = await challengesQ.get_submission(by_id=submissions_id)
     if submission.user_id != current_user.id:
@@ -136,7 +138,8 @@ async def get_submission_status(submissions_id: str, current_user: schema.User =
 
 
 @router.get('/submissions/{submissions_id}/log')
-async def get_submission_status(submissions_id: str, current_user: schema.User = Depends(api_lib.get_current_active_user)):
+async def get_submission_status(
+        submissions_id: str, current_user: schema.User = Depends(api_lib.get_current_active_user)):
     """ Return status of a submission """
     submission = await challengesQ.get_submission(by_id=submissions_id)
     if submission.user_id != current_user.id:
@@ -164,4 +167,3 @@ async def get_user_results(submissions_id: str, current_user: schema.User = Depe
             result[ld.label] = api_lib.file2dict(ld_file)
 
     return result
-
