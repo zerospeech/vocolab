@@ -135,6 +135,7 @@ class NotifySettings(BaseModel):
     MAIL_TLS: bool = True
     MAIL_SSL: bool = False
     MAIL_SSL_TLS: bool = True
+    MAIL_STARTTLS: bool = True
 
 
 class ServerSettings(BaseModel):

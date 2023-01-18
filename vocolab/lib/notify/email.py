@@ -15,9 +15,10 @@ email_cgf = ConnectionConfig(
     MAIL_FROM_NAME=_settings.notify_options.MAIL_FROM_NAME,
     MAIL_PORT=_settings.notify_options.MAIL_PORT,
     MAIL_SERVER=_settings.notify_options.MAIL_SERVER,
-    # todo: investigate why this changed to MAIL_SSL_TLS and if it still works
+    # todo: investigate why this changed to MAIL_SSL_TLS &  MAIL_STARTTLS and if it still works
     # MAIL_TLS=_settings.notify_options.MAIL_TLS,
     # MAIL_SSL=_settings.notify_options.MAIL_SSL,
+    MAIL_STARTTLS=_settings.notify_options.MAIL_STARTTLS,
     MAIL_SSL_TLS=_settings.notify_options.MAIL_SSL_TLS,
     TEMPLATE_FOLDER=_settings.email_templates_dir
 )

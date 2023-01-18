@@ -2,6 +2,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 from rich.markdown import Markdown
+from rich import inspect
 
 from vocolab import get_settings, out
 from vocolab.admin import cmd_lib
@@ -45,7 +46,7 @@ class SettingsCMD(cmd_lib.CMD):
         # arguments
         self.parser.add_argument('--get', help='Retrieves a specific value')
         self.parser.add_argument('--info', help='Info on how to set settings', action='store_true')
-        self.parser.add_argument('--keys', help='List all available keys', action='store_true')
+        self.parser.add_argument('--inspect', help='List all available keys', action='store_true')
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -58,7 +59,8 @@ class SettingsCMD(cmd_lib.CMD):
                 console.print(f":x: Key {args.get} not found", style='red bold')
 
         elif args.keys:
-            console.print([i for i in _settings.__fields__ if i != 'local'])
+            # console.print([i for i in _settings.__fields__ if i != 'local'])
+            inspect(_settings)
         elif args.info:
             md = Markdown(settings_info_md)
             console.print(md)
