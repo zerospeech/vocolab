@@ -30,7 +30,7 @@ voco = "vocolab.admin.main:run_cli"
 
 [project.optional-dependencies]
 dev = [
-   "zerospeech-benchmarks[abx,tde]",
+   "zerospeech-benchmarks[all]",
     "ipython",
     "jupyterlab",
     "pytest",

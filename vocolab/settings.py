@@ -19,20 +19,9 @@ from pydantic import (
 )
 
 
-class CeleryWorkerOptions(BaseModel):
-    celery_bin: Path = Path(shutil.which('celery'))
-    celery_nodes: Dict[str, str] = {
-        'eval': 'vc-evaluate-node', 'update': 'vc-update-node', 'echo': 'vc-echo-node'
-    }
-    celery_app: str = 'vocolab.worker.server:app'
-    celery_pool_type: str = "prefork"
-    celery_worker_number: int = 2
-
-
 class DocumentationSettings(BaseModel):
     """ Settings related to documentation of API """
     doc_title: str = "VocoLab Challenge API"
-    doc_version: str = 'v0.5'
     doc_description: str = 'A documentation of the API for the VocoLab Challenge back-end !'
 
 
@@ -50,6 +39,16 @@ class ConsoleOutputSettings(BaseModel):
 
 class DatabaseSettings(BaseModel):
     db_file: str = 'vocolab.db'
+
+
+class CeleryWorkerOptions(BaseModel):
+    celery_bin: Path = Path(shutil.which('celery'))
+    celery_nodes: Dict[str, str] = {
+        'eval': 'vc-evaluate-node', 'update': 'vc-update-node', 'echo': 'vc-echo-node'
+    }
+    celery_app: str = 'vocolab.worker.server:app'
+    celery_pool_type: str = "prefork"
+    celery_worker_number: int = 2
 
 
 class TaskQueueSettings(BaseModel):
@@ -78,8 +77,8 @@ class TaskQueueSettings(BaseModel):
 
 class AppSettings(BaseModel):
     app_name: str = "VocoLab Challenge API"
-    maintainers: str = "CoML Team, INRIA, ENS, EHESS, CNRS"
-    admin_email: EmailStr = EmailStr("contact@zerospeech.com")
+    maintainers: str = "Organisation Name"
+    admin_email: EmailStr = EmailStr("contact@email.com")
     custom_hostname: Optional[str] = None
 
     @property
@@ -101,20 +100,12 @@ class APISettings(BaseModel):
     API_BASE_URL: str = "https://api.vocolab.com"
     favicon: str = 'https://api.vocolab.com/static/favicon.ico'
     origins: List[str] = [
-        # local debug urls
         "http://vocolab.test",
         "http://api.vocolab.test",
-        # staging urls
-        "https://*.cognitive-ml.fr/*"
-        # production urls
-        "https://zerospeech.com",
-        "https://api.zerospeech.com",
     ]
     origin_regex: List[str] = [
         # local debug urls
         "http://*.test"
-        # production urls
-        "https://*zerospeech.com/*"
     ]
 
 
