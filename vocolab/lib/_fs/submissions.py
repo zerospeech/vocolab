@@ -228,7 +228,7 @@ def make_submission_on_disk(submission_id: str, username: str, track: str, meta:
         - tmp/ : temporary folder for multipart uploads (contains chunks & index)
         - upload.lock : lockfile used to declare the submission has not finished uploading
     """
-    submission_dir = get_submission_dir(submission_id, as_obj=True)
+    submission_dir: SubmissionDir = get_submission_dir(submission_id, as_obj=True)
     submission_dir.root.mkdir(parents=True, exist_ok=True)
     submission_dir.scores.mkdir(exist_ok=True)
     submission_dir.input.mkdir(exist_ok=True)
