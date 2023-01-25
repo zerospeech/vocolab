@@ -1,4 +1,5 @@
 import os
+import shlex
 import shutil
 import sys
 from os import execv
@@ -42,27 +43,28 @@ class DebugAPICMD(cmd_lib.CMD):
 
     def __init__(self, root, name, cmd_path):
         super(DebugAPICMD, self).__init__(root, name, cmd_path)
-        self.parser.add_argument("-u", "--uvicorn", action='store_true',
+        self.parser.add_argument("-e", "--extra-args", action='store_true',
                                  help="Pass custom arguments to uvicorn")
-        self.parser.add_argument("-o", "--uvicorn-options", action='store_true',
+        self.parser.add_argument("-i", "--uvicorn-info", action='store_true',
                                  help="Print uvicorn command options")
 
     def run(self, argv):
         args, extra_args = self.parser.parse_known_args(argv)
 
         executable = which('uvicorn')
-        exec_args = []
 
-        if args.uvicorn_options:
+        if args.uvicorn_info:
             # run help on the uvicorn command
-            exec_args.extend(['--help'])
-        elif args.uvicorn:
+            exec_args = '--help',
+        elif args.extra_args:
             # run with custom uvicorn options
-            exec_args.extend(['vocolab.api:app', *extra_args])
+            exec_args = tuple([*extra_args, 'vocolab.api:app'])
         else:
             # run default debug version
-            exec_args.extend(['vocolab.api:app', '--reload', '--debug', '--no-access-log'])
+            exec_args = tuple(['--reload', '--port', '8080', '--no-access-log', 'vocolab.api:app'])
 
+        if _settings.console_options.DEBUG:
+            print(f"> {executable} {shlex.join(exec_args)}")
         execv(executable, exec_args)
 
 
@@ -115,6 +117,8 @@ class APInitEnvironmentCMD(cmd_lib.CMD):
         _settings.submission_dir.mkdir(exist_ok=True)
         out.cli.info(f"creating : {_settings.leaderboard_dir}")
         _settings.leaderboard_dir.mkdir(exist_ok=True)
+        out.cli.info(f"creating : {_settings.static_files_directory}")
+        _settings.static_files_directory.mkdir(exist_ok=True, parents=True)
         # create tables
         out.cli.info(f"creating : tables in database ...")
         create_db()

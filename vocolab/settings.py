@@ -1,3 +1,4 @@
+import secrets
 import shutil
 
 import os
@@ -15,7 +16,7 @@ except ImportError:
 
 
 from pydantic import (
-    BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork, BaseModel
+    BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork, BaseModel, Field
 )
 
 
@@ -220,6 +221,17 @@ class _VocoLabSettings(BaseSettings):
     def config_template_dir(self) -> Path:
         """ Directory containing configuration files templates """
         return self.templates_dir / 'config'
+
+    @property
+    def secret(self):
+        if not (self.DATA_FOLDER / '.secret').is_file():
+            with (self.DATA_FOLDER / '.secret').open("wb") as fp:
+                fp.write(secrets.token_hex(256).encode())
+
+        with (self.DATA_FOLDER / '.secret').open('rb') as fp:
+            return fp.read().decode()
+
+
 
     class Config:
         env_prefix = 'VC_'

@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
-from rich.markdown import Markdown
 from rich import inspect
+from rich.markdown import Markdown
 
 from vocolab import get_settings, out
 from vocolab.admin import cmd_lib
@@ -57,8 +57,7 @@ class SettingsCMD(cmd_lib.CMD):
                 console.print(f"[green]{v}[/green]")
             except AttributeError:
                 console.print(f":x: Key {args.get} not found", style='red bold')
-
-        elif args.keys:
+        elif args.inspect:
             # console.print([i for i in _settings.__fields__ if i != 'local'])
             inspect(_settings)
         elif args.info:
@@ -80,11 +79,11 @@ class SettingsCMD(cmd_lib.CMD):
 
 class GenerateEnvFileCMD(cmd_lib.CMD):
     """ Generate a template .env file """
-    
+
     def __init__(self, root, name, cmd_path):
         super(GenerateEnvFileCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir))\
+        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir)) \
             .get_template("example.env")
 
     def run(self, argv):
