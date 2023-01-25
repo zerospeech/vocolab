@@ -18,23 +18,28 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 file2dict = _fs.commons.load_dict_file
 
 
-async def validate_token(token: str = Depends(oauth2_scheme)) -> schema.LoggedUser:
+def validate_token(token: str = Depends(oauth2_scheme)) -> schema.Token:
     """ Dependency for validating the current users session via the token"""
     try:
-        token_item = await userQ.validate_token(token=token)
-        return token_item
+        token = schema.Token.decode(token)
+        if token.is_expired():
+            raise ValueError('Token has expired')
+
+        if token.allow_password_reset:
+            raise ValueError('Token only for password reset purposes')
+
+        return token
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token is not found or invalid !",
+            detail="Token is invalid or has expired !",
         )
 
 
-async def get_user(token: schema.LoggedUser = Depends(validate_token)) -> schema.User:
+async def get_user(token: schema.Token = Depends(validate_token)) -> schema.User:
     """ Dependency for fetching current user from database using token entry """
     try:
-        user = await userQ.get_user(by_uid=token.user_id)
-        return user
+        return await userQ.get_user(by_email=token.user_email)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

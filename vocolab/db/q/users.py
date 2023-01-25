@@ -1,14 +1,14 @@
-
 import secrets
 from datetime import datetime
 from typing import Optional, List
 
-from email_validator import validate_email, EmailSyntaxError
 
-from vocolab import exc
+from email_validator import validate_email, EmailNotValidError
+
+from vocolab import exc, out
 from vocolab.db import zrDB, models, schema, exc as db_exc
-from vocolab.settings import get_settings
 from vocolab.lib import users_lib
+from vocolab.settings import get_settings
 
 _settings = get_settings()
 
@@ -92,30 +92,35 @@ def check_users_password(*, password: str, user: schema.User):
     return hashed_pwd == user.hashed_pswd
 
 
-async def validate_token(*, token: str):
-    """ Verify that a session token exists & is valid.
-    :returns the logged_user entry
-    :raises ValueError if entry not valid
+async def get_user_for_login(login_id: str, password: str) -> Optional[schema.User]:
     """
-    query = schema.logged_users_table.select().where(
-        schema.logged_users_table.c.token == token
-    )
+    :params login_id<str>: the login id can be username or email
+    :params password<str>: the user's password
+    """
+    try:
+        validate_email(login_id)  # check if email is valid
+        query = schema.users_table.select().where(
+            schema.users_table.c.email == login_id
+        )
+    except EmailNotValidError:
+        query = schema.users_table.select().where(
+            schema.users_table.c.username == login_id
+        )
 
-    logged_usr = await zrDB.fetch_one(query)
-    if logged_usr is None:
-        raise ValueError('Token appears to not be valid')
+    user = await zrDB.fetch_one(query)
+    if user is None:
+        return None
+    user = schema.User(**user)
+    out.console.print(f"===> {user=}")
 
-    logged_usr = schema.LoggedUser(**logged_usr)
-
-    # verify dates
-    if datetime.now() > logged_usr.expiration_date:
-        raise ValueError('Token appears to have expired')
-
-    return logged_usr
+    hashed_pswd, _ = users_lib.hash_pwd(password=password, salt=user.salt)
+    if user.enabled and hashed_pswd == user.hashed_pswd:
+        return user
+    return None
 
 
 async def get_user(*, by_uid: Optional[int] = None, by_username: Optional[str] = None,
-                   by_email: Optional[str] = None, by_password_reset_session: Optional[str] = None) -> schema.User:
+                   by_email: Optional[str] = None) -> schema.User:
     """ Get a user from the database using uid, username or email as a search parameter.
 
     :rtype: schema.User
@@ -135,22 +140,6 @@ async def get_user(*, by_uid: Optional[int] = None, by_username: Optional[str] =
         query = schema.users_table.select().where(
             schema.users_table.c.email == by_email
         )
-    elif by_password_reset_session:
-        query = schema.password_reset_table.select().where(
-            schema.password_reset_table.c.token == by_password_reset_session
-        )
-
-        session = await zrDB.fetch_one(query)
-        if session is None:
-            raise ValueError("session was not found")
-        session = schema.PasswordResetSession(**session)
-        if session.expiration_date < datetime.now():
-            raise ValueError("session expired")
-
-        query = schema.users_table.select().where(
-            schema.users_table.c.id == session.user_id
-        )
-
     else:
         raise ValueError('a value must be provided : uid, username, email')
 
@@ -179,136 +168,6 @@ async def delete_user(*, uid: int):
     return await zrDB.execute(query)
 
 
-async def get_logged_user_list() -> List[schema.User]:
-    """ Return a list of all users """
-    query = schema.logged_users_table.join(schema.users_table).select().where(
-        schema.logged_users_table.c.user_id == schema.users_table.c.id
-    )
-    logged_list = await zrDB.fetch_all(query)
-    return [schema.User(**usr) for usr in logged_list]
-
-
-async def login_user(*, login: str, pwd: str):
-    """ Create a new session for a user
-    :param login<str> argument used to identify user (can be username or email)
-    :param pwd<str> the password of the user
-    :returns the user object
-    :raises ValueError if the login or password are not matched to a user.
-    """
-    # check username/email
-    try:
-        email = validate_email(email=login)
-        query = schema.users_table.select().where(
-            schema.users_table.c.email == email.email
-        )
-    except EmailSyntaxError:
-        query = schema.users_table.select().where(
-            schema.users_table.c.username == login
-        )
-
-    usr = await zrDB.fetch_one(query)
-    if usr is None:
-        raise ValueError('Login or password incorrect')
-
-    usr = schema.User(**usr)
-
-    # check password
-    if not check_users_password(password=pwd, user=usr):
-        raise ValueError('Login or password incorrect')
-
-    # Log user in
-    user_token = secrets.token_urlsafe(64)
-    token_best_by = datetime.now() + _settings.user_options.session_expiry_delay
-    query = schema.logged_users_table.insert().values(
-        token=user_token,
-        user_id=usr.id,
-        expiration_date=token_best_by
-    )
-    await zrDB.execute(query)
-
-    return usr, user_token
-
-
-async def admin_login(*, by_uid: int = Optional[int]):
-    if by_uid:
-        query = schema.users_table.select().where(
-            schema.users_table.c.id == by_uid
-        )
-    else:
-        raise ValueError("Login Parameters do not match !!!")
-
-    usr = await zrDB.fetch_one(query)
-    if usr is None:
-        raise ValueError('Login or password incorrect')
-
-    usr = schema.User(**usr)
-    # Log user in
-    user_token = secrets.token_urlsafe(64)
-    token_best_by = datetime.now() + _settings.user_options.session_expiry_delay
-    query = schema.logged_users_table.insert().values(
-        token=user_token,
-        user_id=usr.id,
-        expiration_date=token_best_by
-    )
-    await zrDB.execute(query)
-    return usr, user_token
-
-
-async def delete_session(*, by_token: Optional[str] = None, by_uid: Optional[int] = None,
-                         clear_all: bool = False):
-    """ Delete a specific user session """
-    if by_token:
-        query = schema.logged_users_table.delete().where(
-            schema.logged_users_table.c.token == by_token
-        )
-    elif by_uid:
-        query = schema.logged_users_table.delete().where(
-            schema.logged_users_table.c.user_id == by_uid
-        )
-    elif clear_all:
-        query = schema.logged_users_table.delete()
-    else:
-        raise exc.OptionMissing(
-            f"Function {delete_session.__name__} requires an uid or token but None was provided!"
-        )
-    # returns number of deleted entries
-    return await zrDB.execute(query)
-
-
-async def clear_expired_sessions():
-    """ Deletes all expired sessions from the logged_users table """
-    query = schema.logged_users_table.delete().where(
-        schema.logged_users_table.c.expiration_date <= datetime.now()
-    )
-    # returns number of deleted entries
-    return await zrDB.execute(query)
-
-
-async def create_password_reset_session(*, username: str, email: str) -> schema.PasswordResetSession:
-    try:
-        user = await get_user(by_email=email)
-    except ValueError:
-        raise exc.UserNotFound("the user is not valid")
-
-    if user.username != username:
-        raise exc.ValueNotValid("username provided does not match email")
-
-    user_token = secrets.token_urlsafe(64)
-    token_best_by = datetime.now() + _settings.user_options.password_reset_expiry_delay
-    query = schema.password_reset_table.insert().values(
-        token=user_token,
-        user_id=user.id,
-        expiration_date=token_best_by,
-    )
-    await zrDB.execute(query)
-
-    return schema.PasswordResetSession(
-        token=user_token,
-        user_id=user.id,
-        expiration_date=token_best_by
-    )
-
-
 async def update_users_password(*, user: schema.User, password: str, password_validation: str):
     """ Change a users password """
 
@@ -320,12 +179,7 @@ async def update_users_password(*, user: schema.User, password: str, password_va
         schema.users_table.c.id == user.id
     ).values(hashed_pswd=hashed_pswd, salt=salt)
 
-    query2 = schema.password_reset_table.delete().where(
-        schema.password_reset_table.c.user_id == user.id
-    )
-
     await zrDB.execute(query)
-    await zrDB.execute(query2)
 
 
 async def toggle_user_status(*, user_id: int, active: bool = True):
@@ -346,36 +200,4 @@ async def toggle_all_users_status(*, active: bool = True):
     query = schema.users_table.update().values(
         active=active
     )
-    return await zrDB.execute(query)
-
-
-async def get_password_reset_sessions(all_sessions: bool = False) -> List[schema.PasswordResetSession]:
-    """ Return a list of all users """
-    if all_sessions:
-        query = schema.password_reset_table.select()
-    else:
-        query = schema.password_reset_table.select().where(
-            schema.password_reset_table.c.expiration_date > datetime.now()
-        )
-    session_list = await zrDB.fetch_all(query)
-    if session_list is None:
-        raise ValueError(f'database does not contain any user')
-    return [schema.PasswordResetSession(**usr) for usr in session_list]
-
-
-async def clear_expired_password_reset_sessions():
-    """ Deletes all expired password reset sessions from the password_reset_users table """
-    query = schema.password_reset_table.delete().where(
-        schema.password_reset_table.c.expiration_date <= datetime.now()
-    )
-    # returns number of deleted entries
-    return await zrDB.execute(query)
-
-
-async def clear_password_reset_sessions(*, by_uid: int):
-    """ Deletes all  password reset sessions from the password_reset_users table """
-    query = schema.password_reset_table.delete().where(
-        schema.password_reset_table.c.user_id == by_uid
-    )
-    # returns number of deleted entries
     return await zrDB.execute(query)

@@ -1,9 +1,15 @@
+import json
 from datetime import datetime
 from typing import Optional
 
 import sqlalchemy
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, ValidationError
+from jose import jwt, JWTError  # noqa: false flags from requirements https://youtrack.jetbrains.com/issue/PY-27985
 
+from ...settings import get_settings
+
+
+_settings = get_settings()
 users_metadata = sqlalchemy.MetaData()
 
 
@@ -38,39 +44,28 @@ users_table = sqlalchemy.Table(
     sqlalchemy.Column("created_at", sqlalchemy.DATETIME)
 )
 
+class Token(BaseModel):
+    """ API Session Token """
+    expires_at: datetime = Field(default_factory=lambda: datetime.now() + _settings.user_options.session_expiry_delay)
+    created_at: datetime = Field(default_factory=lambda: datetime.now())
+    allow_password_reset: bool = False # used for password reset sessions
+    user_email: EmailStr
 
-class LoggedUser(BaseModel):
-    token: str
-    user_id: int
-    expiration_date: datetime
+    def is_expired(self) -> bool:
+        """ Check if Token has expired """
+        return self.expires_at < datetime.now()
 
-    class Config:
-        orm_mode = True
+    def encode(self) -> str:
+        """ Encode into a token string """
+        # passing by json allows to convert datetimes to strings using pydantic serializer
+        as_dict = json.loads(self.json())
+        return jwt.encode(claims=as_dict, key=_settings.secret, algorithm=_settings.api_options.token_encryption)
 
-
-logged_users_table = sqlalchemy.Table(
-    "logged_users",
-    users_metadata,
-    sqlalchemy.Column("token", sqlalchemy.String, primary_key=True),
-    sqlalchemy.Column("user_id", sqlalchemy.Integer,
-                      sqlalchemy.ForeignKey("users_credentials.id"), primary_key=True),
-    sqlalchemy.Column("expiration_date", sqlalchemy.DateTime)
-)
-
-
-class PasswordResetSession(BaseModel):
-    token: str
-    user_id: int
-    expiration_date: datetime
-
-    class Config:
-        orm_mode = True
-
-
-password_reset_table = sqlalchemy.Table(
-    'password_reset_users',
-    users_metadata,
-    sqlalchemy.Column("token", sqlalchemy.String, primary_key=True),
-    sqlalchemy.Column("user_id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("expiration_date", sqlalchemy.DateTime),
-)
+    @classmethod
+    def decode(cls, encoded_token: str):
+        """ Decode token from encoded string """
+        try:
+            payload = jwt.decode(token=encoded_token, key=_settings.secret, algorithms=[_settings.api_options.token_encryption])
+            return Token(**payload)
+        except (JWTError, ValidationError) as e:
+            raise ValueError("Invalid token") from e

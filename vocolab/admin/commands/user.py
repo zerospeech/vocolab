@@ -238,7 +238,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                     data=dict(
                         username=user.username,
                         admin_email=_settings.app_options.admin_email,
-                        url=f"{_settings.API_BASE_URL}{verification_path}?v={user.verified}&username={user.username}"
+                        url=f"{_settings.api_options.API_BASE_URL}{verification_path}?v={user.verified}&username={user.username}"
                     ),
                     template_name='email_validation.jinja2'
                 ))

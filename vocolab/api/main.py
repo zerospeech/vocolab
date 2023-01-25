@@ -8,7 +8,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from starlette.responses import JSONResponse
+from fastapi.responses import JSONResponse
 
 from vocolab import settings, out
 from vocolab.api import router as v1_router

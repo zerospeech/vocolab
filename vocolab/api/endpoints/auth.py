@@ -23,11 +23,17 @@ _settings = get_settings()
 
 
 @router.post('/login', response_model=models.api.LoggedItem)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> models.api.LoggedItem:
     """ Authenticate a user """
     try:
-        _, token = await userQ.login_user(login=form_data.username, pwd=form_data.password)
-        return models.api.LoggedItem(access_token=token, token_type="bearer")
+        out.console.print(f"{form_data.username=}, {form_data.password=}")
+        user = await userQ.get_user_for_login(login_id=form_data.username, password=form_data.password)
+        out.console.print(f'login {user=}')
+        if user is None:
+            raise ValueError('Bad login')
+
+        token = schema.Token(user_email=user.email)
+        return models.api.LoggedItem(access_token=token.encode(), token_type="bearer")
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -35,19 +41,11 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         )
 
 
-@router.delete('/logout')
-async def logout(token: schema.LoggedUser = Depends(api_lib.validate_token)):
-    """ Delete a user's session """
-    await userQ.delete_session(by_token=token.token)
-    out.log.info(f"session {token} closed !!")
-    return Response(status_code=200)
-
-
 @router.post('/signup', response_class=HTMLResponse)
 async def post_signup(request: Request,
                       first_name: str = Form(...), last_name: str = Form(...),
                       affiliation: str = Form(...), email: EmailStr = Form(...),
-                      username: str = Form(...), password: str = Form(...)):
+                      username: str = Form(...), password: str = Form(...)) -> str:
     """ Create a new user via the HTML form  (returns a html page) """
     user = models.misc.UserCreate(
         username=username,
@@ -84,10 +82,15 @@ async def password_reset_request(
         html_response: bool = False,
         username: str = Form(...), email: EmailStr = Form(...)):
     """ Request a users password to be reset """
-    session = await userQ.create_password_reset_session(username=username, email=email)
+    user = await userQ.get_user(by_username=username)
+    if user.username != username:
+        raise ValueError('Bad request, no such user')
+
+    # session = await userQ.create_password_reset_session(username=username, email=email)
+    token = schema.Token(user_email=user.email, allow_password_reset=True)
     data = {
         'username': username,
-        'url': f"{api_lib.url_for(request, 'password_update_page')}?v={session.token}",
+        'url': f"{api_lib.url_for(request, 'password_update_page')}?v={token.encode()}",
         'admin_email': _settings.app_options.admin_email
     }
 
@@ -118,7 +121,11 @@ async def post_password_update(v: str, request: Request, html_response: bool = F
         if v != session_code:
             raise ValueError('session validation not passed !!!')
 
-        user = await userQ.get_user(by_password_reset_session=v)
+        token = schema.Token.decode(v)
+        if not token.allow_password_reset:
+            raise ValueError('bad session')
+
+        user = await userQ.get_user(by_email=token.user_email)
         await userQ.update_users_password(user=user, password=password, password_validation=password_validation)
     except ValueError as e:
         out.log.error(

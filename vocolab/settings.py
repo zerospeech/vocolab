@@ -6,7 +6,7 @@ import platform
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Union, Set, Dict, Optional
+from typing import List, Union, Set, Dict, Optional, Literal
 from importlib.metadata import version, PackageNotFoundError
 
 try:
@@ -109,6 +109,8 @@ class APISettings(BaseModel):
         "http://*.test"
     ]
 
+    token_encryption: str = "HS256"
+
 
 class NotifySettings(BaseModel):
     # Mattermost
@@ -124,10 +126,8 @@ class NotifySettings(BaseModel):
     MAIL_FROM_NAME: str = "emailUsername"
     MAIL_PORT: int = 587
     MAIL_SERVER: str = "0.0.0.0"
-    MAIL_TLS: bool = True
-    MAIL_SSL: bool = False
     MAIL_SSL_TLS: bool = True
-    MAIL_STARTTLS: bool = True
+    MAIL_STARTTLS: bool = False
 
 
 class ServerSettings(BaseModel):
