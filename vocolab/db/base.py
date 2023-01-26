@@ -1,8 +1,7 @@
 import databases
 import sqlalchemy
 
-from vocolab.db.schema import users_metadata
-from vocolab.db.schema import challenge_metadata
+from vocolab.db.schema import users_metadata, challenge_metadata
 from vocolab.settings import get_settings
 
 _settings = get_settings()

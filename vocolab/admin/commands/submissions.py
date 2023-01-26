@@ -9,7 +9,7 @@ from vocolab import out, get_settings
 from vocolab.admin import cmd_lib
 from vocolab.db.models.api import NewSubmissionRequest, NewSubmission
 from vocolab.db.q import challengesQ, userQ
-from vocolab.db.schema import challenges as db_challenges
+from vocolab.db import schema as db_challenges
 from vocolab.lib import submissions_lib
 
 # api settings
