@@ -11,7 +11,7 @@ from fastapi import UploadFile
 from vocolab import get_settings, exc
 from vocolab.db import models
 
-from .commons import md5sum, rsync, ssh_exec, zip_folder
+from .._fs.commons import md5sum, rsync, ssh_exec, zip_folder
 
 _settings = get_settings()
 

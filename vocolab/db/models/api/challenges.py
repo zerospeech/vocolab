@@ -1,6 +1,7 @@
 """ Dataclasses representing API/challenge input output data types """
 from datetime import date
-from typing import Optional, List, Tuple
+from pathlib import Path
+from typing import Optional, List, Tuple, Dict
 
 from pydantic import BaseModel, HttpUrl
 
@@ -36,9 +37,15 @@ class SubmissionRequestFileIndexItem(BaseModel):
 
 class NewSubmissionRequest(BaseModel):
     """ Dataclass used for input in the creation of a new submission to a challenge """
+    username: str
+    track_label: str
+    track_id: int
+    model_id: str
     filename: str
     hash: str
     multipart: bool
+    has_scores: bool
+    leaderboards: Dict[str, Path]
     index: Optional[List[SubmissionRequestFileIndexItem]]
 
 

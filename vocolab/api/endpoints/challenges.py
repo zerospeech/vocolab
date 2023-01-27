@@ -1,6 +1,7 @@
 """ Routing for /challenges section of the API
 This section handles challenge data
 """
+from datetime import datetime
 from typing import List
 
 from fastapi import (
@@ -32,7 +33,14 @@ async def get_challenge_info(challenge_id: int):
     return await challengesQ.get_challenge(challenge_id=challenge_id, allow_inactive=True)
 
 
-# todo test submit creation
+@router.get('/model/create')
+async def get_model_id(first_author_name: str, current_user: schema.User = Depends(api_lib.get_current_active_user)):
+    new_model_id = f"{first_author_name[:3]}{str(datetime.now().year)[2:]}"
+    # todo: check
+    return new_model_id
+
+
+# todo: update submission process
 @router.post('/{challenge_id}/submission/create', responses={404: {"model": models.api.Message}})
 async def create_submission(
         challenge_id: int, data: models.api.NewSubmissionRequest,
