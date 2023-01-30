@@ -10,7 +10,7 @@ from fastapi import (
 from vocolab import exc
 from vocolab.db import models
 from vocolab.db.q import leaderboardQ
-from vocolab.lib import api_lib
+from vocolab.core import api_lib
 from vocolab.settings import get_settings
 
 router = APIRouter()

@@ -11,7 +11,7 @@ from fastapi import (
 from vocolab import out, exc
 from vocolab.db import schema, models
 from vocolab.db.q import challengesQ
-from vocolab.lib import api_lib, submissions_lib
+from vocolab.core import api_lib, submission_lib
 from vocolab.settings import get_settings
 
 router = APIRouter()
@@ -57,7 +57,7 @@ async def create_submission(
         track_id=challenge.id,
     ), evaluator_id=challenge.evaluator)
     # create disk entry
-    submissions_lib.make_submission_on_disk(
+    submission_lib.make_submission_on_disk(
         submission_id, current_user.username, challenge.label, meta=data
     )
     return submission_id
@@ -77,11 +77,11 @@ async def upload_submission(
     if challenge is None:
         return ValueError(f'challenge {challenge_id} not found or inactive')
     try:
-        is_completed, remaining = submissions_lib.add_part(submission_id, part_name, file_data)
+        is_completed, remaining = submission_lib.add_part(submission_id, part_name, file_data)
 
         if is_completed:
             # run the completion of the submission on the background
-            background_tasks.add_task(submissions_lib.complete_submission, submission_id, with_eval=True)
+            background_tasks.add_task(submission_lib.complete_submission, submission_id, with_eval=True)
 
         return models.api.UploadSubmissionPartResponse(
             completed=is_completed, remaining=[n.file_name for n in remaining]

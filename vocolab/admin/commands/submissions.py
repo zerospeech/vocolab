@@ -6,11 +6,10 @@ from pathlib import Path
 from rich.table import Table
 
 from vocolab import out, get_settings
-from vocolab.admin import cmd_lib
 from vocolab.db.models.api import NewSubmissionRequest, NewSubmission
 from vocolab.db.q import challengesQ, userQ
 from vocolab.db import schema as db_challenges
-from vocolab.lib import submissions_lib
+from vocolab.core import submission_lib, cmd_lib
 
 # api settings
 _settings = get_settings()
@@ -77,7 +76,7 @@ class SetSubmissionCMD(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        submission_fs = submissions_lib.get_submission_dir(args.submission_id, as_obj=True)
+        submission_fs = submission_lib.get_submission_dir(args.submission_id, as_obj=True)
         submission_fs.clean_all_locks()
         asyncio.run(challengesQ.update_submission_status(
             by_id=args.submission_id, status=args.status
@@ -122,18 +121,18 @@ class CreateSubmissionCMD(cmd_lib.CMD):
         challenge, user, submission_id = asyncio.run(create_submission(args.challenge_id, args.user_id))
 
         # create entry on disk
-        submissions_lib.make_submission_on_disk(
+        submission_lib.make_submission_on_disk(
             submission_id, user.username, challenge.label,
             NewSubmissionRequest(
-                filename=archive.name, hash=submissions_lib.md5sum(archive),
+                filename=archive.name, hash=submission_lib.md5sum(archive),
                 multipart=False
             )
         )
         # fetch folder
-        folder = submissions_lib.get_submission_dir(submission_id)
+        folder = submission_lib.get_submission_dir(submission_id)
         # copy file
         shutil.copy(archive, folder / 'archive.zip')
-        submissions_lib.unzip(folder / 'archive.zip', folder / 'input')
+        submission_lib.unzip(folder / 'archive.zip', folder / 'input')
 
         # set status
         (folder / 'upload.lock').unlink()
@@ -173,7 +172,7 @@ class EvalSubmissionCMD(cmd_lib.CMD):
 
         asyncio.run(
             # todo check if status is correctly set.
-            submissions_lib.evaluate(submission_id=submission.id, extra_args=extra_arguments)
+            submission_lib.evaluate(submission_id=submission.id, extra_args=extra_arguments)
         )
 
 
@@ -200,7 +199,7 @@ class FetchSubmissionFromRemote(cmd_lib.CMD):
             sys.exit(1)
 
         # transferring
-        submissions_lib.fetch_submission_from_remote(host=args.hostname, submission_id=args.submission_id)
+        submission_lib.fetch_submission_from_remote(host=args.hostname, submission_id=args.submission_id)
 
 
 class UploadSubmissionToRemote(cmd_lib.CMD):
@@ -227,7 +226,7 @@ class UploadSubmissionToRemote(cmd_lib.CMD):
             sys.exit(1)
 
         # transferring
-        submissions_lib.transfer_submission_to_remote(host=args.hostname, submission_id=args.submission_id)
+        submission_lib.transfer_submission_to_remote(host=args.hostname, submission_id=args.submission_id)
 
 
 class DeleteSubmissionCMD(cmd_lib.CMD):
@@ -244,21 +243,21 @@ class DeleteSubmissionCMD(cmd_lib.CMD):
         args = self.parser.parse_args(argv)
 
         if args.delete_by == 'by_id':
-            del_id = asyncio.run(submissions_lib.delete_submission(by_id=args.selector))
-            submissions_lib.delete_submission_files(del_id[0])
+            del_id = asyncio.run(submission_lib.delete_submission(by_id=args.selector))
+            submission_lib.delete_submission_files(del_id[0])
             out.cli.info(f"Successfully deleted: {args.selector}")
         elif args.delete_by == 'by_user':
-            deleted = asyncio.run(submissions_lib.delete_submission(by_user=int(args.selector)))
+            deleted = asyncio.run(submission_lib.delete_submission(by_user=int(args.selector)))
 
             for d in deleted:
-                submissions_lib.delete_submission_files(d)
+                submission_lib.delete_submission_files(d)
                 out.cli.info(f"Successfully deleted: {d}")
 
         elif args.delete_by == 'by_track':
-            deleted = asyncio.run(submissions_lib.delete_submission(by_track=int(args.selector)))
+            deleted = asyncio.run(submission_lib.delete_submission(by_track=int(args.selector)))
 
             for d in deleted:
-                submissions_lib.delete_submission_files(d)
+                submission_lib.delete_submission_files(d)
                 out.cli.info(f"Successfully deleted: {d}")
         else:
             out.cli.error("Error type of deletion unknown")
@@ -311,11 +310,11 @@ class ArchiveSubmissionCMD(cmd_lib.CMD):
     async def archive_submission(*args):
         for submission_id in args:
             # archive leaderboard entry
-            await submissions_lib.archive_leaderboard_entries(submission_id)
+            await submission_lib.archive_leaderboard_entries(submission_id)
             # remove submission from db
-            await submissions_lib.delete_submission(by_id=submission_id)
+            await submission_lib.delete_submission(by_id=submission_id)
             # zip & archive files
-            submissions_lib.archive_submission_files(submission_id)
+            submission_lib.archive_submission_files(submission_id)
 
             out.cli.info(f"Successfully archived: {submission_id}")
 

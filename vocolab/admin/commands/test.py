@@ -6,9 +6,8 @@ from pathlib import Path
 from pydantic import EmailStr
 
 from vocolab import get_settings, out
-from vocolab.admin import cmd_lib
 from vocolab.db.models.misc import UserCreate
-from vocolab.lib import notify
+from vocolab.core import notify, cmd_lib
 
 _settings = get_settings()
 

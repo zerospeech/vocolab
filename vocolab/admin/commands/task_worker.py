@@ -6,7 +6,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from vocolab import out, get_settings
-from vocolab.admin import cmd_lib
+from vocolab.core import cmd_lib
 from vocolab.db.models import tasks
 from vocolab.worker import server
 

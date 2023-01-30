@@ -9,7 +9,7 @@ from fastapi import (
 )
 
 from vocolab import exc, out
-from vocolab.lib import api_lib, users_lib, submissions_lib
+from vocolab.core import api_lib, users_lib, submission_lib
 from vocolab.db import schema, models
 from vocolab.db.q import challengesQ, leaderboardQ
 from vocolab.settings import get_settings
@@ -146,7 +146,7 @@ async def get_submission_status(
         raise exc.AccessError("current user is not allowed to preview this submission !",
                               status=exc.http_status.HTTP_403_FORBIDDEN)
 
-    log = submissions_lib.SubmissionLogger(submissions_id)
+    log = submission_lib.SubmissionLogger(submissions_id)
     return log.get_text()
 
 
@@ -157,7 +157,7 @@ async def get_user_results(submissions_id: str, current_user: schema.User = Depe
     if submission.user_id != current_user.id:
         raise exc.AccessError("current user is not allowed to preview this submission !",
                               status=exc.http_status.HTTP_403_FORBIDDEN)
-    sub_location = submissions_lib.get_submission_dir(submission_id=submission.id)
+    sub_location = submission_lib.get_submission_dir(submission_id=submission.id)
 
     leaderboards = await leaderboardQ.get_leaderboards(by_challenge_id=submission.track_id)
     result = {}

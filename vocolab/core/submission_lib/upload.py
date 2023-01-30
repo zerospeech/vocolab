@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 
 from vocolab import exc
-from .._fs.commons import md5sum
+from ..commons import md5sum
 from .logs import SubmissionLogger
 
 """
@@ -34,22 +34,23 @@ class SinglepartUploadHandler(BaseModel):
         return self.root_dir / 'content_archive.zip'
 
     @property
-    def hash_file(self) -> Path:
+    def hash_file_location(self) -> Path:
         """ singlepart upload can be verified by the checksum inside this file """
         return self.root_dir / 'archive.hash'
 
     @property
     def file_hash(self):
         """ Load promised md5sum of content archive """
-        with self.hash_file.open() as fp:
+        with self.hash_file_location.open() as fp:
             return fp.read().replace('\n', '')
 
-    @property
-    def success(self):
+    def completed(self) -> bool:
         return self.target_file.is_file()
 
-    def write_data(self, logger: SubmissionLogger, file_name: str, file_hash: str, data: UploadFile):
+    def write_data(self, logger: SubmissionLogger, file_name: str,
+                   file_hash: str, data: UploadFile):
         logger.log(f"adding a new part to upload: {file_name}")
+        assert file_hash == self.file_hash, "Given hash & expected hash should be the same !!"
 
         # Add the part
         with self.target_file.open('wb') as fp:

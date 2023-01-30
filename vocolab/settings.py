@@ -3,10 +3,12 @@ import shutil
 
 import os
 import platform
+import tempfile
+from contextlib import contextmanager
 from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Union, Set, Dict, Optional, Literal
+from typing import List, Union, Set, Dict, Optional, Literal, Generator
 from importlib.metadata import version, PackageNotFoundError
 
 try:
@@ -154,6 +156,9 @@ class _VocoLabSettings(BaseSettings):
     """ Base Settings for module """
     app_home: DirectoryPath = Path(__file__).parent
     DATA_FOLDER: DirectoryPath = Path('data/')
+    TMP_ROOT: DirectoryPath = Path('/tmp')
+    ARCHIVE_FOLDER: Path
+    ARCHIVE_HOST: str = "localhost"
 
     # Settings Categories
     app_options: AppSettings = AppSettings()
@@ -192,7 +197,13 @@ class _VocoLabSettings(BaseSettings):
     @property
     def submission_archive_dir(self) -> Path:
         """directory pointing to archived submissions """
-        return self.DATA_FOLDER / 'submissions/archive'
+        return self.ARCHIVE_FOLDER / 'submissions'
+
+    @property
+    def remote_archive(self) -> bool:
+        return self.ARCHIVE_HOST not in (
+            'localhost', '127.0.0.1', self.app_options.hostname
+        )
 
     @property
     def templates_dir(self) -> Path:
@@ -231,7 +242,14 @@ class _VocoLabSettings(BaseSettings):
         with (self.DATA_FOLDER / '.secret').open('rb') as fp:
             return fp.read().decode()
 
-
+    @contextmanager
+    def get_temp_dir(self) -> Generator[Path, None, None]:
+        """ Create a temporary directory """
+        temp_dir = tempfile.TemporaryDirectory(prefix="voco-", dir=str(self.TMP_ROOT))
+        try:
+            yield Path(temp_dir.name)
+        finally:
+            temp_dir.cleanup()
 
     class Config:
         env_prefix = 'VC_'

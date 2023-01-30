@@ -4,7 +4,7 @@ Database functions that manipulate the leaderboard table
 from pathlib import Path
 from typing import Any, List, Optional
 from vocolab.db import schema, zrDB, exc as db_exc
-from vocolab.lib import misc
+from vocolab.core import misc
 
 
 async def get_leaderboard(*, leaderboard_id: int) -> schema.LeaderBoard:

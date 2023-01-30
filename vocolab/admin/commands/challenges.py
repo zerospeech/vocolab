@@ -7,7 +7,7 @@ from pydantic import ValidationError, parse_obj_as, AnyHttpUrl
 from rich.table import Table
 
 from vocolab import out
-from vocolab.admin import cmd_lib
+from vocolab.core import cmd_lib
 from vocolab.db import schema, models
 from vocolab.db.q import challengesQ
 

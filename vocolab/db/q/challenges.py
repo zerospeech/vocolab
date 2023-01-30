@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from vocolab import get_settings
 from vocolab.db import models, zrDB, schema, exc as db_exc
-from vocolab.lib import misc
+from vocolab.core import misc
 
 _settings = get_settings()
 

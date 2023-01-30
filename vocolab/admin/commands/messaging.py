@@ -1,7 +1,7 @@
 import sys
 
 from vocolab import out, get_settings
-from vocolab.admin import cmd_lib
+from vocolab.core import cmd_lib
 
 # api settings
 from vocolab.db.models.tasks import SimpleLogMessage, SubmissionUpdateMessage, UpdateType

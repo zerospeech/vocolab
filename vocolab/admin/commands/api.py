@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from jinja2 import Environment, FileSystemLoader
 
 from vocolab import get_settings, out
-from vocolab.admin import cmd_lib
+from vocolab.core import cmd_lib
 from vocolab.db.base import create_db
 
 _settings = get_settings()

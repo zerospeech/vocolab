@@ -5,7 +5,7 @@ from typing import Dict
 from vocolab import out, get_settings
 from vocolab.db import schema
 from vocolab.db.q import leaderboardQ, challengesQ
-from vocolab.lib import _fs, misc
+from vocolab.core import commons, misc
 
 _settings = get_settings()
 
@@ -42,11 +42,11 @@ async def build_leaderboard(*, leaderboard_id: int):
         *leaderboard.external_entries.rglob('*.yml')
     ]
     for item in external_entries:
-        leaderboard_entries.append(_fs.commons.load_dict_file(item))
+        leaderboard_entries.append(commons.load_dict_file(item))
 
     # copy external static files
     if leaderboard.static_files and (leaderboard.external_entries / 'static').is_dir():
-        _fs.commons.copy_all_contents(leaderboard.external_entries / 'static', static_location)
+        commons.copy_all_contents(leaderboard.external_entries / 'static', static_location)
 
     if not leaderboard.archived:
         submission_list = await challengesQ.list_submission(by_track=leaderboard.challenge_id)

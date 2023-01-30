@@ -9,11 +9,10 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from vocolab import out, get_settings
-from vocolab.admin import cmd_lib
 from vocolab.db.models.misc import UserCreate
 from vocolab.db.q import userQ, challengesQ
-from vocolab.lib import notify
-from vocolab.lib.misc import CustomTypesJsonEncoder
+from vocolab.core import notify, cmd_lib
+from vocolab.core.misc import CustomTypesJsonEncoder
 
 _settings = get_settings()
 

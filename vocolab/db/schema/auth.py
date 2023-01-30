@@ -3,11 +3,10 @@ from datetime import datetime
 from typing import Optional
 
 import sqlalchemy
-from pydantic import BaseModel, EmailStr, Field, ValidationError
 from jose import jwt, JWTError  # noqa: false flags from requirements https://youtrack.jetbrains.com/issue/PY-27985
+from pydantic import BaseModel, EmailStr, Field, ValidationError
 
 from ...settings import get_settings
-
 
 _settings = get_settings()
 users_metadata = sqlalchemy.MetaData()

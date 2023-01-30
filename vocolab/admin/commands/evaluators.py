@@ -5,9 +5,8 @@ from rich.prompt import Confirm
 from rich.table import Table
 
 from vocolab import get_settings, out
-from vocolab.admin import cmd_lib
 from vocolab.db.q import challenges as ch_queries
-from vocolab.lib import evaluators_lib
+from vocolab.core import evaluators_lib, cmd_lib
 
 _settings = get_settings()
 

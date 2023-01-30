@@ -8,7 +8,7 @@ from fastapi import (
 from fastapi.responses import HTMLResponse
 
 from vocolab import exc, out
-from vocolab.lib import api_lib
+from vocolab.core import api_lib
 from vocolab.db.q import userQ
 from vocolab.settings import get_settings
 

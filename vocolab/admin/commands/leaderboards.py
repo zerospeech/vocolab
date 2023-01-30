@@ -7,10 +7,9 @@ from rich.prompt import Prompt, Confirm, IntPrompt
 from rich.table import Table
 
 from vocolab import out
-from vocolab.admin import cmd_lib
 from vocolab.db import schema
 from vocolab.db.q import leaderboardQ
-from vocolab.lib import leaderboards_lib
+from vocolab.core import leaderboards_lib, cmd_lib
 
 
 class LeaderboardCMD(cmd_lib.CMD):

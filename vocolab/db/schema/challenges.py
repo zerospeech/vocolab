@@ -1,17 +1,14 @@
-from datetime import datetime, date
+from datetime import date
+from datetime import datetime
+from enum import Enum
 from pathlib import Path
 from typing import Optional
 
 import sqlalchemy
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, AnyHttpUrl
+from pydantic import HttpUrl
 
 from vocolab.db.models.tasks import ExecutorsType
-from datetime import datetime
-from enum import Enum
-from typing import Optional
-
-import sqlalchemy
-from pydantic import BaseModel, AnyHttpUrl
 
 challenge_metadata = sqlalchemy.MetaData()
 

@@ -5,7 +5,7 @@ from typing import List
 
 from vocolab import out, get_settings, exc
 from vocolab.db.models import tasks
-from vocolab.lib import submissions_lib
+from vocolab.core import submission_lib
 
 _settings = get_settings()
 
@@ -32,7 +32,7 @@ def build_cmd(_cmd: tasks.SubmissionEvaluationMessage) -> List[str]:
     if executor is None:
         raise ValueError(f'{_cmd.executor} is not present in system')
 
-    sub_dir = submissions_lib.get_submission_dir(_cmd.submission_id)
+    sub_dir = submission_lib.get_submission_dir(_cmd.submission_id)
     bin_path = Path(_cmd.bin_path).resolve()
     verify_bin(bin_path)
     script = bin_path / _cmd.script_name
@@ -100,7 +100,7 @@ def evaluate_submission_fn(sem: tasks.SubmissionEvaluationMessage):
                         f"with a non zero return code. see logs for details!!")
 
     # write output in log
-    with submissions_lib.SubmissionLogger(sem.submission_id) as lg:
+    with submission_lib.SubmissionLogger(sem.submission_id) as lg:
         lg.append_eval(eval_output)
 
     # send submission evaluation result

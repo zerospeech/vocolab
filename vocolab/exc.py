@@ -1,7 +1,7 @@
 """ A File containing Exceptions definitions """
 from typing import Any, Optional
 
-from starlette import status as http_status
+from fastapi import status as http_status
 
 
 class VocoLabException(Exception):

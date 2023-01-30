@@ -6,7 +6,7 @@ from celery import Celery
 
 from vocolab import out, get_settings
 from vocolab.db.models import tasks
-from vocolab.lib import worker_lib
+from vocolab.core import worker_lib
 
 # """""""""""""""""""""""""""""""""""""
 # todo: read up on what is the best pool/supervisor

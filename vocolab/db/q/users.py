@@ -7,7 +7,7 @@ from email_validator import validate_email, EmailNotValidError
 
 from vocolab import exc, out
 from vocolab.db import zrDB, models, schema, exc as db_exc
-from vocolab.lib import users_lib
+from vocolab.core import users_lib
 from vocolab.settings import get_settings
 
 _settings = get_settings()

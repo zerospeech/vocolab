@@ -8,14 +8,14 @@ from jinja2 import FileSystemLoader, Environment
 from vocolab import settings
 from vocolab.db import schema, models
 from vocolab.db.q import userQ
-from vocolab.lib import notify, _fs
+from vocolab.core import notify, commons
 
 _settings = settings.get_settings()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 # export
-file2dict = _fs.commons.load_dict_file
+file2dict = commons.load_dict_file
 
 
 def validate_token(token: str = Depends(oauth2_scheme)) -> schema.Token:

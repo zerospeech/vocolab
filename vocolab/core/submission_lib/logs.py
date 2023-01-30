@@ -4,7 +4,7 @@ from typing import Optional, TextIO
 
 from pydantic import BaseModel
 
-from .._fs.commons import ssh_exec
+from ..commons import ssh_exec
 from ...settings import get_settings
 
 _settings = get_settings()

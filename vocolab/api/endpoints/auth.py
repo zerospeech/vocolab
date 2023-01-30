@@ -14,7 +14,7 @@ from pydantic import EmailStr
 from vocolab import exc, out
 from vocolab.db import schema, models
 from vocolab.db.q import userQ
-from vocolab.lib import api_lib, notify
+from vocolab.core import api_lib, notify
 from vocolab.settings import get_settings
 
 router = APIRouter()

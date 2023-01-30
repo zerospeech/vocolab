@@ -1,7 +1,8 @@
 import sys
 
 from vocolab import get_settings, out
-from vocolab.admin import cmd_lib, commands
+from vocolab.core import cmd_lib
+from vocolab.admin import commands
 
 # settings
 _settings = get_settings()
