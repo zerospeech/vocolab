@@ -1,7 +1,6 @@
 """ Routing for /challenges section of the API
 This section handles challenge data
 """
-from datetime import datetime
 
 from fastapi import (
     APIRouter, Depends, UploadFile, File, BackgroundTasks
@@ -9,37 +8,39 @@ from fastapi import (
 
 from vocolab import out, exc
 from vocolab.core import api_lib, submission_lib
-from vocolab.db import schema, models
-from vocolab.db.q import challengesQ
+from vocolab.data import models, model_queries
 from vocolab.settings import get_settings
 
 router = APIRouter()
 _settings = get_settings()
 
 
-@router.get('/create')
-async def create_new_model(first_author_name: str,
-                           current_user: schema.User = Depends(api_lib.get_current_active_user)):
-    new_model_id = f"{first_author_name[:3]}{str(datetime.now().year)[2:]}"
-    # todo: check
-    return new_model_id
+@router.post('/create')
+async def create_new_model(
+        first_author_name: str,
+        current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+    """ Route to create a new model entry """
+    # todo: add data in request body & check if it works correctly
+    return await model_queries.ModelID.create(first_author_name, ...)
 
 
 @router.get('/list')
 async def get_model_list():
-    pass
+    """ Request the full model list """
+    # todo check if extra formatting is needed
+    return await model_queries.ModelIDList.get()
 
 
 @router.get('/{model_id}/info')
-async def get_model_info():
-    # todo: check
-    pass
+async def get_model_info(model_id: str):
+    return await model_queries.ModelID.get(model_id)
 
 
 @router.get('/{model_id}/submissions/list')
-async def get_model_submissions():
-    # todo: check
-    pass
+async def get_model_submissions(model_id: str):
+    """ Get all submissions corresponding to a model_id """
+    model = await model_queries.ModelID.get(model_id)
+    return await model.get_submissions()
 
 
 @router.get('/{model_id}/submissions/{submission_id}/info')
@@ -87,7 +88,8 @@ async def create_submission(
 
     return submission_id
 
- # todo update
+
+# todo update
 @router.put("/{model_id}/submission/{submission_id}/upload", response_model=models.api.UploadSubmissionPartResponse)
 async def upload_submission(
         model_id: str,
@@ -115,4 +117,3 @@ async def upload_submission(
     except exc.VocoLabException as e:
         out.log.exception()
         raise e
-

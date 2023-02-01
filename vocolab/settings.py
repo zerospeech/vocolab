@@ -16,7 +16,6 @@ try:
 except ImportError:
     from toml import load as toml_load
 
-
 from pydantic import (
     BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork, BaseModel, Field
 )
@@ -38,10 +37,6 @@ class ConsoleOutputSettings(BaseModel):
     ROTATING_LOGS: bool = True
     LOG_FILE: Optional[Path] = None
     ERROR_LOG_FILE: Optional[Path] = None
-
-
-class DatabaseSettings(BaseModel):
-    db_file: str = 'vocolab.db'
 
 
 class CeleryWorkerOptions(BaseModel):
@@ -242,6 +237,16 @@ class _VocoLabSettings(BaseSettings):
 
         with (self.DATA_FOLDER / '.secret').open('rb') as fp:
             return fp.read().decode()
+
+    @property
+    def database_file(self):
+        """ Path to the database file """
+        return self.DATA_FOLDER / 'vocolab.db'
+
+    @property
+    def database_connection_url(self):
+        """ Database connection url """
+        return f"sqlite:///{self.database_file}"
 
     @contextmanager
     def get_temp_dir(self) -> Generator[Path, None, None]:
