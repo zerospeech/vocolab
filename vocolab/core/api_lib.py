@@ -6,8 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jinja2 import FileSystemLoader, Environment
 
 from vocolab import settings
-from vocolab.db import schema, models
-from vocolab.db.q import userQ
+from vocolab.data import model_queries, models
 from vocolab.core import notify, commons
 
 _settings = settings.get_settings()
@@ -18,10 +17,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 file2dict = commons.load_dict_file
 
 
-def validate_token(token: str = Depends(oauth2_scheme)) -> schema.Token:
+def validate_token(token: str = Depends(oauth2_scheme)) -> model_queries.Token:
     """ Dependency for validating the current users session via the token"""
     try:
-        token = schema.Token.decode(token)
+        token = model_queries.Token.decode(token)
         if token.is_expired():
             raise ValueError('Token has expired')
 
@@ -36,10 +35,10 @@ def validate_token(token: str = Depends(oauth2_scheme)) -> schema.Token:
         )
 
 
-async def get_user(token: schema.Token = Depends(validate_token)) -> schema.User:
+async def get_user(token: model_queries.Token = Depends(validate_token)) -> model_queries.User:
     """ Dependency for fetching current user from database using token entry """
     try:
-        return await userQ.get_user(by_email=token.user_email)
+        return await model_queries.User.get(by_email=token.user_email)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -47,9 +46,9 @@ async def get_user(token: schema.Token = Depends(validate_token)) -> schema.User
         )
 
 
-async def get_current_active_user(current_user: schema.User = Depends(get_user)) -> schema.User:
+async def get_current_active_user(current_user: model_queries.User = Depends(get_user)) -> model_queries.User:
     """ Dependency for validating current user """
-    if current_user.verified == 'True':
+    if current_user.is_verified():
         if current_user.active:
             return current_user
         else:
@@ -71,9 +70,9 @@ def generate_html_response(data: Dict[str, Any], template_name: str) -> str:
     return template.render(**data)
 
 
-async def signup(request: Request, user: models.misc.UserCreate):
+async def signup(request: Request, user: models.api.UserCreateRequest):
     """ Creates a new user and schedules the registration email """
-    verification_code = await userQ.create_user(usr=user)
+    verification_code = await model_queries.User.create(new_usr=user)
     data = {
         'username': user.username,
         # todo check if url needs update
@@ -84,13 +83,14 @@ async def signup(request: Request, user: models.misc.UserCreate):
     loop = asyncio.get_running_loop()
     loop.create_task(notify.email.template_email(
         emails=[user.email],
-        subject='[Zerospeech] Account Verification',
+        subject=f'[{_settings.app_options.platform_name}] Account Verification',
         data=data,
         template_name='email_validation.jinja2')
     )
 
 
 def get_base_url(request: Request) -> str:
+    """ Get base url taking into account http -> https redirection """
     base_url = f"{request.base_url}"
 
     headers = request.headers
@@ -101,6 +101,7 @@ def get_base_url(request: Request) -> str:
 
 
 def url_for(request: Request, path_requested: str) -> str:
+    """ Query API path url taking into account http -> https redirections """
     url = request.url_for(path_requested)
 
     headers = request.headers

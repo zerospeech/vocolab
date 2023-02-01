@@ -18,74 +18,42 @@ router = APIRouter()
 _settings = get_settings()
 
 
-@router.get('/', response_model=List[models.api.ChallengePreview])
+@router.get('/list', response_model=List[models.api.ChallengePreview])
 async def get_challenge_list(include_inactive: bool = False):
     """ Return a list of all active challenges """
     challenge_lst = await challengesQ.list_challenges(include_all=include_inactive)
     return [models.api.ChallengePreview(id=ch.id, label=ch.label, active=ch.active) for ch in challenge_lst]
 
 
-@router.get('/{challenge_id}', response_model=models.api.ChallengesResponse,
+@router.get('/{challenge_id}/info', response_model=models.api.ChallengesResponse,
             responses={404: {"model": models.api.Message}})
 async def get_challenge_info(challenge_id: int):
     """ Return information of a specific challenge """
     # todo add leaderboards to challenge info
     return await challengesQ.get_challenge(challenge_id=challenge_id, allow_inactive=True)
 
-
-@router.get('/model/create')
-async def get_model_id(first_author_name: str, current_user: schema.User = Depends(api_lib.get_current_active_user)):
-    new_model_id = f"{first_author_name[:3]}{str(datetime.now().year)[2:]}"
-    # todo: check
-    return new_model_id
-
-
-# todo: update submission process
-@router.post('/{challenge_id}/submission/create', responses={404: {"model": models.api.Message}})
-async def create_submission(
-        challenge_id: int, data: models.api.NewSubmissionRequest,
-        current_user: schema.User = Depends(api_lib.get_current_active_user)
-):
-    """ Create a new submission """
-    challenge = await challengesQ.get_challenge(challenge_id=challenge_id)
-    if challenge is None:
-        return ValueError(f'challenge {challenge_id} not found or inactive')
-
-    # create db entry
-    submission_id = await challengesQ.add_submission(new_submission=models.api.NewSubmission(
-        user_id=current_user.id,
-        track_id=challenge.id,
-    ), evaluator_id=challenge.evaluator)
-    # create disk entry
-    submission_lib.make_submission_on_disk(
-        submission_id, current_user.username, challenge.label, meta=data
-    )
-    return submission_id
+@router.get('/{challenge_id}/submissions', response_model=models.api.ChallengesResponse,
+            responses={404: {"model": models.api.Message}})
+async def get_sub_list(challenge_id: int):
+    """ Return information of a specific challenge """
+    # todo add leaderboards to challenge info
+    pass
 
 
-@router.put("/{challenge_id}/submission/upload", response_model=models.api.UploadSubmissionPartResponse)
-async def upload_submission(
-        challenge_id: int,
-        submission_id: str,
-        part_name: str,
-        background_tasks: BackgroundTasks,
-        file_data: UploadFile = File(...),
-        current_user: schema.User = Depends(api_lib.get_current_active_user),
-):
-    out.console.info(f"user: {current_user.username}")
-    challenge = await challengesQ.get_challenge(challenge_id=challenge_id)
-    if challenge is None:
-        return ValueError(f'challenge {challenge_id} not found or inactive')
-    try:
-        is_completed, remaining = submission_lib.add_part(submission_id, part_name, file_data)
 
-        if is_completed:
-            # run the completion of the submission on the background
-            background_tasks.add_task(submission_lib.complete_submission, submission_id, with_eval=True)
+@router.get('/{challenge_id}/leaderboards', response_model=models.api.ChallengesResponse,
+            responses={404: {"model": models.api.Message}})
+async def get_all_leaderboards(challenge_id: int):
+    """ Return information of a specific challenge """
+    # todo add leaderboards to challenge info
+    pass
 
-        return models.api.UploadSubmissionPartResponse(
-            completed=is_completed, remaining=[n.file_name for n in remaining]
-        )
-    except exc.VocoLabException as e:
-        out.log.exception()
-        raise e
+
+
+@router.get('/{challenge_id}/leaderboards/{leaderboard_id}', response_model=models.api.ChallengesResponse,
+            responses={404: {"model": models.api.Message}})
+async def get_leaderboard(challenge_id: int, leaderboard_id):
+    """ Return information of a specific challenge """
+    # todo add leaderboards to challenge info
+    pass
+

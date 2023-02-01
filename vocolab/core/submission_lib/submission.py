@@ -294,7 +294,8 @@ class ModelDir(BaseModel):
             raise FileNotFoundError(f'Model {model_id} does not exist')
         return cls(root_dir=root)
 
-    def make_submission(self, submission_id: str, auto_eval: bool, request_meta: models.api.NewSubmissionRequest):
+    def make_submission(self, submission_id: str, challenge_id: int, challenge_label: str,
+                        auto_eval: bool, request_meta: models.api.NewSubmissionRequest):
         root_dir = self.root_dir / submission_id
         if root_dir.is_dir():
             raise FileExistsError(f'Submission {submission_id} cannot be created as it already exists')
@@ -307,8 +308,8 @@ class ModelDir(BaseModel):
         sub_info = SubmissionInfo(
             model_id=self.label,
             username=request_meta.username,
-            track_id=request_meta.track_id,
-            track_label=request_meta.track_label,
+            track_id=challenge_id,
+            track_label=challenge_label,
             submission_id=submission_id,
             created_at=datetime.now(),
             leaderboard_entries=request_meta.leaderboards
@@ -329,7 +330,7 @@ class ModelDir(BaseModel):
 
         submission_dir.get_log_handler().header(
             who=request_meta.username,
-            task=request_meta.track_label,
+            task=challenge_label,
             multipart=request_meta.multipart,
             has_scores=request_meta.has_scores,
             auto_eval=auto_eval

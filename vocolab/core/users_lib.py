@@ -1,13 +1,42 @@
 import hashlib
+import json
 import os
-from typing import Callable
+from datetime import datetime
+from typing import Callable, Optional
 
-from vocolab.db import models
-from vocolab.lib import _fs
+from pydantic import BaseModel, Extra, EmailStr
+from vocolab import get_settings, exc
 
-# export functions
-update_user_data = _fs.users.update_user_data
-get_user_data: Callable[[str], models.api.UserData] = _fs.users.get_user_data
+_settings = get_settings()
+
+class UserProfileData(BaseModel):
+    username: str
+    affiliation: str
+    first_name: Optional[str]
+    last_name: Optional[str]
+    verified: bool
+    email: EmailStr
+    created: Optional[datetime]
+
+    class Config:
+        extra = Extra.allow
+
+    @classmethod
+    def load(cls, username: str):
+        db_file = (_settings.user_data_dir / f"{username}.json")
+        if not db_file.is_file():
+            raise exc.UserNotFound('user requested has no data entry')
+
+        with db_file.open() as fp:
+            return cls.parse_obj(json.load(fp))
+
+    def update(self):
+        if not _settings.user_data_dir.is_dir():
+            _settings.user_data_dir.mkdir(parents=True)
+
+        with (_settings.user_data_dir / f"{self.username}.json").open('w') as fp:
+            fp.write(self.json(indent=4))
+
 
 
 def hash_pwd(*, password: str, salt=None):

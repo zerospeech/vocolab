@@ -79,6 +79,7 @@ class TaskQueueSettings(BaseModel):
 
 
 class AppSettings(BaseModel):
+    platform_name: str = "VOCOLAB"
     app_name: str = "VocoLab Challenge API"
     maintainers: str = "Organisation Name"
     admin_email: EmailStr = EmailStr("contact@email.com")

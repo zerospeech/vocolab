@@ -12,8 +12,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
 
 from vocolab import exc, out
-from vocolab.db import schema, models
-from vocolab.db.q import userQ
+from vocolab.data import models, model_queries
 from vocolab.core import api_lib, notify
 from vocolab.settings import get_settings
 
@@ -26,13 +25,11 @@ _settings = get_settings()
 async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> models.api.LoggedItem:
     """ Authenticate a user """
     try:
-        out.console.print(f"{form_data.username=}, {form_data.password=}")
-        user = await userQ.get_user_for_login(login_id=form_data.username, password=form_data.password)
-        out.console.print(f'login {user=}')
+        user = await model_queries.User.login(login_id=form_data.username, password=form_data.password)
         if user is None:
             raise ValueError('Bad login')
 
-        token = schema.Token(user_email=user.email)
+        token = model_queries.Token(user_email=user.email)
         return models.api.LoggedItem(access_token=token.encode(), token_type="bearer")
     except ValueError:
         raise HTTPException(
@@ -47,7 +44,7 @@ async def post_signup(request: Request,
                       affiliation: str = Form(...), email: EmailStr = Form(...),
                       username: str = Form(...), password: str = Form(...)) -> str:
     """ Create a new user via the HTML form  (returns a html page) """
-    user = models.misc.UserCreate(
+    user = models.api.UserCreateRequest(
         username=username,
         email=email,
         pwd=password,
@@ -82,12 +79,12 @@ async def password_reset_request(
         html_response: bool = False,
         username: str = Form(...), email: EmailStr = Form(...)):
     """ Request a users password to be reset """
-    user = await userQ.get_user(by_username=username)
-    if user.username != username:
+    user = await model_queries.User.get(by_username=username)
+    if user.email != email:
         raise ValueError('Bad request, no such user')
 
     # session = await userQ.create_password_reset_session(username=username, email=email)
-    token = schema.Token(user_email=user.email, allow_password_reset=True)
+    token = model_queries.Token(user_email=user.email, allow_password_reset=True)
     data = {
         'username': username,
         'url': f"{api_lib.url_for(request, 'password_update_page')}?v={token.encode()}",
@@ -121,12 +118,12 @@ async def post_password_update(v: str, request: Request, html_response: bool = F
         if v != session_code:
             raise ValueError('session validation not passed !!!')
 
-        token = schema.Token.decode(v)
+        token = model_queries.Token.decode(v)
         if not token.allow_password_reset:
             raise ValueError('bad session')
 
-        user = await userQ.get_user(by_email=token.user_email)
-        await userQ.update_users_password(user=user, password=password, password_validation=password_validation)
+        user = await model_queries.User.get(by_email=token.user_email)
+        await user.change_password(new_password=password, password_validation=password_validation)
     except ValueError as e:
         out.log.error(
             f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')

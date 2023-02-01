@@ -13,6 +13,15 @@ from Crypto.Hash import MD5
 from vocolab import out
 
 
+def drop_keys(data: Dict, keys: List[str]):
+    """ Filter keys from a dictionary """
+    for k in keys:
+        try:
+            del data[k]
+        except KeyError:
+            pass
+
+
 def load_dict_file(location: Path) -> Union[Dict, List]:
     """ Load a dict type file (json, yaml, toml)"""
     with location.open() as fp:
