@@ -8,8 +8,7 @@ from fastapi import (
     APIRouter
 )
 from vocolab import exc
-from vocolab.db import models
-from vocolab.db.q import leaderboardQ
+from vocolab.data import models, model_queries
 from vocolab.core import api_lib
 from vocolab.settings import get_settings
 

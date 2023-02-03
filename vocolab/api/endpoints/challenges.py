@@ -1,17 +1,13 @@
 """ Routing for /challenges section of the API
 This section handles challenge data
 """
-from datetime import datetime
 from typing import List
 
 from fastapi import (
-    APIRouter, Depends, UploadFile, File, BackgroundTasks
+    APIRouter
 )
 
-from vocolab import out, exc
-from vocolab.db import schema, models
-from vocolab.db.q import challengesQ
-from vocolab.core import api_lib, submission_lib
+from vocolab.data import models, model_queries
 from vocolab.settings import get_settings
 
 router = APIRouter()
@@ -21,8 +17,8 @@ _settings = get_settings()
 @router.get('/list', response_model=List[models.api.ChallengePreview])
 async def get_challenge_list(include_inactive: bool = False):
     """ Return a list of all active challenges """
-    challenge_lst = await challengesQ.list_challenges(include_all=include_inactive)
-    return [models.api.ChallengePreview(id=ch.id, label=ch.label, active=ch.active) for ch in challenge_lst]
+    challenge_lst = await model_queries.ChallengeList.get(include_all=include_inactive)
+    return [models.api.ChallengePreview(id=ch.id, label=ch.label, active=ch.active) for ch in challenge_lst.items]
 
 
 @router.get('/{challenge_id}/info', response_model=models.api.ChallengesResponse,
@@ -30,30 +26,27 @@ async def get_challenge_list(include_inactive: bool = False):
 async def get_challenge_info(challenge_id: int):
     """ Return information of a specific challenge """
     # todo add leaderboards to challenge info
-    return await challengesQ.get_challenge(challenge_id=challenge_id, allow_inactive=True)
+    return await model_queries.Challenge.get(challenge_id=challenge_id, allow_inactive=True)
 
-@router.get('/{challenge_id}/submissions', response_model=models.api.ChallengesResponse,
+
+@router.get('/{challenge_id}/submissions',
             responses={404: {"model": models.api.Message}})
-async def get_sub_list(challenge_id: int):
+async def get_sub_list(challenge_id: int) -> model_queries.ChallengeSubmissionList:
     """ Return information of a specific challenge """
-    # todo add leaderboards to challenge info
-    pass
+    return await model_queries.ChallengeSubmissionList.get_from_challenge(challenge_id)
 
 
-
-@router.get('/{challenge_id}/leaderboards', response_model=models.api.ChallengesResponse,
-            responses={404: {"model": models.api.Message}})
-async def get_all_leaderboards(challenge_id: int):
+@router.get('/{challenge_id}/leaderboards', responses={404: {"model": models.api.Message}})
+async def get_all_leaderboards(challenge_id: int) -> model_queries.LeaderboardList:
     """ Return information of a specific challenge """
-    # todo add leaderboards to challenge info
-    pass
-
+    return await model_queries.LeaderboardList.get_by_challenge(challenge_id=challenge_id)
 
 
 @router.get('/{challenge_id}/leaderboards/{leaderboard_id}', response_model=models.api.ChallengesResponse,
             responses={404: {"model": models.api.Message}})
 async def get_leaderboard(challenge_id: int, leaderboard_id):
     """ Return information of a specific challenge """
-    # todo add leaderboards to challenge info
-    pass
-
+    leaderboard = await model_queries.Leaderboard.get(leaderboard_id=leaderboard_id)
+    if leaderboard is not None and  challenge_id != leaderboard.challenge_id:
+        raise ValueError(f'No such leaderboard in challenge {challenge_id}')
+    return leaderboard
