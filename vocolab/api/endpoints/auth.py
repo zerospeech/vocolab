@@ -148,3 +148,9 @@ async def post_password_update(v: str, request: Request, html_response: bool = F
     if html_response:
         return HTMLResponse(api_lib.generate_html_response(data, template_name='response.html.jinja2'))
     return JSONResponse(data)
+
+
+@router.post('/email/validate')
+async def validate_email(code: str):
+    # todo
+    pass

@@ -2,7 +2,7 @@ import shlex
 from datetime import date
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Iterable
 
 from pydantic import BaseModel
 from pydantic import HttpUrl
@@ -23,6 +23,12 @@ class EvaluatorItem(BaseModel):
 
     class Config:
         orm_mode = True
+
+    async def update_args(self, arg_list: List[str]):
+        query = tables.evaluators_table.update().where(
+            tables.evaluators_table.c.id == self.id
+        ).values(executor_arguments=shlex.join(arg_list))
+        await zrDB.execute(query)
 
     @classmethod
     async def add_or_update(cls, *, evl_item: models.cli.NewEvaluatorItem):
@@ -45,7 +51,7 @@ class EvaluatorItem(BaseModel):
             await zrDB.execute(update_query)
 
     @classmethod
-    async def get(cls, by_id: str) -> Optional["EvaluatorItem"]:
+    async def get(cls, by_id: int) -> Optional["EvaluatorItem"]:
         query = tables.evaluators_table.select().where(
             tables.evaluators_table.c.id == by_id
         )
@@ -53,14 +59,13 @@ class EvaluatorItem(BaseModel):
         if not result:
             return None
         return cls.parse_obj(result)
-    async def update_args(self, arg_list: List[str]):
-        query = tables.evaluators_table.update().where(
-            tables.evaluators_table.c.id == self.id
-        ).values(executor_arguments=shlex.join(arg_list))
 
 
 class EvaluatorList(BaseModel):
     items: List[EvaluatorItem]
+
+    def __iter__(self) -> Iterable[EvaluatorItem]:
+        return iter(self.items)
 
     @classmethod
     async def get(cls) -> "EvaluatorList":
@@ -69,7 +74,6 @@ class EvaluatorList(BaseModel):
         if not results:
             return cls(items=[])
         return cls(items=results)
-
 
 
 class Challenge(BaseModel):
@@ -158,10 +162,11 @@ class Challenge(BaseModel):
         await zrDB.execute(query)
 
 
-
-
 class ChallengeList(BaseModel):
     items: List[Challenge]
+
+    def __iter__(self) -> Iterable[Challenge]:
+        return iter(self.items)
 
     def filter_active(self) -> "ChallengeList":
         self.items = [i for i in self.items if i.is_active()]
@@ -252,7 +257,6 @@ class Leaderboard(BaseModel):
 
         return value
 
-
     @classmethod
     async def get(cls, leaderboard_id: int) -> Optional["Leaderboard"]:
         query = tables.leaderboards_table.select().where(
@@ -266,6 +270,9 @@ class Leaderboard(BaseModel):
 
 class LeaderboardList(BaseModel):
     items: List[Leaderboard]
+
+    def __iter__(self) -> Iterable[Leaderboard]:
+        return iter(self.items)
 
     @classmethod
     async def get_all(cls) -> "LeaderboardList":
@@ -284,7 +291,6 @@ class LeaderboardList(BaseModel):
         if not ld_list:
             return cls(items=[])
         return cls(items=ld_list)
-
 
 
 class LeaderboardEntry:

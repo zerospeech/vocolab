@@ -1,14 +1,14 @@
 import json
 import secrets
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Iterable
 
 from email_validator import validate_email, EmailNotValidError
 from jose import jwt, JWTError  # noqa: false flags from requirements https://youtrack.jetbrains.com/issue/PY-27985
 from pydantic import BaseModel, EmailStr, Field, ValidationError
 
 from vocolab.data import models, tables, exc as db_exc
-from ..base import zrDB
+from ..db import zrDB
 from ...core import users_lib
 from ...settings import get_settings
 
@@ -169,8 +169,12 @@ class User(BaseModel):
 class UserList(BaseModel):
     items: List[User]
 
+
+    def __iter__(self) -> Iterable[User]:
+        return iter(self.items)
+
     @classmethod
-    def get(cls, active_only: bool = False) -> "UserList":
+    async def get(cls, active_only: bool = False) -> "UserList":
         """ Get all existing users, flag allows to filter non-active users """
         query = tables.users_table.select()
         if active_only:
@@ -183,12 +187,19 @@ class UserList(BaseModel):
         return cls(items=user_list)
 
     @classmethod
-    def toggle_status(cls, active: bool = True):
+    async def toggle_status(cls, active: bool = True):
         """ Toggles all users status from active to inactive """
         query = tables.users_table.update().values(
             active=active
         )
         return await zrDB.execute(query)
+
+    @classmethod
+    async def verify(cls):
+        query = tables.users_table.update().values(
+            verify="True"
+        )
+        await zrDB.execute(query)
 
 
 class Token(BaseModel):

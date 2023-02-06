@@ -16,8 +16,9 @@ router = APIRouter()
 _settings = get_settings()
 
 
-@router.get("/profile")
+@router.get("/{username}/profile")
 def get_profile(
+        username: str,
         current_user: model_queries.User = Depends(api_lib.get_current_active_user)) -> users_lib.UserProfileData:
     try:
         user_data = current_user.get_profile_data()
@@ -29,8 +30,9 @@ def get_profile(
         out.console.exception()
 
 
-@router.post("/profile")
+@router.post("/{username}/profile")
 def update_profile(
+        username: str,
         user_data: users_lib.UserProfileData,
         current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     if user_data.username != current_user.username:
@@ -40,6 +42,64 @@ def update_profile(
 
     user_data.update()
     return Response(status_code=200)
+
+
+@router.get("/{username}/models/list")
+async def list_users_models(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+    # todo
+    pass
+
+
+@router.post("/{username}/models/create")
+async def create_new_model(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+    # todo
+    pass
+
+
+@router.get("/{username}/submissions/list")
+async def list_users_submissions(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+    # todo
+    pass
+
+
+@router.post("/{username}/submissions/create")
+async def create_new_submission(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+    pass
+
+
+# todo: update submission process
+# @router.post('/{model_id}/submissions/create/', responses={404: {"model": models.api.Message}})
+# async def create_submission(
+#         model_id: str, challenge_id: int,
+#         data: models.api.NewSubmissionRequest,
+#         current_user: schema.User = Depends(api_lib.get_current_active_user)
+# ):
+#     """ Create a new submission """
+#     # todo fetch model_id
+#
+#     challenge = await challengesQ.get_challenge(challenge_id=challenge_id)
+#     if challenge is None:
+#         return ValueError(f'challenge {challenge_id} not found or inactive')
+#
+#     # create db entry
+#     # todo check submission table data
+#     submission_id = await challengesQ.add_submission(new_submission=models.api.NewSubmission(
+#         user_id=current_user.id,
+#         track_id=challenge.id,
+#     ), evaluator_id=challenge.evaluator)
+#
+#     # create disk entry
+#     model_dir = submission_lib.ModelDir.load(data.model_id)
+#     model_dir.make_submission(
+#         submission_id=submission_id,
+#         challenge_id=challenge_id,
+#         challenge_label=challenge.label,
+#         auto_eval=...,
+#         request_meta=data
+#     )
+#
+#     return submission_id
+
 
 
 # @router.get('{username}/submissions')

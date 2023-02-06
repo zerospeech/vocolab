@@ -29,24 +29,19 @@ async def get_challenge_info(challenge_id: int):
     return await model_queries.Challenge.get(challenge_id=challenge_id, allow_inactive=True)
 
 
-@router.get('/{challenge_id}/submissions',
+@router.get('/{challenge_id}/submissions/list',
             responses={404: {"model": models.api.Message}})
 async def get_sub_list(challenge_id: int) -> model_queries.ChallengeSubmissionList:
     """ Return information of a specific challenge """
     return await model_queries.ChallengeSubmissionList.get_from_challenge(challenge_id)
 
 
-@router.get('/{challenge_id}/leaderboards', responses={404: {"model": models.api.Message}})
+@router.get("/{challenge_id}/models/list")
+async def get_models_list(challenge_id: int):
+    pass
+
+
+@router.get('/{challenge_id}/leaderboards/list', responses={404: {"model": models.api.Message}})
 async def get_all_leaderboards(challenge_id: int) -> model_queries.LeaderboardList:
     """ Return information of a specific challenge """
     return await model_queries.LeaderboardList.get_by_challenge(challenge_id=challenge_id)
-
-
-@router.get('/{challenge_id}/leaderboards/{leaderboard_id}', response_model=models.api.ChallengesResponse,
-            responses={404: {"model": models.api.Message}})
-async def get_leaderboard(challenge_id: int, leaderboard_id):
-    """ Return information of a specific challenge """
-    leaderboard = await model_queries.Leaderboard.get(leaderboard_id=leaderboard_id)
-    if leaderboard is not None and  challenge_id != leaderboard.challenge_id:
-        raise ValueError(f'No such leaderboard in challenge {challenge_id}')
-    return leaderboard

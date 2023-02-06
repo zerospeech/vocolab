@@ -2,7 +2,7 @@ import math
 from datetime import datetime
 from enum import Enum
 from itertools import chain, product
-from typing import Optional, List
+from typing import Optional, List, Iterable
 
 from pydantic import BaseModel, AnyHttpUrl
 
@@ -105,6 +105,9 @@ class ModelID(BaseModel):
 class ModelIDList(BaseModel):
     items: List[ModelID]
 
+    def __iter__(self) -> Iterable[ModelID]:
+        return iter(self.items)
+
     @classmethod
     async def get(cls) -> "ModelIDList":
         items = db.zrDB.fetch_all(tables.models_table.select())
@@ -199,9 +202,11 @@ class ChallengeSubmission(BaseModel):
         )
 
 
-
 class ChallengeSubmissionList(BaseModel):
     items: List[ChallengeSubmission]
+
+    def __iter__(self) -> Iterable[ChallengeSubmission]:
+        return iter(self.items)
 
     @classmethod
     async def get_from_challenge(cls, challenge_id: int):
@@ -250,7 +255,6 @@ class ChallengeSubmissionList(BaseModel):
             items = []
 
         return cls(items=items)
-
 
     async def update_evaluators(self, evaluator_id: int):
         for e in self.items:
