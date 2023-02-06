@@ -4,7 +4,7 @@ from vocolab import out, get_settings
 from vocolab.core import cmd_lib
 
 # api settings
-from vocolab.db.models.tasks import SimpleLogMessage, SubmissionUpdateMessage, UpdateType
+from vocolab.data.models.tasks import SimpleLogMessage, SubmissionUpdateMessage, UpdateType
 from vocolab.worker import server as message_server
 
 _settings = get_settings()

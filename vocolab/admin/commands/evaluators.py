@@ -1,11 +1,12 @@
 import asyncio
 import sys
+from typing import List
 
 from rich.prompt import Confirm
 from rich.table import Table
 
 from vocolab import get_settings, out
-from vocolab.db.q import challenges as ch_queries
+from vocolab.data import model_queries
 from vocolab.core import evaluators_lib, cmd_lib
 
 _settings = get_settings()
@@ -19,7 +20,7 @@ class EvaluatorsCMD(cmd_lib.CMD):
 
     def run(self, argv):
         _ = self.parser.parse_args(argv)
-        evaluators = asyncio.run(ch_queries.get_evaluators())
+        evaluators: model_queries.EvaluatorList = asyncio.run(model_queries.EvaluatorList.get())
 
         # Prepare output
         table = Table(show_header=True, header_style="bold magenta")
@@ -30,12 +31,11 @@ class EvaluatorsCMD(cmd_lib.CMD):
         table.add_column("script_path")
         table.add_column("executor_arguments")
 
-        for ev in evaluators:
+        for ev in evaluators.items:
             table.add_row(
                 f"{ev.id}", f"{ev.label}", f"{ev.host}", f"{ev.executor}",
                 f"{ev.script_path}", f"{ev.executor_arguments}"
             )
-
         # print
         out.cli.print(table)
 
@@ -82,6 +82,11 @@ class DiscoverEvaluatorsCMD(cmd_lib.CMD):
         super(DiscoverEvaluatorsCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('host')
 
+    @staticmethod
+    async def add_evaluators_list(eval_list):
+        for item in eval_list:
+            await model_queries.EvaluatorItem.add_or_update(evl_item=item)
+
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
@@ -99,7 +104,7 @@ class DiscoverEvaluatorsCMD(cmd_lib.CMD):
         out.cli.print(f"Found evaluators : {[ev.label for ev in evaluators]}")
         response = Confirm.ask("Do want to import them into the database?")
         if response:
-            asyncio.run(ch_queries.add_evaluator(lst_eval=evaluators))
+            asyncio.run(self.add_evaluators_list(evaluators))
             out.cli.print(":heavy_check_mark: successfully inserted evaluators")
 
 
@@ -112,14 +117,19 @@ class UpdateBaseArguments(cmd_lib.CMD):
         # arguments
         self.parser.add_argument("evaluator_id", type=int, help='The id of the entry')
 
+    @staticmethod
+    async def update_eval_args(evaluator_id: int, arg_list: List[str]):
+        evaluator = await model_queries.EvaluatorItem.get(evaluator_id)
+        await evaluator.update_args(arg_list)
+
     def run(self, argv):
         """ Update base arguments of an evaluator
 
             Pass a list of arguments to give to the evaluator
         """
-        args, rest = self.parser.parse_known_args(argv)
+        args, rest = self.parser.parse_known_args()
 
         asyncio.run(
-            ch_queries.edit_evaluator_args(eval_id=args.evaluator_id, arg_list=rest)
+            self.update_eval_args(args.evaluator_id, rest)
         )
         out.cli.info(":heavy_check_mark: successfully updated evaluator")

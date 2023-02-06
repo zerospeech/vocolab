@@ -7,9 +7,8 @@ from rich.prompt import Prompt, Confirm, IntPrompt
 from rich.table import Table
 
 from vocolab import out
-from vocolab.db import schema
-from vocolab.db.q import leaderboardQ
 from vocolab.core import leaderboards_lib, cmd_lib
+from vocolab.data import model_queries
 
 
 class LeaderboardCMD(cmd_lib.CMD):
@@ -21,9 +20,9 @@ class LeaderboardCMD(cmd_lib.CMD):
     def run(self, argv):
         _ = self.parser.parse_args(argv)
         try:
-            leaderboards = asyncio.run(leaderboardQ.list_leaderboards())
+            leaderboards: model_queries.LeaderboardList = asyncio.run(model_queries.LeaderboardList.get_all())
         except ValueError:
-            leaderboards = []
+            leaderboards = model_queries.LeaderboardList(items=[])
 
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column('ID')
@@ -123,7 +122,7 @@ class EditLeaderboardCMD(cmd_lib.CMD):
 
     def __init__(self, root, name, cmd_path):
         super(EditLeaderboardCMD, self).__init__(root, name, cmd_path)
-        self.leaderboard_fields = schema.LeaderBoard.get_field_names()
+        self.leaderboard_fields = model_queries.Leaderboard.get_field_names()
         self.leaderboard_fields.remove('id')
 
         # arguments
@@ -132,13 +131,18 @@ class EditLeaderboardCMD(cmd_lib.CMD):
                                  help="The name of the field")
         self.parser.add_argument('field_value', help="The new value of the field")
 
+    @staticmethod
+    async def update_value(leaderboard_id: int, field_name: str, value: str):
+        leaderboard = await model_queries.Leaderboard.get(leaderboard_id=leaderboard_id)
+        return await leaderboard.update_property(variable_name=field_name, value=value, allow_parsing=True)
+
+
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        res = asyncio.run(leaderboardQ.update_leaderboard_value(
+        res = asyncio.run(self.update_value(
             leaderboard_id=args.leaderboard_id,
-            variable_name=args.field_name,
-            value=args.field_value,
-            allow_parsing=True
+            field_name=args.field_name,
+            value=args.field_value
         ))
         out.cli.info(f"Field {args.field_name}={res} :white_check_mark:")
 

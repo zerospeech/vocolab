@@ -3,16 +3,15 @@ import json
 import string
 import sys
 from pathlib import Path
+from typing import Tuple
 
 from pydantic import EmailStr
 from rich.prompt import Prompt
 from rich.table import Table
 
 from vocolab import out, get_settings
-from vocolab.db.models.misc import UserCreate
-from vocolab.db.q import userQ, challengesQ
 from vocolab.core import notify, cmd_lib
-from vocolab.core.misc import CustomTypesJsonEncoder
+from vocolab.data import models, model_queries
 
 _settings = get_settings()
 
@@ -29,7 +28,7 @@ class UsersCMD(cmd_lib.CMD):
         args = self.parser.parse_args(argv)
 
         # fetch data
-        user_lst = asyncio.run(userQ.get_user_list())
+        user_lst: model_queries.UserList = asyncio.run(model_queries.UserList.get())
 
         if args.mail_list:
             for u in user_lst:
@@ -56,72 +55,27 @@ class UsersCMD(cmd_lib.CMD):
         out.cli.print(table)
 
 
-class UserSessionsCMD(cmd_lib.CMD):
-    """ List logged users """
-
-    def __init__(self, root, name, cmd_path):
-        super(UserSessionsCMD, self).__init__(root, name, cmd_path)
-
-    @staticmethod
-    def just_print():
-        """ Prints a list of logged users """
-        user_lst = asyncio.run(userQ.get_logged_user_list())
-
-        # Prepare output
-        table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("ID")
-        table.add_column("Username")
-        table.add_column("Email")
-        table.add_column("Active")
-        table.add_column("Verified")
-
-        for usr in user_lst:
-            table.add_row(
-                f"{usr.id}", usr.username, usr.email, f"{usr.active}", f"{usr.verified}"
-            )
-
-        out.cli.print(table)
-
-    def run(self, argv):
-        _ = self.parser.parse_args(argv)
-        self.just_print()
-
-
-class CloseUserSessionsCMD(cmd_lib.CMD):
-    """ Close user sessions """
-
-    def __init__(self, root, name, cmd_path):
-        super(CloseUserSessionsCMD, self).__init__(root, name, cmd_path)
-        self.parser.add_argument("-u", "--user-id")
-        self.parser.add_argument("-a", "--close-all", action='store_true')
-
-    def run(self, argv):
-        args = self.parser.parse_args(argv)
-
-        if args.user_id:
-            asyncio.run(userQ.delete_session(by_uid=args.user_id))
-            out.cli.print(f"All sessions of user {args.user_id} were closed", style="bold")
-        elif args.close_all:
-            asyncio.run(userQ.delete_session(clear_all=True))
-            out.cli.print(f"All sessions were closed", style="bold")
-        else:
-            self.parser.print_help()
-
-        sys.exit(0)
-
-
-class CreateUserSessionsCMD(cmd_lib.CMD):
+class CreateUserSessionCMD(cmd_lib.CMD):
     """ Create a session for a user """
 
     def __init__(self, root, name, cmd_path):
-        super(CreateUserSessionsCMD, self).__init__(root, name, cmd_path)
+        super(CreateUserSessionCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument("user_id", type=int)
+
+    @staticmethod
+    async def login(user_id: int) -> Tuple[str, str, str]:
+        user = await model_queries.User.get(by_uid=user_id)
+        token = model_queries.Token(
+            user_email=user.email
+        )
+        return token.encode(), user.username, user.email
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-
-        usr, token = asyncio.run(userQ.admin_login(by_uid=args.user_id))
-        out.cli.print(f"{usr.username}, {usr.email}, {token}")
+        token, username, email = asyncio.run(
+            self.login(args.user_id)
+        )
+        out.cli.print(f"{username}, {email}, {token}")
         sys.exit(0)
 
 
@@ -133,15 +87,15 @@ class CreateUserCMD(cmd_lib.CMD):
         self.parser.add_argument('-f', '--from-file', type=str, help="Load users from a json file")
 
     @staticmethod
-    def _make_usr(user: UserCreate):
-        _ = asyncio.run(userQ.create_user(usr=user))
+    def _make_usr(user: models.api.UserCreateRequest):
+        _ = asyncio.run(model_queries.User.create(new_usr=user))
 
     def _create_from_file(self, file: Path):
         with file.open() as fp:
             user_list = json.load(fp)
 
             for data in user_list:
-                user = UserCreate(
+                user = models.api.UserCreateRequest(
                     username=data.get("username"),
                     email=EmailStr(data.get('email')),
                     pwd=data.get("password"),
@@ -166,7 +120,7 @@ class CreateUserCMD(cmd_lib.CMD):
 
         password = out.cli.raw.input("Password: ", password=True)
 
-        user = UserCreate(
+        user = models.api.UserCreateRequest(
             username=username,
             email=EmailStr(email),
             pwd=password,
@@ -203,18 +157,24 @@ class VerifyUserCMD(cmd_lib.CMD):
         self.parser.add_argument("--send-all", action='store_true',
                                  help="resend verification email to all unverified users")
 
+    @staticmethod
+    async def verify_single(user_id: int):
+        user = await model_queries.User.get(by_uid=user_id)
+        await user.verify(verification_code=user.verified, force=True)
+
+    @staticmethod
+    async def verify_all():
+        await model_queries.UserList.verify()
+
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
         if args.verify:
             # verify user
-            asyncio.run(userQ.admin_verification(user_id=args.verify))
+            asyncio.run(self.verify_single(user_id=args.verify))
         elif args.verify_all:
             # verify all users
-            users = asyncio.run(userQ.get_user_list())
-            for u in users:
-                if u.verified != 'True':
-                    asyncio.run(userQ.admin_verification(user_id=u.id))
+            asyncio.run(self.verify_all())
         elif args.send:
             # send verification email
             try:
@@ -225,7 +185,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                 sys.exit(1)
 
             try:
-                user = asyncio.run(userQ.get_user(by_uid=args.send))
+                user = asyncio.run(model_queries.User.get(by_uid=args.send))
             except ValueError:
                 out.cli.error(f"User with id: {args.send} does not exist !!")
                 sys.exit(1)
@@ -254,7 +214,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                 out.cli.error("Path file not found in settings")
                 sys.exit(1)
 
-            users = asyncio.run(userQ.get_user_list())
+            users = asyncio.run(model_queries.UserList.get())
             for u in users:
                 if u.verified != 'True':
                     asyncio.run(notify.email.template_email(
@@ -263,7 +223,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                         data=dict(
                             username=u.username,
                             admin_email=_settings.app_options.admin_email,
-                            url=f"{_settings.API_BASE_URL}{verification_path}?v={u.verified}&username={u.username}"
+                            url=f"{_settings.api_options.API_BASE_URL}{verification_path}?v={u.verified}&username={u.username}"
                         ),
                         template_name='email_validation.jinja2'
                     ))
@@ -283,24 +243,33 @@ class UserActivationCMD(cmd_lib.CMD):
         self.parser.add_argument("--activate-all", action='store_true', help="activate all users")
         self.parser.add_argument("--deactivate-all", action='store_true', help="deactivate all users")
 
+    @staticmethod
+    async def toggle_status(user_id: int, activate: bool):
+        user = await model_queries.User.get(by_uid=user_id)
+        await user.toggle_status(active=activate)
+
+    @staticmethod
+    async def toggle_all(activate: bool):
+        await model_queries.UserList.toggle_status(active=activate)
+
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
         if args.activate:
             # activate user
-            asyncio.run(userQ.toggle_user_status(user_id=args.activate, active=True))
+            asyncio.run(self.toggle_status(user_id=args.activate, activate=True))
             out.cli.info("User activated successfully")
         elif args.deactivate:
             # deactivate user
-            asyncio.run(userQ.toggle_user_status(user_id=args.deactivate, active=False))
+            asyncio.run(self.toggle_status(user_id=args.activate, activate=False))
             out.cli.info("User deactivated successfully")
         elif args.activate_all:
             # activate all users
-            asyncio.run(userQ.toggle_all_users_status(active=True))
+            asyncio.run(self.toggle_all(activate=True))
             out.cli.info("Users activated successfully")
         elif args.deactivate_all:
             # deactivate all users
-            asyncio.run(userQ.toggle_all_users_status(active=False))
+            asyncio.run(self.toggle_all(activate=False))
             out.cli.info("Users deactivated successfully")
         else:
             self.parser.print_help()
@@ -314,6 +283,15 @@ class PasswordUserCMD(cmd_lib.CMD):
         self.parser.add_argument("-r", "--reset", metavar="UID",
                                  help="reset & send a new password session to user")
 
+    @staticmethod
+    async def reset_password_session(user_id):
+        user = await model_queries.User.get(by_uid=user_id)
+        token = model_queries.Token(
+            allow_password_reset=True,
+            user_email=user.email
+        )
+        return token.encode(), user.username, user.email
+
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
@@ -325,15 +303,13 @@ class PasswordUserCMD(cmd_lib.CMD):
                 out.cli.error("Path file not found in settings")
                 sys.exit(1)
 
-            user = asyncio.run(userQ.get_user(by_uid=args.reset))
-            out.cli.ic(user)
-            session = asyncio.run(userQ.create_password_reset_session(username=user.username, email=user.email))
+            token, username, email = asyncio.run(self.reset_password_session(args.reset))
             asyncio.run(notify.email.template_email(
-                emails=[user.email],
+                emails=[email],
                 subject='[Zerospeech] Password Reset',
                 data=dict(
-                    username=user.username,
-                    url=f"{_settings.API_BASE_URL}{password_reset_path}?v={session.token}",
+                    username=username,
+                    url=f"{_settings.api_options.API_BASE_URL}{password_reset_path}?v={token}",
                     admin_email=_settings.app_options.admin_email
                 ),
                 template_name='password_reset.jinja2'
@@ -349,48 +325,20 @@ class CheckPasswordCMD(cmd_lib.CMD):
         super(CheckPasswordCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('user_id', type=int)
 
+    @staticmethod
+    async def check_password(user_id: int, password: str):
+        user = await model_queries.User.get(by_uid=user_id)
+        return user.password_matches(password)
+
     def run(self, argv):
         args = self.parser.parse_args(argv)
         pwd = Prompt.ask('password', password=True)
-
-        user = asyncio.run(userQ.get_user(by_uid=args.user_id))
-        if userQ.check_users_password(password=pwd, user=user):
+        if asyncio.run(self.check_password(args.user_id, pwd)):
             out.cli.info("--> Passwords match !!")
             sys.exit(0)
         else:
             out.cli.error("--> Passwords do not match !!")
             sys.exit(1)
-
-
-class ResetSessionsCMD(cmd_lib.CMD):
-    """ Check the list of reset sessions """
-
-    def __init__(self, root, name, cmd_path):
-        super(ResetSessionsCMD, self).__init__(root, name, cmd_path)
-        self.parser.add_argument('--all', action='store_true', help="Show all sessions (even expired ones)")
-        self.parser.add_argument('--clean', action='store_true', help="Clean expired sessions")
-
-    def run(self, argv):
-        args = self.parser.parse_args(argv)
-
-        if args.clean:
-            # clean sessions
-            asyncio.run(userQ.clear_expired_password_reset_sessions())
-            out.cli.info('removed all expired password reset sessions :heavy_check_mark:')
-        else:
-            sessions = asyncio.run(userQ.get_password_reset_sessions(args.all))
-            # print
-            table = Table(show_header=True, header_style="bold magenta")
-            table.add_column("user_id")
-            table.add_column("token")
-            table.add_column("expiration_date")
-
-            for item in sessions:
-                table.add_row(
-                    f"{item.user_id}", item.token, f"{item.expiration_date.isoformat()}"
-                )
-
-            out.cli.print(table)
 
 
 class NotifyCMD(cmd_lib.CMD):
@@ -404,7 +352,7 @@ class NotifyCMD(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        user_list = asyncio.run(userQ.get_user_list())
+        user_list = asyncio.run(model_queries.UserList.get())
         email_list = [user.email for user in user_list]
         with args.body.open() as fp:
             body = fp.read()
@@ -426,26 +374,28 @@ class DeleteUser(cmd_lib.CMD):
 
     @staticmethod
     async def delete_user(user_id: int):
-        user_submissions = await challengesQ.list_submission(by_user=user_id)
-        if len(user_submissions) > 0:
-            out.cli.print(f"User {user_id} has {len(user_submissions)} unarchived submissions !!\n"
-                          f"Cannot delete, archive submissions and try again !!")
-            sys.exit(1)
-
-        user = await userQ.get_user(by_uid=user_id)
-        user_dict = user.dict()
-
-        await userQ.delete_session(by_uid=user_id)
-        await userQ.clear_password_reset_sessions(by_uid=user_id)
-        await userQ.delete_user(uid=user_id)
-        return user_dict
+        pass
+        # user_submissions = await challengesQ.list_submission(by_user=user_id)
+        # if len(user_submissions) > 0:
+        #     out.cli.print(f"User {user_id} has {len(user_submissions)} unarchived submissions !!\n"
+        #                   f"Cannot delete, archive submissions and try again !!")
+        #     sys.exit(1)
+        #
+        # user = await userQ.get_user(by_uid=user_id)
+        # user_dict = user.dict()
+        #
+        # await userQ.delete_session(by_uid=user_id)
+        # await userQ.clear_password_reset_sessions(by_uid=user_id)
+        # await userQ.delete_user(uid=user_id)
+        # return user_dict
 
     def run(self, argv):
-        args = self.parser.parse_args(argv)
-        user_dict = asyncio.run(self.delete_user(args.user_id))
-        out.cli.info(f'User {args.user_id} deleted successfully !!')
-
-        if args.save:
-            out.cli.info(f"backing up user @ {args.save}")
-            with Path(args.save).with_suffix('.json').open('w') as fp:
-                json.dump(user_dict, fp, cls=CustomTypesJsonEncoder)
+       pass
+        # args = self.parser.parse_args(argv)
+        # user_dict = asyncio.run(self.delete_user(args.user_id))
+        # out.cli.info(f'User {args.user_id} deleted successfully !!')
+        #
+        # if args.save:
+        #     out.cli.info(f"backing up user @ {args.save}")
+        #     with Path(args.save).with_suffix('.json').open('w') as fp:
+        #         json.dump(user_dict, fp, cls=CustomTypesJsonEncoder)

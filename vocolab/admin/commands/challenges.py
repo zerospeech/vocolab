@@ -8,8 +8,7 @@ from rich.table import Table
 
 from vocolab import out
 from vocolab.core import cmd_lib
-from vocolab.db import schema, models
-from vocolab.db.q import challengesQ
+from vocolab.data import models, model_queries
 
 
 class ChallengesCMD(cmd_lib.CMD):
@@ -28,8 +27,8 @@ class ChallengesCMD(cmd_lib.CMD):
 
         # fetch data
         loop = asyncio.get_event_loop()
-        challenge_lst = loop.run_until_complete(
-            challengesQ.list_challenges(include_all=args.include_all)
+        challenge_lst: model_queries.ChallengeList = loop.run_until_complete(
+            model_queries.ChallengeList.get(include_all=args.include_all)
         )
 
         # Prepare output
@@ -42,7 +41,7 @@ class ChallengesCMD(cmd_lib.CMD):
         table.add_column("end_date")
         table.add_column("evaluator")
 
-        for ch in challenge_lst:
+        for ch in challenge_lst.items:
             if ch.end_date:
                 end_date_str = ch.end_date.strftime('%d/%m/%Y')
             else:
@@ -105,7 +104,7 @@ class AddChallengeCMD(cmd_lib.CMD):
 
             if not args.dry_run:
                 for item in obj_list:
-                    asyncio.run(challengesQ.create_new_challenge(item))
+                    asyncio.run(model_queries.Challenge.create(item))
                     out.cli.print(f"insertion of {item.label} was successful:white_check_mark:",
                                   style="bold green")
             else:
@@ -124,7 +123,7 @@ class SetChallenge(cmd_lib.CMD):
 
     def __init__(self, root, name, cmd_path):
         super(SetChallenge, self).__init__(root, name, cmd_path)
-        self.challenge_fields = schema.Challenge.get_field_names()
+        self.challenge_fields = model_queries.Challenge.get_field_names()
         self.challenge_fields.remove('id')
 
         # arguments
@@ -133,12 +132,18 @@ class SetChallenge(cmd_lib.CMD):
                                  help='The name of the field')
         self.parser.add_argument('value', help='The new value of the field')
 
+    @staticmethod
+    async def update_property(challenge_id: int, field_name: str, value: str):
+        ch = await model_queries.Challenge.get(challenge_id=challenge_id)
+        return await ch.update_property(
+            variable_name=field_name,
+            value=value,
+            allow_parsing=True
+        )
+
     def run(self, argv):
         args = self.parser.parse_args(argv)
         res = asyncio.run(
-            challengesQ.update_challenge_property(
-                challenge_id=args.id, variable_name=args.field_name, value=args.value,
-                allow_parsing=True
-            )
+            self.update_property(args.id, args.field_name, args.value)
         )
         out.cli.info(f"Field {args.field_name}={res} :white_check_mark:")

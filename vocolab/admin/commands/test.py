@@ -6,7 +6,6 @@ from pathlib import Path
 from pydantic import EmailStr
 
 from vocolab import get_settings, out
-from vocolab.db.models.misc import UserCreate
 from vocolab.core import notify, cmd_lib
 
 _settings = get_settings()
@@ -59,25 +58,4 @@ class TestDebugCMD(cmd_lib.CMD):
 
     def run(self, argv):
         _ = self.parser.parse_args(argv)
-        out.cli.print("-- New User Info --", style="bold")
-        first_name = out.cli.raw.input("First Name: ")
-        last_name = out.cli.raw.input("Last Name: ")
-        email = out.cli.raw.input("Email: ")
-        affiliation = out.cli.raw.input("Affiliation: ")
-
-        clean_last_name = ''.join([i if i in string.ascii_letters else ' ' for i in last_name])
-        def_username = f"{first_name[0]}{clean_last_name.replace(' ', '')}".lower()
-        username = out.cli.raw.input(f"Username(default {def_username}): ")
-        username = username if username else def_username
-
-        password = out.cli.raw.input("Password: ", password=True)
-
-        user = UserCreate(
-            username=username,
-            email=EmailStr(email),
-            pwd=password,
-            first_name=first_name,
-            last_name=last_name,
-            affiliation=affiliation
-        )
-        out.cli.print(user)
+        out.cli.info("Nothing to see here move along")
