@@ -8,8 +8,8 @@ from typing import Dict, List
 from fastapi import UploadFile
 from pydantic import BaseModel
 
-from ...db import models
-from ...settings import get_settings
+from vocolab.data import models
+from vocolab import get_settings
 from ..commons import unzip, ssh_exec, rsync, zip_folder, scp
 from .logs import SubmissionLogger
 from .upload import MultipartUploadHandler, SinglepartUploadHandler
@@ -27,7 +27,7 @@ class SubmissionInfo(BaseModel):
     leaderboard_entries: Dict[str, Path]
 
 
-class SubmissionDir(BaseModel):
+class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
     """ Handler interfacing a submission directory stored on disk """
     root_dir: Path
 
@@ -69,8 +69,7 @@ class SubmissionDir(BaseModel):
         """ Check whether info file is present"""
         return self.info_file.is_file()
 
-    @functools.lru_cache
-    @property
+    @functools.lru_cache()
     def info(self) -> SubmissionInfo:
         """ Load submission information """
         with self.info_file.open() as fp:

@@ -2,9 +2,10 @@ import hashlib
 import json
 import os
 from datetime import datetime
-from typing import Callable, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Extra, EmailStr
+
 from vocolab import get_settings, exc
 
 _settings = get_settings()

@@ -10,7 +10,7 @@ from ...settings import get_settings
 _settings = get_settings()
 
 
-class SubmissionLogger(BaseModel):
+class SubmissionLogger(BaseModel, arbitrary_types_allowed=True):
     """ Class managing individual logging of submission life-cycle """
     root_dir: Path
     fp_write: Optional[TextIO] = None

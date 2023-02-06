@@ -1,15 +1,14 @@
-import secrets
-import shutil
-
 import os
 import platform
+import secrets
+import shutil
 import tempfile
 from contextlib import contextmanager
 from datetime import timedelta
 from functools import lru_cache
-from pathlib import Path
-from typing import List, Union, Set, Dict, Optional, Literal, Generator
 from importlib.metadata import version, PackageNotFoundError
+from pathlib import Path
+from typing import List, Union, Set, Dict, Optional, Generator
 
 try:
     from tomllib import load as toml_load
@@ -17,7 +16,7 @@ except ImportError:
     from toml import load as toml_load
 
 from pydantic import (
-    BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork, BaseModel, Field
+    BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork, BaseModel
 )
 
 
@@ -151,9 +150,9 @@ class UserSettings(BaseModel):
 class _VocoLabSettings(BaseSettings):
     """ Base Settings for module """
     app_home: DirectoryPath = Path(__file__).parent
-    DATA_FOLDER: DirectoryPath = Path('data/')
+    DATA_FOLDER: DirectoryPath = Path('/data')
     TMP_ROOT: DirectoryPath = Path('/tmp')
-    ARCHIVE_FOLDER: Path
+    ARCHIVE_FOLDER: Path = Path('/archive')
     ARCHIVE_HOST: str = "localhost"
 
     # Settings Categories
@@ -166,7 +165,6 @@ class _VocoLabSettings(BaseSettings):
     notify_options: NotifySettings = NotifySettings()
     server_options: ServerSettings = ServerSettings()
     user_options: UserSettings = UserSettings()
-    database_options: DatabaseSettings = DatabaseSettings()
 
     CUSTOM_TEMPLATES_DIR: Optional[Path] = None
 

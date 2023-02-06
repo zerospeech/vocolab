@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List
 
 from vocolab import out, get_settings, exc
-from vocolab.db.models import tasks
+from vocolab.data import models
 from vocolab.core import submission_lib
 
 _settings = get_settings()
@@ -25,7 +25,7 @@ def verify_host_bin():
         raise exc.ServerError(f"No bin directory configured for current host {_settings.app_options.hostname}")
 
 
-def build_cmd(_cmd: tasks.SubmissionEvaluationMessage) -> List[str]:
+def build_cmd(_cmd: models.tasks.SubmissionEvaluationMessage) -> List[str]:
     """ Build a subprocess command from an evaluation message """
 
     executor = _cmd.executor.to_exec()
@@ -38,13 +38,13 @@ def build_cmd(_cmd: tasks.SubmissionEvaluationMessage) -> List[str]:
     script = bin_path / _cmd.script_name
 
     cmd_list = [executor]
-    if _cmd.executor == tasks.ExecutorsType.sbatch:
+    if _cmd.executor == models.tasks.ExecutorsType.sbatch:
         cmd_list.extend([
             f"--job-name='{_cmd.label}'",  # name the job on slurmDB
             f"--output={sub_dir}/slurm.log",
             "--wait",  # wait for the process to complete
         ])
-    elif _cmd.executor == tasks.ExecutorsType.docker:
+    elif _cmd.executor == models.tasks.ExecutorsType.docker:
         raise NotImplementedError("should add some verification for docker-run support")
 
     # custom executor args from DB
@@ -57,7 +57,7 @@ def build_cmd(_cmd: tasks.SubmissionEvaluationMessage) -> List[str]:
     return cmd_list
 
 
-def eval_subprocess(_cmd: tasks.SubmissionEvaluationMessage):
+def eval_subprocess(_cmd: models.tasks.SubmissionEvaluationMessage):
     """ Evaluate a subprocess type BrokerCMD """
     cmd_array = build_cmd(_cmd)
     out.log.debug(f"$> {shlex.join(cmd_array)}")
@@ -71,27 +71,29 @@ def eval_subprocess(_cmd: tasks.SubmissionEvaluationMessage):
     return result.returncode, output
 
 
-def post_eval_update(status: int, sem: tasks.SubmissionEvaluationMessage):
+def post_eval_update(status: int, sem: models.tasks.SubmissionEvaluationMessage):
     """ Send message to update queue that evaluation is completed. """
-    from vocolab.worker.server import update
-    from vocolab.db.models.tasks import SubmissionUpdateMessage, UpdateType
+    pass
+    # todo recheck
+    # from vocolab.worker.server import update
+    # from vocolab.db.models.tasks import SubmissionUpdateMessage, UpdateType
+    #
+    # sum_ = SubmissionUpdateMessage(
+    #     label=f"{_settings.app_options.hostname}-completed-{sem.submission_id}",
+    #     submission_id=sem.submission_id,
+    #     updateType=UpdateType.evaluation_undefined,
+    #     hostname=f"{_settings.app_options.hostname}"
+    # )
+    # if status == 0:
+    #     sum_.updateType = UpdateType.evaluation_complete
+    # else:
+    #     sum_.updateType = UpdateType.evaluation_failed
+    #
+    # # send update to channel
+    # update.delay(sum_=sum_.dict())
 
-    sum_ = SubmissionUpdateMessage(
-        label=f"{_settings.app_options.hostname}-completed-{sem.submission_id}",
-        submission_id=sem.submission_id,
-        updateType=UpdateType.evaluation_undefined,
-        hostname=f"{_settings.app_options.hostname}"
-    )
-    if status == 0:
-        sum_.updateType = UpdateType.evaluation_complete
-    else:
-        sum_.updateType = UpdateType.evaluation_failed
 
-    # send update to channel
-    update.delay(sum_=sum_.dict())
-
-
-def evaluate_submission_fn(sem: tasks.SubmissionEvaluationMessage):
+def evaluate_submission_fn(sem: models.tasks.SubmissionEvaluationMessage):
     status, eval_output = eval_subprocess(sem)
     if status == 0:
         out.log.info(f"Evaluation of {sem.submission_id} was completed successfully")

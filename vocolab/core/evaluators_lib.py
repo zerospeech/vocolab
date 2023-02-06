@@ -4,7 +4,7 @@ from typing import List
 import yaml
 
 from vocolab import get_settings
-from vocolab.db import models
+from vocolab.data import models
 from vocolab.core import commons
 
 _settings = get_settings()
