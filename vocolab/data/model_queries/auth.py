@@ -156,13 +156,15 @@ class User(BaseModel):
             db_exc.parse_user_insertion(e)
 
         # create user profile data
-        data = models.api.UserData(
+        profile_data = users_lib.UserProfileData(
             username=new_usr.username,
+            email=new_usr.email,
             affiliation=new_usr.affiliation,
             first_name=new_usr.first_name,
-            last_name=new_usr.last_name
+            last_name=new_usr.last_name,
+            verified=False
         )
-        users_lib.update_user_data(new_usr.username, data)
+        profile_data.save()
         return verification_code
 
 

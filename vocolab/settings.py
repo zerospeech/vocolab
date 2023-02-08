@@ -169,6 +169,13 @@ class _VocoLabSettings(BaseSettings):
     CUSTOM_TEMPLATES_DIR: Optional[Path] = None
 
     @property
+    def data_lock(self) -> Path:
+        return self.DATA_FOLDER / 'readonly.lock'
+
+    def is_locked(self) -> bool:
+        return self.data_lock.is_file()
+
+    @property
     def static_files_directory(self) -> Path:
         """ Directory containing static files served by the API """
         return self.DATA_FOLDER / "_static"
@@ -245,6 +252,18 @@ class _VocoLabSettings(BaseSettings):
     def database_connection_url(self):
         """ Database connection url """
         return f"sqlite:///{self.database_file}"
+
+    @property
+    def email_verif_path(self) -> str:
+        """ Load API path for verifying emails """
+        with (self.DATA_FOLDER / 'email_verification.path').open() as fp:
+            return fp.read().strip()
+
+    @property
+    def password_reset_path(self) -> str:
+        """ Load API path for resetting passwords """
+        with (self.DATA_FOLDER / 'password_reset.path').open() as fp:
+            return fp.read().strip()
 
     @contextmanager
     def get_temp_dir(self) -> Generator[Path, None, None]:

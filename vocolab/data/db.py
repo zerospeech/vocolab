@@ -12,8 +12,8 @@ _settings = get_settings()
 zrDB = databases.Database(_settings.database_connection_url)
 
 def build_database_from_schema():
-    if not (_settings.DATA_FOLDER / _settings.database_options.db_file).is_file():
-        (_settings.DATA_FOLDER / _settings.database_options.db_file).touch()
+    if not _settings.database_file.is_file():
+        _settings.database_file.touch()
 
     engine = sqlalchemy.create_engine(
        _settings.database_connection_url, connect_args={"check_same_thread": False}

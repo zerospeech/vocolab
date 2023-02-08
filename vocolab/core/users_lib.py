@@ -10,6 +10,7 @@ from vocolab import get_settings, exc
 
 _settings = get_settings()
 
+
 class UserProfileData(BaseModel):
     username: str
     affiliation: str
@@ -31,13 +32,17 @@ class UserProfileData(BaseModel):
         with db_file.open() as fp:
             return cls.parse_obj(json.load(fp))
 
-    def update(self):
+    def save(self):
         if not _settings.user_data_dir.is_dir():
             _settings.user_data_dir.mkdir(parents=True)
 
         with (_settings.user_data_dir / f"{self.username}.json").open('w') as fp:
             fp.write(self.json(indent=4))
 
+    def delete(self):
+        """ Delete profile data from disk"""
+        file = (_settings.user_data_dir / f"{self.username}.json")
+        file.unlink(missing_ok=True)
 
 
 def hash_pwd(*, password: str, salt=None):

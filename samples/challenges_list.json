@@ -38,8 +38,8 @@
   {
     "id": 5,
     "label": "tde-15",
-    "start_date": "2020-01-20",
-    "end_date": "2020-04-30",
+    "start_date": "2015-01-20",
+    "end_date": null,
     "url": "https://zerospeech.com/tasks/task_2/tasks_goals/",
     "active": false,
     "evaluator": null

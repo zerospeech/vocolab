@@ -3,14 +3,14 @@ import json
 import string
 import sys
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
 from pydantic import EmailStr
 from rich.prompt import Prompt
 from rich.table import Table
 
 from vocolab import out, get_settings
-from vocolab.core import notify, cmd_lib
+from vocolab.core import notify, cmd_lib, users_lib
 from vocolab.data import models, model_queries
 
 _settings = get_settings()
@@ -87,8 +87,19 @@ class CreateUserCMD(cmd_lib.CMD):
         self.parser.add_argument('-f', '--from-file', type=str, help="Load users from a json file")
 
     @staticmethod
-    def _make_usr(user: models.api.UserCreateRequest):
-        _ = asyncio.run(model_queries.User.create(new_usr=user))
+    async def _make_usr(user: models.api.UserCreateRequest):
+        verify_code = await model_queries.User.create(new_usr=user)
+        # notify user for verification
+        await notify.email.template_email(
+            emails=[user.email],
+            subject='[Zerospeech] Account Verification',
+            data=dict(
+                username=user.username,
+                admin_email=_settings.app_options.admin_email,
+                url=f"{_settings.api_options.API_BASE_URL}{_settings.email_verif_path}?v={verify_code}&username={user.username}"
+            ),
+            template_name='email_validation.jinja2'
+        )
 
     def _create_from_file(self, file: Path):
         with file.open() as fp:
@@ -103,7 +114,7 @@ class CreateUserCMD(cmd_lib.CMD):
                     last_name=data.get('last_name'),
                     affiliation=data.get('affiliation')
                 )
-                self._make_usr(user)
+                asyncio.run(self._make_usr(user))
 
     def _create_form_input(self):
 
@@ -128,7 +139,7 @@ class CreateUserCMD(cmd_lib.CMD):
             last_name=last_name,
             affiliation=affiliation
         )
-        self._make_usr(user)
+        asyncio.run(self._make_usr(user))
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -178,13 +189,6 @@ class VerifyUserCMD(cmd_lib.CMD):
         elif args.send:
             # send verification email
             try:
-                with (_settings.DATA_FOLDER / 'email_verification.path').open() as fp:
-                    verification_path = fp.read()
-            except FileNotFoundError:
-                out.cli.error("Path file not found in settings")
-                sys.exit(1)
-
-            try:
                 user = asyncio.run(model_queries.User.get(by_uid=args.send))
             except ValueError:
                 out.cli.error(f"User with id: {args.send} does not exist !!")
@@ -197,7 +201,7 @@ class VerifyUserCMD(cmd_lib.CMD):
                     data=dict(
                         username=user.username,
                         admin_email=_settings.app_options.admin_email,
-                        url=f"{_settings.api_options.API_BASE_URL}{verification_path}?v={user.verified}&username={user.username}"
+                        url=f"{_settings.api_options.API_BASE_URL}{_settings.email_verif_path}?v={user.verified}&username={user.username}"
                     ),
                     template_name='email_validation.jinja2'
                 ))
@@ -373,29 +377,21 @@ class DeleteUser(cmd_lib.CMD):
         self.parser.add_argument('--save', help="path to save user details as info")
 
     @staticmethod
-    async def delete_user(user_id: int):
-        pass
-        # user_submissions = await challengesQ.list_submission(by_user=user_id)
-        # if len(user_submissions) > 0:
-        #     out.cli.print(f"User {user_id} has {len(user_submissions)} unarchived submissions !!\n"
-        #                   f"Cannot delete, archive submissions and try again !!")
-        #     sys.exit(1)
-        #
-        # user = await userQ.get_user(by_uid=user_id)
-        # user_dict = user.dict()
-        #
-        # await userQ.delete_session(by_uid=user_id)
-        # await userQ.clear_password_reset_sessions(by_uid=user_id)
-        # await userQ.delete_user(uid=user_id)
-        # return user_dict
+    async def delete_user(user_id: int, save_to_file: Optional[Path] = None):
+        user = await model_queries.User.get(by_uid=user_id)
+        profile_data = users_lib.UserProfileData.load(username=user.username)
+        profile_data.delete()
+
+        # todo: check if user has any assets and skip deletion
+        # user-assets: leaderboard-entries, models, submissions
+        await user.delete()
+
 
     def run(self, argv):
-       pass
-        # args = self.parser.parse_args(argv)
-        # user_dict = asyncio.run(self.delete_user(args.user_id))
-        # out.cli.info(f'User {args.user_id} deleted successfully !!')
-        #
-        # if args.save:
-        #     out.cli.info(f"backing up user @ {args.save}")
-        #     with Path(args.save).with_suffix('.json').open('w') as fp:
-        #         json.dump(user_dict, fp, cls=CustomTypesJsonEncoder)
+        args = self.parser.parse_args(argv)
+        save_to = None
+        if args.save:
+            save_to = Path(args.save)
+
+        # Delete user
+        asyncio.run(self.delete_user(args.user_id, save_to))

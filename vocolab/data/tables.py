@@ -75,10 +75,7 @@ leaderboards_table = sqlalchemy.Table(
     sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
     sqlalchemy.Column('challenge_id', sqlalchemy.Integer, sqlalchemy.ForeignKey("challenges.id")),
     sqlalchemy.Column('label', sqlalchemy.String, unique=True),
-    sqlalchemy.Column('path_to', sqlalchemy.String),
-    sqlalchemy.Column('entry_file', sqlalchemy.String),
     sqlalchemy.Column('archived', sqlalchemy.Boolean),
-    sqlalchemy.Column('external_entries', sqlalchemy.String),
     sqlalchemy.Column('static_files', sqlalchemy.Boolean),
     sqlalchemy.Column('sorting_key', sqlalchemy.String),
 )

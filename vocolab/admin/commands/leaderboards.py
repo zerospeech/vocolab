@@ -8,7 +8,7 @@ from rich.table import Table
 
 from vocolab import out
 from vocolab.core import leaderboards_lib, cmd_lib
-from vocolab.data import model_queries
+from vocolab.data import model_queries, models
 
 
 class LeaderboardCMD(cmd_lib.CMD):
@@ -28,18 +28,15 @@ class LeaderboardCMD(cmd_lib.CMD):
         table.add_column('ID')
         table.add_column('Label')
         table.add_column('Archived')
-        table.add_column('External Entries', no_wrap=False, overflow='fold')
         table.add_column('Static Files')
         table.add_column('Challenge ID')
-        table.add_column('EntryFile', no_wrap=False, overflow='fold')
-        table.add_column('LeaderboardFile', no_wrap=False, overflow='fold')
         table.add_column('Key', no_wrap=False, overflow='fold')
-
         for entry in leaderboards:
+
             table.add_row(
                 f"{entry.id}", f"{entry.label}", f"{entry.archived}",
-                f"{entry.external_entries}", f"{entry.static_files}", f"{entry.challenge_id}",
-                f"{entry.entry_file}", f"{entry.path_to}", f"{entry.sorting_key}"
+                f"{entry.static_files}", f"{entry.challenge_id}",
+                f"{entry.sorting_key}"
             )
         # print table
         out.cli.print(table, no_wrap=False)
@@ -105,14 +102,13 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
             lds = [self.ask_input()]
 
         for item in lds:
-            asyncio.run(leaderboards_lib.create(
-                challenge_id=item.get("challenge_id"),
-                label=item.get("label"),
-                entry_file=item.get("entry_file"),
-                external_entries=item.get("external_entries"),
-                static_files=item.get("static_files", False),
-                archived=item.get("archived", False),
-                path_to=item.get("path_to")
+            asyncio.run(model_queries.Leaderboard.create(
+                model_queries.Leaderboard(
+                    challenge_id=item.get("challenge_id"),
+                    label=item.get("label"),
+                    static_files=item.get("static_files", False),
+                    archived=item.get("archived", False),
+                )
             ))
             out.cli.info(f"Successfully created leaderboard : {item.get('label')}")
 

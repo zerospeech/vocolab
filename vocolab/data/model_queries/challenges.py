@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from pydantic import HttpUrl
 
 from vocolab.data import models, tables
-from vocolab.core import misc
+from vocolab.core import misc, leaderboards_lib
 from ..db import zrDB, db_exc
 
 
@@ -189,10 +189,7 @@ class Leaderboard(BaseModel):
     id: Optional[int]
     challenge_id: int  # Id to linked challenge
     label: str  # Name of leaderboard
-    path_to: Path  # Path to build result
-    entry_file: str  # filename in submission results
     archived: bool  # is_archived
-    external_entries: Optional[Path]  # Location of external entries (baselines, toplines, archived)
     static_files: bool  # has static files
     sorting_key: Optional[str]  # path to the item to use as sorting key
 
@@ -203,19 +200,31 @@ class Leaderboard(BaseModel):
     class Config:
         orm_mode = True
 
+    def get_dir(self):
+        leaderboards_lib.LeaderboardDir.load(
+            label=self.label,
+            sorting_key=self.sorting_key
+        )
+
     @classmethod
     async def create(cls, ld_data: 'Leaderboard'):
         query = tables.leaderboards_table.insert().values(
             label=ld_data.label,
             challenge_id=ld_data.challenge_id,
-            path_to=f"{ld_data.path_to}",
-            entry_file=ld_data.entry_file,
             archived=ld_data.archived,
-            external_entries=f"{ld_data.external_entries}",
-            static_files=ld_data.static_files
+            static_files=ld_data.static_files,
+            sorting_key=ld_data.sorting_key
         )
         try:
             result = await zrDB.execute(query)
+
+            # make necessary folders in storage
+            _ = leaderboards_lib.LeaderboardDir.create(
+                label=ld_data.label,
+                sorting_key=ld_data.sorting_key,
+                static_files=ld_data.static_files
+            )
+
             return result
         except Exception as e:
             db_exc.parse_user_insertion(e)
