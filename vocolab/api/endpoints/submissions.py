@@ -30,6 +30,23 @@ async def get_submission_scores(submission_id: str):
     pass
 
 
+@router.get("/{submission_id}/content/mode")
+async def submission_mode(submission_id: str):
+    """
+    Should return the submission mode
+    open: allows adding content
+    closed: content has completed being add
+    """
+    pass
+
+
+@router.get("/{submission_id}/content/reset")
+async def reset_submission(submission_id: str):
+    """
+    remove content of submission & allow new content to be added
+    """
+    pass
+
 @router.put("/{submission_id}/content/add", response_model=models.api.UploadSubmissionPartResponse)
 async def upload_submission(
         model_id: str,
@@ -38,10 +55,10 @@ async def upload_submission(
         part_name: str,
         background_tasks: BackgroundTasks,
         file_data: UploadFile = File(...),
-        current_user: schema.User = Depends(api_lib.get_current_active_user),
+        current_user: model_queries.User = Depends(api_lib.get_current_active_user),
 ):
     out.console.info(f"user: {current_user.username}")
-    challenge = await challengesQ.get_challenge(challenge_id=challenge_id)
+    challenge = ... # await challengesQ.get_challenge(challenge_id=challenge_id)
     if challenge is None:
         return ValueError(f'challenge {challenge_id} not found or inactive')
     try:
@@ -60,5 +77,5 @@ async def upload_submission(
 
 
 @router.delete("/{submission_id}/remove")
-async def remove_submission(submission_id: str):
+async def remove_submission(submission_id: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     pass

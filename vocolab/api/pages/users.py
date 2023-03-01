@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse
 
 from vocolab import exc, out
 from vocolab.core import api_lib
-from vocolab.db.q import userQ
+from vocolab.data import model_queries
 from vocolab.settings import get_settings
 
 router = APIRouter()
@@ -32,9 +32,9 @@ async def email_verification(v: str, username: str, request: Request):
     """ Verify a new users email address """
     msg = 'Success'
     res = False
-
     try:
-        res = await userQ.verify_user(username=username, verification_code=v)
+        usr = await model_queries.User.get(by_username=username)
+        res = await usr.verify(verification_code=v)
     except ValueError:
         msg = 'Username does not exist'
     except exc.ActionNotValid as e:
@@ -59,7 +59,11 @@ async def email_verification(v: str, username: str, request: Request):
 async def password_update_page(v: str, request: Request):
     """ An HTML page-form that allows a user to change their password """
     try:
-        user = await userQ.get_user(by_password_reset_session=v)
+        token = model_queries.Token.decode(v)
+        if not token.allow_password_reset and not token.is_expired():
+            raise ValueError('bad session')
+
+        user = await model_queries.User.get(by_email=token.user_email)
     except ValueError as e:
         out.log.error(
             f'{request.client.host}:{request.client.port} requested bad password reset session as {v} - [{e}]')

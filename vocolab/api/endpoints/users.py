@@ -4,12 +4,12 @@ This section handles user data
 
 import pydantic
 from fastapi import (
-    APIRouter, Depends, Response
+    APIRouter, Depends, Response, HTTPException
 )
 
 from vocolab import out
 from vocolab.core import api_lib, users_lib
-from vocolab.data import model_queries
+from vocolab.data import model_queries, models
 from vocolab.settings import get_settings
 
 router = APIRouter()
@@ -17,9 +17,12 @@ _settings = get_settings()
 
 
 @router.get("/{username}/profile")
-def get_profile(
-        username: str,
-        current_user: model_queries.User = Depends(api_lib.get_current_active_user)) -> users_lib.UserProfileData:
+def get_profile(username: str,
+                current_user: model_queries.User = Depends(
+                    api_lib.get_current_active_user)) -> users_lib.UserProfileData:
+    if current_user.username != username:
+        raise HTTPException(status_code=401, detail="Operation not allowed")
+
     try:
         user_data = current_user.get_profile_data()
         # re-update verification
@@ -35,36 +38,64 @@ def update_profile(
         username: str,
         user_data: users_lib.UserProfileData,
         current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
-    if user_data.username != current_user.username:
-        raise ValueError('Bad username specified')
+    if current_user.username != username:
+        raise HTTPException(status_code=401, detail="Operation not allowed")
+
+    if not (user_data.username == current_user.username):
+        raise HTTPException(status_code=401, detail="Operation not allowed")
 
     user_data.verified = current_user.is_verified()
-
-    user_data.update()
+    user_data.save()
     return Response(status_code=200)
 
 
 @router.get("/{username}/models/list")
 async def list_users_models(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
-    # todo
-    pass
+    """ Returning list of models of current user """
+    if current_user.username != username:
+        raise HTTPException(status_code=401, detail="Operation not allowed")
+    return await model_queries.ModelIDList.get_by_user(current_user.id)
 
 
 @router.post("/{username}/models/create")
-async def create_new_model(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
-    # todo
-    pass
+async def create_new_model(username: str, autor_name: str, data: models.api.NewModelIdRequest,
+                           current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+    """ Create a new model id"""
+    if current_user.username != username:
+        raise HTTPException(status_code=401, detail="Operation not allowed")
+
+    if current_user.id != data.user_id:
+        raise HTTPException(status_code=401, detail="Operation not allowed")
+
+    # create & return the new model_id
+    model_id = await model_queries.ModelID.create(first_author_name=autor_name, data=data)
+    return model_id
 
 
 @router.get("/{username}/submissions/list")
-async def list_users_submissions(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
-    # todo
-    pass
+async def list_users_submissions(username: str,
+                                 current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+    if current_user.username != username:
+        raise HTTPException(status_code=401, detail="Operation not allowed")
+
+    items = await model_queries.ChallengeSubmissionList.get_from_user(user_id=current_user.id)
+    return items
 
 
 @router.post("/{username}/submissions/create")
-async def create_new_submission(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
-    pass
+async def create_new_submission(username: str, data: models.api.NewSubmissionRequest,
+                                current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+    if current_user.username != username:
+        raise HTTPException(status_code=401, detail="Operation not allowed")
+
+    # todo check evaluator & other details
+    new_submission_id = await model_queries.ChallengeSubmission.create(
+        username=current_user.username,
+        new_submission=data,
+        evaluator_id=...,
+    )
+
+    return new_submission_id
 
 
 # todo: update submission process
@@ -99,7 +130,6 @@ async def create_new_submission(username: str, current_user: model_queries.User 
 #     )
 #
 #     return submission_id
-
 
 
 # @router.get('{username}/submissions')

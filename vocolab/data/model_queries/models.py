@@ -113,6 +113,17 @@ class ModelIDList(BaseModel):
         items = db.zrDB.fetch_all(tables.models_table.select())
         return cls(items=items)
 
+    @classmethod
+    async def get_by_user(cls, user_id: int) -> "ModelIDList":
+        """ Load models by user """
+        query = tables.models_table.select().where(
+            tables.models_table.c.user_id == user_id
+        )
+        items = db.zrDB.fetch_all(query)
+        if not items:
+            return cls(items=[])
+        return cls.parse_obj(dict(items=items))
+
 
 class SubmissionStatus(str, Enum):
     """ Definition of different states of submissions """

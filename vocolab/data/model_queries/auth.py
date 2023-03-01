@@ -68,10 +68,9 @@ class User(BaseModel):
             tables.users_table.c.id == self.id
         ).values(verified='True')
 
-        if secrets.compare_digest(self.verified, verification_code) or force:
+        if self.verified == verification_code or force:
             await zrDB.execute(query)
             return True
-
         return False
 
     async def toggle_status(self, active: bool = True):

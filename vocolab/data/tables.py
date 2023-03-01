@@ -102,9 +102,11 @@ leaderboard_entry_table = sqlalchemy.Table(
     "leaderboard_entries",
     tables_metadata,
     sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True, unique=True, autoincrement=True),
-    sqlalchemy.Column("entry_path", sqlalchemy.String),
+    sqlalchemy.Column("data", sqlalchemy.JSON),
+    sqlalchemy.Column("src", sqlalchemy.String),
     sqlalchemy.Column("model_id", sqlalchemy.String, sqlalchemy.ForeignKey("leaderboards.id")),
     sqlalchemy.Column("submission_id", sqlalchemy.String, sqlalchemy.ForeignKey("challenge_submissions.id")),
     sqlalchemy.Column("leaderboard_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("models.id")),
-    sqlalchemy.Column("submitted_at", sqlalchemy.String)
+    sqlalchemy.Column("user_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("users_credentials.id")),
+    sqlalchemy.Column("submitted_at", sqlalchemy.DATETIME)
 )

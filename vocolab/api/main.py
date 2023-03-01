@@ -12,7 +12,8 @@ from fastapi.responses import JSONResponse
 
 from vocolab import settings, out
 from vocolab.api import router as v1_router
-from vocolab.db import zrDB, create_db
+# from vocolab.db import zrDB, create_db
+from vocolab.data import db
 from vocolab.exc import VocoLabException
 
 _settings = settings.get_settings()
@@ -92,9 +93,9 @@ async def zerospeech_error_formatting(request: Request, exc: VocoLabException):
 @app.on_event("startup")
 async def startup():
     # conditional creation of the necessary files
-    create_db()
+    db.build_database_from_schema()
     # pool connection to databases
-    await zrDB.connect()
+    await db.zrDB.connect()
     # create data_folders
     _settings.user_data_dir.mkdir(exist_ok=True, parents=True)
     _settings.leaderboard_dir.mkdir(exist_ok=True)
@@ -112,7 +113,7 @@ async def startup():
 async def shutdown():
     # clean up db connection pool
     out.log.info("shutdown of api server")
-    await zrDB.disconnect()
+    await db.zrDB.disconnect()
 
 
 # sub applications
