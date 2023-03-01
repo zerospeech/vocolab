@@ -151,6 +151,7 @@ class ChallengeSubmission(BaseModel):
     id: str
     user_id: int
     track_id: int
+    model_id: str
     submit_date: datetime
     status: SubmissionStatus
     auto_eval: bool
@@ -161,7 +162,7 @@ class ChallengeSubmission(BaseModel):
         orm_mode = True
 
     @classmethod
-    async def create(cls, username: str, new_submission: models.api.NewSubmissionRequest, evaluator_id: int) -> str:
+    async def create(cls, username: str, new_submission: models.api.NewSubmissionRequest, evaluator_id: Optional[int]) -> str:
         """ Creates a database entry for the new submission """
         submission_id = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{username}"
         values = new_submission.dict()

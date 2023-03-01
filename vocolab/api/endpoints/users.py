@@ -92,7 +92,7 @@ async def create_new_submission(username: str, data: models.api.NewSubmissionReq
     new_submission_id = await model_queries.ChallengeSubmission.create(
         username=current_user.username,
         new_submission=data,
-        evaluator_id=...,
+        evaluator_id=None,
     )
 
     return new_submission_id

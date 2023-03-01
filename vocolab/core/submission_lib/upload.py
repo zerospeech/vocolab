@@ -47,17 +47,18 @@ class SinglepartUploadHandler(BaseModel):
     def completed(self) -> bool:
         return self.target_file.is_file()
 
-    def write_data(self, logger: SubmissionLogger, file_name: str,
-                   file_hash: str, data: UploadFile):
+    def write_data(self, logger: SubmissionLogger, file_name: str, data: UploadFile):
         logger.log(f"adding a new part to upload: {file_name}")
-        assert file_hash == self.file_hash, "Given hash & expected hash should be the same !!"
+
 
         # Add the part
         with self.target_file.open('wb') as fp:
             for d in data.file:
                 fp.write(d)
 
-        if not md5sum(self.target_file) == file_hash:
+        calc_hash = md5sum(self.target_file)
+
+        if not self.file_hash == calc_hash:
             # todo: more stuff see multipart fail
             self.target_file.unlink()
             raise exc.ValueNotValid("Hash does not match expected!")
@@ -119,7 +120,7 @@ class MultipartUploadHandler(BaseModel):
         with file.open("w") as fp:
             fp.write(self.json(indent=4))
 
-    def add_part(self, logger: SubmissionLogger, file_name: str, file_size: int, file_hash: str, data: UploadFile):
+    def add_part(self, logger: SubmissionLogger, file_name: str, data: UploadFile):
         """ Add a part to a multipart upload type submission.
 
         - Write the data into a file inside the submission folder.
@@ -130,15 +131,7 @@ class MultipartUploadHandler(BaseModel):
             - ValueNotValid if md5 hash of file does not match md5 recorded in the manifest
         """
         logger.log(f"adding a new part to upload: {self.store_location / file_name}")
-        new_item_mf = ManifestIndexItem(
-            file_name=file_name,
-            file_size=file_size,
-            file_hash=file_hash
-        )
-
-        if new_item_mf not in self.index:
-            logger.log(f"(ERROR) file {file_name} was not found in manifest, upload canceled!!")
-            raise exc.ResourceRequestedNotFound(f"Part {file_name} is not part of submission {logger.submission_id}!!")
+        # todo load information from index and name ???
 
         # write data on disk
         file_part = self.store_location / file_name
@@ -147,18 +140,20 @@ class MultipartUploadHandler(BaseModel):
                 fp.write(d)
 
         calc_hash = md5sum(file_part)
-        if not compare_digest(calc_hash, file_hash):
-            # remove file and throw exception
+        new_item_mf = ManifestIndexItem(
+            file_name=file_name,
+            file_hash=calc_hash,
+            file_size=file_part.stat().st_size
+        )
+
+        if new_item_mf not in self.index:
+            logger.log(f"(ERROR) file {file_name} was not found in manifest, upload canceled!!")
             file_part.unlink()
-            data = f"failed hash comparison" \
-                   f"file: {file_part} with hash {calc_hash}" \
-                   f"on record found : {file_name} with hash {file_hash}"
             logger.log(f"(ERROR) {data}, upload canceled!!")
-            raise exc.ValueNotValid("Hash of part does not match given hash", data=data)
+            raise exc.ResourceRequestedNotFound(f"Part {file_name} is not part of submission {logger.submission_id}!!")
 
         # up count of received parts
         self.received.append(new_item_mf)
-
         logger.log(f" --> part was added successfully", date=False)
 
     def merge_parts(self):

@@ -3,7 +3,8 @@ This section handles challenge data
 """
 
 from fastapi import (
-    APIRouter, Depends, UploadFile, File, BackgroundTasks
+    APIRouter, Depends, UploadFile, File, BackgroundTasks,
+    HTTPException
 )
 
 from vocolab import out, exc
@@ -47,24 +48,40 @@ async def reset_submission(submission_id: str):
     """
     pass
 
+@router.post('{submission_id}/content/init')
+async def upload_manifest(submission_id:str, current_user: model_queries.User = Depends(api_lib.get_current_active_user))
+    # todo: initialise manifest before upload
+    # create submission dir
+    # add manifest and promise of files
+    pass
+
 @router.put("/{submission_id}/content/add", response_model=models.api.UploadSubmissionPartResponse)
 async def upload_submission(
-        model_id: str,
         submission_id: str,
-        challenge_id: int,
         part_name: str,
         background_tasks: BackgroundTasks,
         file_data: UploadFile = File(...),
         current_user: model_queries.User = Depends(api_lib.get_current_active_user),
 ):
     out.console.info(f"user: {current_user.username}")
-    challenge = ... # await challengesQ.get_challenge(challenge_id=challenge_id)
-    if challenge is None:
-        return ValueError(f'challenge {challenge_id} not found or inactive')
+    submission = await model_queries.ChallengeSubmission.get(submission_id)
+    if submission is None:
+        raise HTTPException(status_code=404, detail="submission not found")
+
+    if submission.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Operation not allowed")
+
     try:
-        is_completed, remaining = submission_lib.add_part(submission_id, part_name, file_data)
+        sub_dir = submission_lib.SubmissionDir.load(model_id=submission.model_id, submission_id=submission.id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=417, detail="Expected submission directory to exist")
+
+
+    try:
+        is_completed, remaining = sub_dir.add_content(file_name=part_name, data=file_data)
 
         if is_completed:
+            # todo: fix completed actions
             # run the completion of the submission on the background
             background_tasks.add_task(submission_lib.complete_submission, submission_id, with_eval=True)
 

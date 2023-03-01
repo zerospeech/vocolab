@@ -138,7 +138,7 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
             raise ValueError('Submission has no info index')
         return self.info.leaderboard_entries
 
-    def add_content(self, file_name: str, file_size: int, file_hash: str, data: UploadFile):
+    def add_content(self, file_name: str, data: UploadFile):
         """ Add content to the submission
         *) multipart:
             - add part to the tmp folder
@@ -158,8 +158,6 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
             handler.add_part(
                 logger=self.get_log_handler(),
                 file_name=file_name,
-                file_size=file_size,
-                file_hash=file_hash,
                 data=data
             )
             handler.dump_to_index(self.multipart_index_file)
@@ -172,14 +170,14 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
             handler.write_data(
                 logger=self.get_log_handler(),
                 file_name=file_name,
-                file_hash=file_hash,
                 data=data
             )
 
         if handler.completed():
             """ Upload completed """
             unzip(handler.target_file, self.content_location)
-            # todo notify who what when
+            return True, []
+        return False, handler.remaining_items
 
     def send_content(self, hostname: str) -> Path:
         """ Send content to a remote host for evaluation (return target location) """
