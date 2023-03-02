@@ -49,7 +49,7 @@ async def reset_submission(submission_id: str):
     pass
 
 @router.post('{submission_id}/content/init')
-async def upload_manifest(submission_id:str, current_user: model_queries.User = Depends(api_lib.get_current_active_user))
+async def upload_manifest(submission_id:str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     # todo: initialise manifest before upload
     # create submission dir
     # add manifest and promise of files
