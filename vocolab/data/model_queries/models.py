@@ -60,7 +60,7 @@ class ModelID(BaseModel):
         return ''.join(word)
 
     @classmethod
-    async def create(cls, first_author_name: str, data: models.api.NewModelIdRequest):
+    async def create(cls, user_id: int, first_author_name: str, data: models.api.NewModelIdRequest):
         """ Create a new ModelID entry in the database
 
             ids are created using the 3 first letters of first name of first author,
@@ -71,12 +71,13 @@ class ModelID(BaseModel):
 
         counter = 1
         new_model_id_extended = f"{new_model_id}{cls.nth_word(counter)}"
-        while cls.exists(new_model_id_extended):
+        while await cls.exists(new_model_id_extended):
             counter += 1
             new_model_id_extended = f"{new_model_id}{cls.nth_word(counter)}"
 
         # create db entry
-        query = tables.models_table.insert().values(id=new_model_id_extended, **data.dict())
+        query = tables.models_table.insert().values(
+            id=new_model_id_extended, user_id=user_id, **data.dict())
         await db.zrDB.execute(query)
         return new_model_id_extended
 

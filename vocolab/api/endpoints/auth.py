@@ -30,7 +30,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> models.api.
             raise ValueError('Bad login')
 
         token = model_queries.Token(user_email=user.email)
-        return models.api.LoggedItem(access_token=token.encode(), token_type="bearer")
+        return models.api.LoggedItem(username=user.username, access_token=token.encode(), token_type="bearer")
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

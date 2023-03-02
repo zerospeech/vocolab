@@ -58,17 +58,20 @@ async def list_users_models(username: str, current_user: model_queries.User = De
 
 
 @router.post("/{username}/models/create")
-async def create_new_model(username: str, autor_name: str, data: models.api.NewModelIdRequest,
+async def create_new_model(username: str, author_name: str, data: models.api.NewModelIdRequest,
                            current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     """ Create a new model id"""
+    print("WRF")
     if current_user.username != username:
         raise HTTPException(status_code=401, detail="Operation not allowed")
 
-    if current_user.id != data.user_id:
-        raise HTTPException(status_code=401, detail="Operation not allowed")
-
     # create & return the new model_id
-    model_id = await model_queries.ModelID.create(first_author_name=autor_name, data=data)
+    try:
+        model_id = await model_queries.ModelID.create(user_id=current_user.id, first_author_name=author_name, data=data)
+    except Exception as e:
+        out.console.print(e)
+        raise e
+
     return model_id
 
 

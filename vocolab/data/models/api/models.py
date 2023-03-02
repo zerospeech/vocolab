@@ -5,7 +5,6 @@ from pydantic import BaseModel, AnyHttpUrl, Field
 
 
 class NewModelIdRequest(BaseModel):
-    user_id: int
     description: str
     gpu_budget: str
     train_set: str

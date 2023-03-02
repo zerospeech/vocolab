@@ -50,7 +50,6 @@ class SinglepartUploadHandler(BaseModel):
     def write_data(self, logger: SubmissionLogger, file_name: str, data: UploadFile):
         logger.log(f"adding a new part to upload: {file_name}")
 
-
         # Add the part
         with self.target_file.open('wb') as fp:
             for d in data.file:
@@ -88,7 +87,6 @@ class MultipartUploadHandler(BaseModel):
     multipart: bool = True
     hashed_parts: bool = True
     target_location: Path
-
 
     @property
     def target_file(self):
@@ -176,7 +174,6 @@ class MultipartUploadHandler(BaseModel):
         fs = Filesplit()
         fs.merge(input_dir=f"{self.store_location}", output_file=str(self.target_file))
         assert md5sum(self.target_file) == self.merge_hash, "output file does not match original md5"
-
 
     def clean(self):
         """ Delete index & parts used for multipart upload """

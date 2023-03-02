@@ -19,6 +19,7 @@ class UserCreateRequest(BaseModel):
 
 class LoggedItem(BaseModel):
     """ Return type of the /login function """
+    username: str
     access_token: str
     token_type: str
 

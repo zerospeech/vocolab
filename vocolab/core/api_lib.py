@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from jinja2 import FileSystemLoader, Environment
 
-from vocolab import settings
+from vocolab import settings, out
 from vocolab.data import model_queries, models
 from vocolab.core import notify, commons
 
@@ -33,6 +33,9 @@ def validate_token(token: str = Depends(oauth2_scheme)) -> model_queries.Token:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is invalid or has expired !",
         )
+    except Exception as e:
+        out.console.exception()
+        raise e
 
 
 async def get_user(token: model_queries.Token = Depends(validate_token)) -> model_queries.User:
@@ -44,6 +47,9 @@ async def get_user(token: model_queries.Token = Depends(validate_token)) -> mode
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User is not in database !"
         )
+    except Exception as e:
+        out.console.exception()
+        raise e
 
 
 async def get_current_active_user(current_user: model_queries.User = Depends(get_user)) -> model_queries.User:

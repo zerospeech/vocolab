@@ -50,7 +50,11 @@ async def log_requests(request: Request, call_next):
 
     start_time = time.time()
 
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception as e:
+        print(e)
+        raise e
 
     process_time = (time.time() - start_time) * 1000
     formatted_process_time = '{0:.2f}'.format(process_time)

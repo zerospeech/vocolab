@@ -1,6 +1,8 @@
+from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, EmailStr
 
 from vocolab.api.endpoints import (
     users, auth, challenges, leaderboards, models, submissions
@@ -13,23 +15,40 @@ _settings = get_settings()
 api_router = APIRouter()
 
 
+class APIIndex(BaseModel):
+    app: str
+    version: str
+    maintainers: str
+    contact: EmailStr
+    installation_datetime: datetime
+
+
 @api_router.get("/")
-def index():
+def index() -> APIIndex:
     """ API Index """
     install_time = (Path.home() / '.voco-installation')
     if install_time.is_file():
         with install_time.open() as fp:
             installation_datetime = fp.read()
     else:
-        installation_datetime = ''
+        installation_datetime = datetime.now().isoformat()
 
-    return {
+    return APIIndex.parse_obj({
         "app": _settings.app_options.app_name,
         "version": _settings.app_options.version,
         "maintainers": _settings.app_options.maintainers,
         "contact": _settings.app_options.admin_email,
         "installation_datetime": installation_datetime
-    }
+    })
+
+
+@api_router.get("/error")
+def get_error():
+    """ This route throws an error (used for testing)"""
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Incorrect username or password"
+    )
 
 
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])

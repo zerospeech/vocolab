@@ -48,12 +48,15 @@ async def reset_submission(submission_id: str):
     """
     pass
 
+
 @router.post('{submission_id}/content/init')
-async def upload_manifest(submission_id:str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+async def upload_manifest(submission_id: str,
+                          current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     # todo: initialise manifest before upload
     # create submission dir
     # add manifest and promise of files
     pass
+
 
 @router.put("/{submission_id}/content/add", response_model=models.api.UploadSubmissionPartResponse)
 async def upload_submission(
@@ -76,7 +79,6 @@ async def upload_submission(
     except FileNotFoundError:
         raise HTTPException(status_code=417, detail="Expected submission directory to exist")
 
-
     try:
         is_completed, remaining = sub_dir.add_content(file_name=part_name, data=file_data)
 
@@ -94,5 +96,6 @@ async def upload_submission(
 
 
 @router.delete("/{submission_id}/remove")
-async def remove_submission(submission_id: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+async def remove_submission(submission_id: str,
+                            current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     pass
