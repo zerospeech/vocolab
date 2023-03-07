@@ -1,11 +1,11 @@
 import pytest
 
-from vocolab.db import zrDB, create_db
+from vocolab.data.db import zrDB, build_database_from_schema
 
 
 @pytest.fixture(scope="session")
 async def db():
-    create_db()
+    build_database_from_schema()
     # connect to Database
     await zrDB.connect()
 

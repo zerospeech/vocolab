@@ -15,13 +15,15 @@ from vocolab.settings import get_settings
 router = APIRouter()
 _settings = get_settings()
 
+NonAllowedOperation = HTTPException(status_code=401, detail="Operation not allowed")
+
 
 @router.get("/{username}/profile")
 def get_profile(username: str,
                 current_user: model_queries.User = Depends(
                     api_lib.get_current_active_user)) -> users_lib.UserProfileData:
     if current_user.username != username:
-        raise HTTPException(status_code=401, detail="Operation not allowed")
+        raise NonAllowedOperation
 
     try:
         user_data = current_user.get_profile_data()
@@ -39,10 +41,10 @@ def update_profile(
         user_data: users_lib.UserProfileData,
         current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     if current_user.username != username:
-        raise HTTPException(status_code=401, detail="Operation not allowed")
+        raise NonAllowedOperation
 
-    if not (user_data.username == current_user.username):
-        raise HTTPException(status_code=401, detail="Operation not allowed")
+    if user_data.username != current_user.username:
+        raise NonAllowedOperation
 
     user_data.verified = current_user.is_verified()
     user_data.save()
@@ -53,7 +55,7 @@ def update_profile(
 async def list_users_models(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     """ Returning list of models of current user """
     if current_user.username != username:
-        raise HTTPException(status_code=401, detail="Operation not allowed")
+        raise NonAllowedOperation
     return await model_queries.ModelIDList.get_by_user(current_user.id)
 
 
@@ -63,7 +65,7 @@ async def create_new_model(username: str, author_name: str, data: models.api.New
     """ Create a new model id"""
     print("WRF")
     if current_user.username != username:
-        raise HTTPException(status_code=401, detail="Operation not allowed")
+        raise NonAllowedOperation
 
     # create & return the new model_id
     try:
@@ -79,7 +81,7 @@ async def create_new_model(username: str, author_name: str, data: models.api.New
 async def list_users_submissions(username: str,
                                  current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     if current_user.username != username:
-        raise HTTPException(status_code=401, detail="Operation not allowed")
+        raise NonAllowedOperation
 
     items = await model_queries.ChallengeSubmissionList.get_from_user(user_id=current_user.id)
     return items
@@ -89,7 +91,7 @@ async def list_users_submissions(username: str,
 async def create_new_submission(username: str, data: models.api.NewSubmissionRequest,
                                 current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     if current_user.username != username:
-        raise HTTPException(status_code=401, detail="Operation not allowed")
+        raise NonAllowedOperation
 
     # todo check evaluator & other details
     new_submission_id = await model_queries.ChallengeSubmission.create(
@@ -109,14 +111,12 @@ async def create_new_submission(username: str, data: models.api.NewSubmissionReq
 #         current_user: schema.User = Depends(api_lib.get_current_active_user)
 # ):
 #     """ Create a new submission """
-#     # todo fetch model_id
 #
 #     challenge = await challengesQ.get_challenge(challenge_id=challenge_id)
 #     if challenge is None:
-#         return ValueError(f'challenge {challenge_id} not found or inactive')
+#         return ValueError('challenge {challenge_id} not found or inactive')
 #
 #     # create db entry
-#     # todo check submission table data
 #     submission_id = await challengesQ.add_submission(new_submission=models.api.NewSubmission(
 #         user_id=current_user.id,
 #         track_id=challenge.id,
@@ -133,13 +133,12 @@ async def create_new_submission(username: str, data: models.api.NewSubmissionReq
 #     )
 #
 #     return submission_id
-
-
+#
+#
 # @router.get('{username}/submissions')
 # async def submissions_list(username: str):
 #     """ Return a list of all user submissions """
 #     user = model_queries.User.get(by_username=username)
-#     # todo fix later
 #     submissions = await challengesQ.get_user_submissions(user_id=current_user.id)
 #     submissions = [
 #         models.api.SubmissionPreview(
@@ -159,8 +158,9 @@ async def create_new_submission(username: str, data: models.api.NewSubmissionReq
 #             data[sub.track_label] = [sub]
 #
 #     return data
-
-
+#
+#
+#
 # @router.get('{username}//submissions/tracks/{track_id}')
 # async def submissions_list_by_track(
 #         track_id: int, current_user: schema.User = Depends(api_lib.get_current_active_user)):
@@ -177,8 +177,8 @@ async def create_new_submission(username: str, data: models.api.NewSubmissionReq
 #         )
 #         for s in submissions if s.track_id == track.id
 #     ]
-
-
+#
+#
 # @router.get('/submissions/{submissions_id}')
 # async def get_submission(submissions_id: str, current_user: schema.User = Depends(api_lib.get_current_active_user)):
 #     """ Return information on a submission """
@@ -210,8 +210,8 @@ async def create_new_submission(username: str, data: models.api.NewSubmissionReq
 #         evaluator_label=evaluator_label,
 #         leaderboards=[(ld.label, ld.id) for ld in leaderboards]
 #     )
-
-
+#
+#
 # @router.get('/submissions/{submissions_id}/status')
 # async def get_submission_status(
 #         submissions_id: str, current_user: schema.User = Depends(api_lib.get_current_active_user)):
@@ -222,8 +222,8 @@ async def create_new_submission(username: str, data: models.api.NewSubmissionReq
 #                               status=exc.http_status.HTTP_403_FORBIDDEN)
 #
 #     return submission.status
-
-
+#
+#
 # @router.get('/submissions/{submissions_id}/log')
 # async def get_submission_status(
 #         submissions_id: str, current_user: schema.User = Depends(api_lib.get_current_active_user)):
@@ -235,8 +235,8 @@ async def create_new_submission(username: str, data: models.api.NewSubmissionReq
 #
 #     log = submission_lib.SubmissionLogger(submissions_id)
 #     return log.get_text()
-
-
+#
+#
 # @router.get('/submissions/{submissions_id}/scores')
 # async def get_user_results(submissions_id: str, current_user: schema.User = Depends(api_lib.get_current_active_user)):
 #     """ Return status of a submission """

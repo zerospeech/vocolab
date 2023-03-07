@@ -18,16 +18,19 @@ _settings = get_settings()
 
 @router.get("/list")
 async def get_sub_list():
+    # todo implement this
     pass
 
 
 @router.get("/{submission_id}/info")
 async def get_sub_info(submission_id: str):
+    # todo implement this
     pass
 
 
 @router.get("/{submission_id}/scores")
 async def get_submission_scores(submission_id: str):
+    # todo implement this
     pass
 
 
@@ -38,6 +41,7 @@ async def submission_mode(submission_id: str):
     open: allows adding content
     closed: content has completed being add
     """
+    # todo implement this
     pass
 
 
@@ -46,6 +50,7 @@ async def reset_submission(submission_id: str):
     """
     remove content of submission & allow new content to be added
     """
+    # todo implement this
     pass
 
 
@@ -85,7 +90,8 @@ async def upload_submission(
         if is_completed:
             # todo: fix completed actions
             # run the completion of the submission on the background
-            background_tasks.add_task(submission_lib.complete_submission, submission_id, with_eval=True)
+            # background_tasks.add_task(submission_lib.complete_submission, submission_id, with_eval=True)
+            pass
 
         return models.api.UploadSubmissionPartResponse(
             completed=is_completed, remaining=[n.file_name for n in remaining]
@@ -98,4 +104,5 @@ async def upload_submission(
 @router.delete("/{submission_id}/remove")
 async def remove_submission(submission_id: str,
                             current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+    # todo implement this
     pass
