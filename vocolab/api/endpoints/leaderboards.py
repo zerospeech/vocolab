@@ -13,14 +13,13 @@ router = APIRouter()
 _settings = get_settings()
 
 
-
 @router.get("/list")
 async def get_list():
     pass
 
-@router.get('{leaderboard_id}/info', response_model=models.api.ChallengesResponse,
-            responses={404: {"model": models.api.Message}})
-async def get_leaderboard_info(leaderboard_id: int):
+
+@router.get('{leaderboard_id}/info')
+async def get_leaderboard_info(leaderboard_id: str):
     """ Return information of a specific challenge """
     return await model_queries.Leaderboard.get(leaderboard_id=leaderboard_id)
 

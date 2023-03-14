@@ -38,9 +38,9 @@ def build_cli():
     if has_challenges:
         # challenge functions
         tree.add_cmd_tree(
-            commands.challenges.ChallengesCMD(CMD_NAME, 'challenges', ''),
-            commands.challenges.AddChallengeCMD(CMD_NAME, 'add', 'challenges'),
-            commands.challenges.SetChallenge(CMD_NAME, 'set', 'challenges')
+            commands.challenges.BenchmarksCMD(CMD_NAME, 'benchmarks', ''),
+            commands.challenges.AddBenchmarkCMD(CMD_NAME, 'add', 'benchmarks'),
+            commands.challenges.SetBenchmarkCMD(CMD_NAME, 'set', 'benchmarks')
         )
 
     if has_db:

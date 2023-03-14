@@ -161,7 +161,8 @@ class User(BaseModel):
             affiliation=new_usr.affiliation,
             first_name=new_usr.first_name,
             last_name=new_usr.last_name,
-            verified=False
+            verified=False,
+            created=datetime.now()
         )
         profile_data.save()
         return verification_code

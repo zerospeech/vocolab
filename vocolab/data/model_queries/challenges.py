@@ -4,13 +4,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Any, Iterable
 
-from pydantic import BaseModel
-from pydantic import HttpUrl
+from pydantic import BaseModel, HttpUrl, Json
 
+from vocolab import get_settings
 from vocolab.data import models, tables
 from vocolab.core import misc, leaderboards_lib
 from ..db import zrDB, db_exc
 
+st = get_settings()
 
 class EvaluatorItem(BaseModel):
     """ Data representation of an evaluator """
@@ -76,15 +77,15 @@ class EvaluatorList(BaseModel):
         return cls(items=results)
 
 
-class Challenge(BaseModel):
+class Benchmark(BaseModel):
     """ Data representation of a challenge """
-    id: int
     label: str
     start_date: date
     end_date: Optional[date]
     active: bool
     url: HttpUrl
     evaluator: Optional[int]
+    auto_eval: bool = st.task_queue_options.AUTO_EVAL
 
     class Config:
         orm_mode = True
@@ -104,7 +105,7 @@ class Challenge(BaseModel):
     @classmethod
     async def create(cls, item: models.cli.NewChallenge):
         try:
-            query = tables.challenges_table.insert().values(
+            query = tables.benchmarks_table.insert().values(
                 **item.dict()
             )
             await zrDB.execute(query)
@@ -112,19 +113,19 @@ class Challenge(BaseModel):
             db_exc.parse_user_insertion(e)
 
     @classmethod
-    async def get(cls, *, challenge_id: int, allow_inactive: bool = False) -> "Challenge":
-        query = tables.challenges_table.select().where(
-            tables.challenges_table.c.id == challenge_id
+    async def get(cls, *, benchmark_id: str, allow_inactive: bool = False) -> "Benchmark":
+        query = tables.benchmarks_table.select().where(
+            tables.benchmarks_table.c.label == benchmark_id
         )
         ch_data = await zrDB.fetch_one(query)
         if ch_data is None:
-            raise ValueError(f'There is no challenge with the following id: {challenge_id}')
+            raise ValueError(f'There is no challenge with the following id: {benchmark_id}')
         ch = cls.parse_obj(ch_data)
         if allow_inactive:
             return ch
         else:
             if not ch.is_active():
-                raise ValueError(f"The Challenge {ch.label}[{ch.id}] is not active")
+                raise ValueError(f"The Challenge {ch.label} is not active")
             return ch
 
     async def update_property(self, *, variable_name: str, value: Any, allow_parsing: bool = False):
@@ -143,8 +144,8 @@ class Challenge(BaseModel):
         setattr(self, variable_name, value)
 
         # update database
-        query = tables.challenges_table.update().where(
-            tables.challenges_table.c.id == self.id
+        query = tables.benchmarks_table.update().where(
+            tables.benchmarks_table.c.label == self.label
         ).values({f"{variable_name}": value})
 
         try:
@@ -156,25 +157,25 @@ class Challenge(BaseModel):
 
     async def delete(self):
         """ Remove from database """
-        query = tables.challenges_table.delete().where(
-            tables.challenges_table.c.id == self.id
+        query = tables.benchmarks_table.delete().where(
+            tables.benchmarks_table.c.label == self.label
         )
         await zrDB.execute(query)
 
 
-class ChallengeList(BaseModel):
-    items: List[Challenge]
+class BenchmarkList(BaseModel):
+    items: List[Benchmark]
 
-    def __iter__(self) -> Iterable[Challenge]:
+    def __iter__(self) -> Iterable[Benchmark]:
         return iter(self.items)
 
-    def filter_active(self) -> "ChallengeList":
+    def filter_active(self) -> "BenchmarkList":
         self.items = [i for i in self.items if i.is_active()]
         return self
 
     @classmethod
-    async def get(cls, include_all: bool = False) -> "ChallengeList":
-        query = tables.challenges_table.select()
+    async def get(cls, include_all: bool = False) -> "BenchmarkList":
+        query = tables.benchmarks_table.select()
         challenges = await zrDB.fetch_all(query)
         if challenges is None:
             raise ValueError('No challenges were found')
@@ -186,9 +187,8 @@ class ChallengeList(BaseModel):
 
 class Leaderboard(BaseModel):
     """ Data representation of a Leaderboard """
-    id: Optional[int]
-    challenge_id: int  # Id to linked challenge
     label: str  # Name of leaderboard
+    benchmark_id: str # Label of the Benchmark
     archived: bool  # is_archived
     static_files: bool  # has static files
     sorting_key: Optional[str]  # path to the item to use as sorting key
@@ -210,7 +210,7 @@ class Leaderboard(BaseModel):
     async def create(cls, ld_data: 'Leaderboard'):
         query = tables.leaderboards_table.insert().values(
             label=ld_data.label,
-            challenge_id=ld_data.challenge_id,
+            benchmark_id=ld_data.benchmark_id,
             archived=ld_data.archived,
             static_files=ld_data.static_files,
             sorting_key=ld_data.sorting_key
@@ -257,7 +257,7 @@ class Leaderboard(BaseModel):
             value = str(value)
 
         query = tables.leaderboards_table.update().where(
-            tables.leaderboards_table.c.id == self.id
+            tables.leaderboards_table.c.label == self.label
         ).values({f"{variable_name}": str(value)})
         try:
             await zrDB.execute(query)
@@ -267,9 +267,9 @@ class Leaderboard(BaseModel):
         return value
 
     @classmethod
-    async def get(cls, leaderboard_id: int) -> Optional["Leaderboard"]:
+    async def get(cls, leaderboard_id: str) -> Optional["Leaderboard"]:
         query = tables.leaderboards_table.select().where(
-            tables.leaderboards_table.c.id == leaderboard_id
+            tables.leaderboards_table.c.label == leaderboard_id
         )
         ld = await zrDB.fetch_one(query)
         if ld is None:
@@ -292,9 +292,9 @@ class LeaderboardList(BaseModel):
         return cls(items=ld_list)
 
     @classmethod
-    async def get_by_challenge(cls, challenge_id: int) -> "LeaderboardList":
+    async def get_by_challenge(cls, benchmark_id: str) -> "LeaderboardList":
         query = tables.leaderboards_table.select().where(
-            tables.leaderboards_table.c.challenge_id == challenge_id
+            tables.leaderboards_table.c.benchmark_id == benchmark_id
         )
         ld_list = await zrDB.fetch_all(query)
         if not ld_list:
@@ -305,8 +305,9 @@ class LeaderboardList(BaseModel):
 class LeaderboardEntry:
     """ Data representation of a leaderboard entry """
     id: Optional[int]
+    data: Json
     entry_path: Path
-    model_id: str
     submission_id: str
-    leaderboard_id: int
+    leaderboard_id: str
+    user_id: int
     submitted_at: datetime

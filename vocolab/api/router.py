@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, EmailStr
 
 from vocolab.api.endpoints import (
-    users, auth, challenges, leaderboards, models, submissions
+    users, auth, benchmarks, leaderboards, models, submissions
 )
 from vocolab.api.pages import users as user_pages
 from vocolab.settings import get_settings
@@ -53,7 +53,7 @@ def get_error():
 
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(users.router, prefix="/users", tags=["user-data"])
-api_router.include_router(challenges.router, prefix="/challenges", tags=["challenges"])
+api_router.include_router(benchmarks.router, prefix="/benchmarks", tags=["benchmarks"])
 api_router.include_router(models.router, prefix="/models", tags=["model"])
 api_router.include_router(submissions.router, prefix="/submissions", tags=["submissions"])
 api_router.include_router(leaderboards.router, prefix="/leaderboards", tags=["leaderboards"])

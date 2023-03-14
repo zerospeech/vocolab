@@ -8,11 +8,9 @@ from pydantic import BaseModel, AnyHttpUrl
 
 from vocolab import get_settings
 from vocolab.data import db, tables, models
+from .challenges import Benchmark
 
 _settings = get_settings()
-
-
-# TODO: add method for easy author_label editing
 
 
 class ModelID(BaseModel):
@@ -21,13 +19,13 @@ class ModelID(BaseModel):
     user_id: int
     created_at: datetime
     description: str
-    gpu_budget: str
+    gpu_budget: Optional[str]
     train_set: str
     authors: str
     institution: str
-    team: str
-    paper_url: AnyHttpUrl
-    code_url: AnyHttpUrl
+    team: Optional[str]
+    paper_url: Optional[AnyHttpUrl]
+    code_url: Optional[AnyHttpUrl]
 
     @staticmethod
     def nth_word(n: int) -> str:
@@ -120,7 +118,8 @@ class ModelIDList(BaseModel):
         query = tables.models_table.select().where(
             tables.models_table.c.user_id == user_id
         )
-        items = db.zrDB.fetch_all(query)
+        items = await db.zrDB.fetch_all(query)
+        print(items, f"{type(items)=}")
         if not items:
             return cls(items=[])
         return cls.parse_obj(dict(items=items))
@@ -151,7 +150,7 @@ class ChallengeSubmission(BaseModel):
     """ Data representation of a submission to a challenge """
     id: str
     user_id: int
-    track_id: int
+    benchmark_id: int
     model_id: str
     submit_date: datetime
     status: SubmissionStatus
@@ -163,22 +162,31 @@ class ChallengeSubmission(BaseModel):
         orm_mode = True
 
     @classmethod
-    async def create(cls, username: str, new_submission: models.api.NewSubmissionRequest, evaluator_id: Optional[int]) -> str:
+    async def create(
+            cls, user_id: int, username: str,
+            model_id: str, benchmark_id: str
+    ) -> "ChallengeSubmission":
         """ Creates a database entry for the new submission """
+        benchmark = await Benchmark.get(benchmark_id=benchmark_id)
+
         submission_id = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{username}"
-        values = new_submission.dict()
-        values["id"] = submission_id
-        values["submit_date"] = datetime.now()
-        values["status"] = SubmissionStatus.uploading
-        values["evaluator_id"] = evaluator_id
-        # todo: auto-eval should maybe work differently ?
-        values["auto_eval"] = _settings.task_queue_options.AUTO_EVAL
+
+        entry = cls.parse_obj(dict(
+            id=submission_id,
+            model_id=model_id,
+            benchmark_id=benchmark_id,
+            user_id=user_id,
+            submit_date=datetime.now(),
+            status=SubmissionStatus.uploading,
+            evaluator_id=benchmark.evaluator,
+            auto_eval=benchmark.auto_eval
+        ))
 
         await db.zrDB.execute(
             query=tables.submissions_table.insert(),
-            values=values
+            values=entry.dict()
         )
-        return submission_id
+        return entry
 
     @classmethod
     async def get(cls, submission_id: str) -> Optional["ChallengeSubmission"]:
@@ -222,10 +230,10 @@ class ChallengeSubmissionList(BaseModel):
         return iter(self.items)
 
     @classmethod
-    async def get_from_challenge(cls, challenge_id: int):
+    async def get_from_challenge(cls, benchmark_id: str):
         items = await db.zrDB.fetch_all(
             tables.submissions_table.select().where(
-                tables.submissions_table.c.track_id == challenge_id
+                tables.submissions_table.c.benchmark_id == benchmark_id
             )
         )
         if items is None:
@@ -255,7 +263,7 @@ class ChallengeSubmissionList(BaseModel):
         if items is None:
             items = []
 
-        return cls(items=items)
+        return cls.parse_obj(dict(items=items))
 
     @classmethod
     async def get_by_status(cls, status: SubmissionStatus):

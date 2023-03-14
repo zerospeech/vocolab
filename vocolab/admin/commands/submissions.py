@@ -1,13 +1,11 @@
 import asyncio
-import shutil
 import sys
-from pathlib import Path
 
 from rich.table import Table
 
 from vocolab import out, get_settings
-from vocolab.data import models, model_queries
 from vocolab.core import submission_lib, cmd_lib
+from vocolab.data import model_queries
 
 # api settings
 _settings = get_settings()

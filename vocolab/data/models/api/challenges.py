@@ -3,25 +3,7 @@ from datetime import date
 from pathlib import Path
 from typing import Optional, List, Tuple, Dict
 
-from pydantic import BaseModel, HttpUrl
-
-
-class ChallengePreview(BaseModel):
-    """ Used as response type for root challenge list request"""
-    id: int
-    label: str
-    active: bool
-
-
-class ChallengesResponse(BaseModel):
-    """ Used as response type for preview of a challenge """
-    id: int
-    label: str
-    start_date: date
-    end_date: Optional[date]
-    active: bool
-    url: HttpUrl
-    evaluator: Optional[int]
+from pydantic import BaseModel
 
 
 class SubmissionRequestFileIndexItem(BaseModel):
@@ -30,20 +12,20 @@ class SubmissionRequestFileIndexItem(BaseModel):
 
         File index is used to verify correct number of files/parts have been uploaded
     """
-    file_name: str
-    file_size: int
-    file_hash: Optional[str] = None
+    filename: str
+    filesize: int
+    filehash: Optional[str] = None
 
 
 class NewSubmissionRequest(BaseModel):
     """ Dataclass used for input in the creation of a new submission to a challenge """
-    username: str
     model_id: str
+    benchmark_id: str
     filename: str
     hash: str
     multipart: bool
     has_scores: bool
-    leaderboards: Dict[str, Path]
+    leaderboard: str
     index: Optional[List[SubmissionRequestFileIndexItem]]
 
 

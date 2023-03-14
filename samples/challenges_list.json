@@ -1,6 +1,5 @@
 [
   {
-    "id": 1,
     "label": "test-challenge",
     "start_date": "2022-02-21",
     "end_date": null,
@@ -9,7 +8,6 @@
     "evaluator": null
   },
   {
-    "id": 2,
     "label": "abx-15",
     "start_date": "2015-01-20",
     "end_date": null,
@@ -18,7 +16,6 @@
     "evaluator": null
   },
   {
-    "id": 3,
     "label": "abx-17",
     "start_date": "2017-01-20",
     "end_date": null,
@@ -27,7 +24,6 @@
     "evaluator": null
   },
   {
-    "id": 4,
     "label": "abx-LS",
     "start_date": "2021-12-12",
     "end_date": null,
@@ -36,7 +32,6 @@
     "evaluator": null
   },
   {
-    "id": 5,
     "label": "tde-15",
     "start_date": "2015-01-20",
     "end_date": null,
@@ -45,7 +40,6 @@
     "evaluator": null
   },
   {
-    "id": 6,
     "label": "tde-17",
     "start_date": "2017-01-20",
     "end_date": null,
@@ -54,7 +48,6 @@
     "evaluator": null
   },
   {
-    "id": 7,
     "label": "slm-21",
     "start_date": "2021-12-12",
     "end_date": null,
@@ -63,7 +56,6 @@
     "evaluator": null
   },
   {
-    "id": 8,
     "label": "ttso-19",
     "start_date": "2019-01-20",
     "end_date": null,

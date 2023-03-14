@@ -9,7 +9,6 @@ from .tasks import ExecutorsType
 
 class NewChallenge(BaseModel):
     """ Dataclass for challenge creation """
-    id: Optional[int]
     label: str
     active: bool
     url: AnyHttpUrl

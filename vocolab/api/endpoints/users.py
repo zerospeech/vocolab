@@ -1,6 +1,7 @@
 """ Routing for /users section of the API
 This section handles user data
 """
+import functools
 
 import pydantic
 from fastapi import (
@@ -15,7 +16,7 @@ from vocolab.settings import get_settings
 router = APIRouter()
 _settings = get_settings()
 
-NonAllowedOperation = HTTPException(status_code=401, detail="Operation not allowed")
+NonAllowedOperation = functools.partial(HTTPException, status_code=401, detail="Operation not allowed")
 
 
 @router.get("/{username}/profile")
@@ -23,12 +24,13 @@ def get_profile(username: str,
                 current_user: model_queries.User = Depends(
                     api_lib.get_current_active_user)) -> users_lib.UserProfileData:
     if current_user.username != username:
-        raise NonAllowedOperation
+        raise NonAllowedOperation()
 
     try:
         user_data = current_user.get_profile_data()
         # re-update verification
         user_data.verified = current_user.is_verified()
+
         return user_data
     except pydantic.ValidationError:
         out.log.error("Failed to validate profile data")
@@ -41,10 +43,10 @@ def update_profile(
         user_data: users_lib.UserProfileData,
         current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     if current_user.username != username:
-        raise NonAllowedOperation
+        raise NonAllowedOperation()
 
     if user_data.username != current_user.username:
-        raise NonAllowedOperation
+        raise NonAllowedOperation()
 
     user_data.verified = current_user.is_verified()
     user_data.save()
@@ -55,7 +57,7 @@ def update_profile(
 async def list_users_models(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     """ Returning list of models of current user """
     if current_user.username != username:
-        raise NonAllowedOperation
+        raise NonAllowedOperation()
     return await model_queries.ModelIDList.get_by_user(current_user.id)
 
 
@@ -65,7 +67,7 @@ async def create_new_model(username: str, author_name: str, data: models.api.New
     """ Create a new model id"""
     print("WRF")
     if current_user.username != username:
-        raise NonAllowedOperation
+        raise NonAllowedOperation()
 
     # create & return the new model_id
     try:
@@ -81,7 +83,7 @@ async def create_new_model(username: str, author_name: str, data: models.api.New
 async def list_users_submissions(username: str,
                                  current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     if current_user.username != username:
-        raise NonAllowedOperation
+        raise NonAllowedOperation()
 
     items = await model_queries.ChallengeSubmissionList.get_from_user(user_id=current_user.id)
     return items
@@ -91,16 +93,19 @@ async def list_users_submissions(username: str,
 async def create_new_submission(username: str, data: models.api.NewSubmissionRequest,
                                 current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     if current_user.username != username:
-        raise NonAllowedOperation
+        raise NonAllowedOperation()
 
-    # todo check evaluator & other details
-    new_submission_id = await model_queries.ChallengeSubmission.create(
+    new_submission = await model_queries.ChallengeSubmission.create(
+        user_id=current_user.id,
         username=current_user.username,
-        new_submission=data,
-        evaluator_id=None,
+        model_id=data.model_id,
+        benchmark_id=data.benchmark_id
     )
 
-    return new_submission_id
+    # todo: create file structure
+    # todo extract leaderboards
+
+    return new_submission.id
 
 
 # todo: update submission process

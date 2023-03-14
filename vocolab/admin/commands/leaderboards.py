@@ -8,7 +8,7 @@ from rich.table import Table
 
 from vocolab import out
 from vocolab.core import leaderboards_lib, cmd_lib
-from vocolab.data import model_queries, models
+from vocolab.data import model_queries
 
 
 class LeaderboardCMD(cmd_lib.CMD):
@@ -25,20 +25,18 @@ class LeaderboardCMD(cmd_lib.CMD):
             leaderboards = model_queries.LeaderboardList(items=[])
 
         table = Table(show_header=True, header_style="bold magenta")
-        table.add_column('ID')
         table.add_column('Label')
         table.add_column('Archived')
         table.add_column('Static Files')
-        table.add_column('Challenge ID')
+        table.add_column('Benchmark ID')
         table.add_column('Key', no_wrap=False, overflow='fold')
         for entry in leaderboards:
 
             table.add_row(
-                f"{entry.id}", f"{entry.label}", f"{entry.archived}",
-                f"{entry.static_files}", f"{entry.challenge_id}",
+                f"{entry.label}", f"{entry.archived}",
+                f"{entry.static_files}", f"{entry.benchmark_id}",
                 f"{entry.sorting_key}"
             )
-        # print table
         out.cli.print(table, no_wrap=False)
 
 
@@ -69,7 +67,7 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
             if external_entries.is_dir():
                 break
             else:
-                out.cli.error(f"External entries must be a valid directory")
+                out.cli.error("External entries must be a valid directory")
 
         add_static_files = Confirm.ask("Does this leaderboard include static files", default=True)
 
@@ -104,10 +102,11 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
         for item in lds:
             asyncio.run(model_queries.Leaderboard.create(
                 model_queries.Leaderboard(
-                    challenge_id=item.get("challenge_id"),
                     label=item.get("label"),
+                    benchmark_id=item.get("benchmark_id"),
                     static_files=item.get("static_files", False),
                     archived=item.get("archived", False),
+                    sorting_key=item.get("sorting_key", None),
                 )
             ))
             out.cli.info(f"Successfully created leaderboard : {item.get('label')}")
@@ -119,16 +118,15 @@ class EditLeaderboardCMD(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(EditLeaderboardCMD, self).__init__(root, name, cmd_path)
         self.leaderboard_fields = model_queries.Leaderboard.get_field_names()
-        self.leaderboard_fields.remove('id')
 
         # arguments
-        self.parser.add_argument("leaderboard_id", type=int, help='The id of the entry')
+        self.parser.add_argument("leaderboard_id", type=str, help='The id of the entry')
         self.parser.add_argument("field_name", type=str, choices=self.leaderboard_fields,
                                  help="The name of the field")
         self.parser.add_argument('field_value', help="The new value of the field")
 
     @staticmethod
-    async def update_value(leaderboard_id: int, field_name: str, value: str):
+    async def update_value(leaderboard_id: str, field_name: str, value: str):
         leaderboard = await model_queries.Leaderboard.get(leaderboard_id=leaderboard_id)
         return await leaderboard.update_property(variable_name=field_name, value=value, allow_parsing=True)
 

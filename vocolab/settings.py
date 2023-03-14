@@ -69,7 +69,7 @@ class TaskQueueSettings(BaseModel):
     HOSTS: Set[str] = set()
     REMOTE_STORAGE: Dict[str, Path] = dict()
     REMOTE_BIN: Dict[str, Path] = dict()
-    AUTO_EVAL: bool = True
+    AUTO_EVAL: bool = False
 
 
 class AppSettings(BaseModel):
