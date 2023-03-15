@@ -1,18 +1,18 @@
 import json
 import shutil
-from hmac import compare_digest
 from pathlib import Path
 from typing import List, Optional
 
+import numpy as np
+import pandas as pd
 from fastapi import UploadFile
 from fsplit.filesplit import Filesplit
-from pydantic import BaseModel
-import pandas as pd
-import numpy as np
+from pydantic import BaseModel, Field
 
 from vocolab import exc
-from ..commons import md5sum
 from .logs import SubmissionLogger
+from ..commons import md5sum
+from ...data.models.api import SubmissionRequestFileIndexItem
 
 """
 ####### File Splitting Note #######
@@ -77,15 +77,21 @@ class ManifestIndexItem(BaseModel):
     def __hash__(self):
         return int(self.file_hash, 16)
 
+    @classmethod
+    def from_api(cls, item: SubmissionRequestFileIndexItem):
+        return cls(
+            file_name=item.filename,
+            file_size=item.filesize,
+            file_hash=item.filehash
+        )
+
 
 class MultipartUploadHandler(BaseModel):
     """ Data Model used for the binary split function as a manifest to allow merging """
     store_location: Path
     merge_hash: str
-    index: Optional[List[ManifestIndexItem]]
-    received: Optional[List[ManifestIndexItem]] = []
-    multipart: bool = True
-    hashed_parts: bool = True
+    index: List[ManifestIndexItem]
+    received: Optional[List[ManifestIndexItem]] = Field(default_factory=list)
     target_location: Path
 
     @property
@@ -117,6 +123,10 @@ class MultipartUploadHandler(BaseModel):
     def dump_to_index(self, file: Path):
         with file.open("w") as fp:
             fp.write(self.json(indent=4))
+
+    def dump_manifest(self):
+        # todo: implement
+        pass
 
     def add_part(self, logger: SubmissionLogger, file_name: str, data: UploadFile):
         """ Add a part to a multipart upload type submission.
@@ -152,16 +162,15 @@ class MultipartUploadHandler(BaseModel):
 
         # up count of received parts
         self.received.append(new_item_mf)
-        logger.log(f" --> part was added successfully", date=False)
+        logger.log(" --> part was added successfully", date=False)
 
     def merge_parts(self):
         """ Merge parts into the target file using filesplit protocol """
         # TODO: update filesplit==3.0.2 to 4.0.0 (breaking upgrade)
         # for update see https://pypi.org/project/filesplit/
-        if self.hashed_parts:
-            for item in self.index:
-                assert md5sum(self.store_location / item.file_name) == item.file_hash, \
-                    f"file {item.file_name} does not match md5"
+        for item in self.index:
+            assert md5sum(self.store_location / item.file_name) == item.file_hash, \
+                f"file {item.file_name} does not match md5"
 
         df = pd.DataFrame([
             (i.file_name, i.file_size)

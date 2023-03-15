@@ -3,16 +3,16 @@ import json
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import List, Optional
 
 from fastapi import UploadFile
 from pydantic import BaseModel
 
-from vocolab.data import models
 from vocolab import get_settings
-from ..commons import unzip, ssh_exec, rsync, zip_folder, scp
 from .logs import SubmissionLogger
-from .upload import MultipartUploadHandler, SinglepartUploadHandler
+from .upload import MultipartUploadHandler, SinglepartUploadHandler, ManifestIndexItem
+from ..commons import unzip, ssh_exec, rsync, zip_folder, scp
+from ...data.models.api import SubmissionRequestFileIndexItem
 
 _settings = get_settings()
 
@@ -20,11 +20,10 @@ _settings = get_settings()
 class SubmissionInfo(BaseModel):
     model_id: str
     username: str
-    track_id: int
-    track_label: str
+    benchmark_label: str
     submission_id: str
     created_at: datetime
-    leaderboard_entries: Dict[str, Path]
+    leaderboard_entry: Optional[str]
 
 
 class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
@@ -129,7 +128,8 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
         self.interrupted_lock.unlink(missing_ok=True)
         self.clean_lock.unlink(missing_ok=True)
 
-    def get_log_handler(self) -> SubmissionLogger:
+    @property
+    def log_handler(self) -> SubmissionLogger:
         """ build the SubmissionLogger class that allows to log submission relative events """
         return SubmissionLogger(root_dir=self.root_dir)
 
@@ -156,7 +156,7 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
             """ Multipart upload """
             handler = MultipartUploadHandler.load_from_index(self.multipart_index_file)
             handler.add_part(
-                logger=self.get_log_handler(),
+                logger=self.log_handler,
                 file_name=file_name,
                 data=data
             )
@@ -168,7 +168,7 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
             """ Single part upload """
             handler = SinglepartUploadHandler(root_dir=self.root_dir)
             handler.write_data(
-                logger=self.get_log_handler(),
+                logger=self.log_handler,
                 file_name=file_name,
                 data=data
             )
@@ -185,7 +185,7 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
         transfer_root_dir = _settings.task_queue_options.REMOTE_STORAGE.get(hostname)
         model_id = self.info.model_id
         remote_submission_dir = transfer_root_dir / model_id / self.submission_id
-        logger = self.get_log_handler()
+        logger = self.log_handler
 
         # if host is local & submission dir is current, do nothing
         if (not is_remote) and (transfer_root_dir == _settings.submission_dir):
@@ -212,7 +212,7 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
         transfer_root_dir = _settings.task_queue_options.REMOTE_STORAGE.get(hostname)
         model_id = self.info.model_id
         remote_submission_dir = transfer_root_dir / model_id / self.submission_id
-        logger = self.get_log_handler()
+        logger = self.log_handler
 
         # if host is local & submission dir is current, do nothing
         if (not is_remote) and (transfer_root_dir == _settings.submission_dir):
@@ -232,14 +232,9 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
             logger.log(res.stderr.decode())
             raise ValueError(f"Failed to copy files from host {hostname}")
 
-    def archive(self, zip_files: bool = False):
-        """Transfer submission to archive """
-        location = _settings.submission_archive_dir / self.info.model_id / self.info.submission_id
-        logger = self.get_log_handler()
-        host = _settings.ARCHIVE_HOST
-
-        if _settings.remote_archive and zip_files:
-            """ Archive file to remote host as a zip file"""
+    def __archive_zip(self):
+        """ Archive submission as zip """
+        if _settings.remote_archive:
             host = _settings.ARCHIVE_HOST
             with _settings.get_temp_dir() as tmp:
                 archive_file = tmp / f'{self.info.model_id}_{self.info.submission_id}'
@@ -247,29 +242,35 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
                 res = scp(src=archive_file, host=host, dest=_settings.submission_archive_dir)
                 if res.returncode != 0:
                     raise ValueError(f"Failed to transfer to {host}")
+        else:
+            """ Archive files to local archive as a zip file"""
+            zip_folder(
+                archive_file=self.root_dir / f'{self.info.model_id}_{self.info.submission_id}',
+                location=self.root_dir
+            )
 
-        elif _settings.remote_archive and not zip_files:
-            """ Archive file to remote host """
-            code, _ = ssh_exec(host, ['mkdir', '-p', f"{location}"])
+    def __archive_raw(self):
+        if _settings.remote_archive:
+            host = _settings.ARCHIVE_HOST
+            code, _ = ssh_exec(host, ['mkdir', '-p', f"{self.root_dir}"])
             if code != 0:
                 raise ValueError(f"No write permissions on {host}")
 
-            res = rsync(src=self.root_dir, dest_host=host, dest=location)
+            res = rsync(src=self.root_dir, dest_host=host, dest=self.root_dir)
             if res.returncode != 0:
                 raise ValueError(f"Failed to copy files to host {host}")
 
-        elif not _settings.remote_archive and not zip_files:
-            """ Archive files to local archive """
-            _res = rsync(src=self.root_dir, dest=location)
+        else:
+            _res = rsync(src=self.root_dir, dest=self.root_dir)
             if _res.returncode != 0:
-                raise ValueError(f"Failed to copy files to archive")
+                raise ValueError("Failed to copy files to archive")
 
-        elif not _settings.remote_archive and zip_files:
-            """ Archive files to local archive as a zip file"""
-            zip_folder(
-                archive_file=location / f'{self.info.model_id}_{self.info.submission_id}',
-                location=self.root_dir
-            )
+    def archive(self, zip_files: bool = False):
+        """Transfer submission to archive """
+        if zip_files:
+            self.__archive_zip()
+        else:
+            self.__archive_raw()
 
     def remove_all(self):
         """ Remove all files related to this submission """
@@ -284,15 +285,25 @@ class ModelDir(BaseModel):
         return self.root_dir.name
 
     @classmethod
+    def make(cls, model_id: str):
+        root = _settings.submission_dir / model_id
+        root.mkdir(exist_ok=True, parents=True)
+
+    @classmethod
     def load(cls, model_id: str):
         root = _settings.submission_dir / model_id
 
         if not root.is_dir():
-            raise FileNotFoundError(f'Model {model_id} does not exist')
+            raise FileNotFoundError('Model Folder not found')
+
         return cls(root_dir=root)
 
-    def make_submission(self, submission_id: str, challenge_id: int, challenge_label: str,
-                        auto_eval: bool, request_meta: models.api.NewSubmissionRequest):
+    def make_submission(
+            self, submission_id: str, benchmark_label: str, auto_eval: bool,
+            username: str, filehash: str, has_scores: bool, multipart: bool,
+            index: Optional[List[SubmissionRequestFileIndexItem]],
+            leaderboard_file: Optional[str] = None
+    ) -> SubmissionDir:
         root_dir = self.root_dir / submission_id
         if root_dir.is_dir():
             raise FileExistsError(f'Submission {submission_id} cannot be created as it already exists')
@@ -304,34 +315,42 @@ class ModelDir(BaseModel):
         # Submission generic info
         sub_info = SubmissionInfo(
             model_id=self.label,
-            username=request_meta.username,
-            track_id=challenge_id,
-            track_label=challenge_label,
+            username=username,
+            benchmark_label=benchmark_label,
             submission_id=submission_id,
             created_at=datetime.now(),
-            leaderboard_entries=request_meta.leaderboards
+            leaderboard_entry=leaderboard_file
         )
         # save info to file
         with submission_dir.info_file.open('w') as fp:
             fp.write(sub_info.json(indent=4))
 
-        if request_meta.multipart:
+        if multipart:
+            if len(index) <= 0:
+                raise ValueError('Parts list is empty')
             submission_dir.multipart_dir.mkdir(exist_ok=True)
+            upload_handler = MultipartUploadHandler(
+                store_location=submission_dir.multipart_dir,
+                target_location=submission_dir.root_dir,
+                merge_hash=filehash,
+                index=[ManifestIndexItem.from_api(i) for i in index]
+            )
             with submission_dir.multipart_index_file.open('w') as fp:
                 fp.write(
-                    request_meta.json(include={'index'}, indent=4)
+                    upload_handler.json(include={'index'}, indent=4)
                 )
         else:
             with submission_dir.content_archive_hash_file.open('w') as fp:
-                fp.write(request_meta.hash)
+                fp.write(filehash)
 
-        submission_dir.get_log_handler().header(
-            who=request_meta.username,
-            task=challenge_label,
-            multipart=request_meta.multipart,
-            has_scores=request_meta.has_scores,
+        submission_dir.log_handler.header(
+            who=username,
+            task=benchmark_label,
+            multipart=multipart,
+            has_scores=has_scores,
             auto_eval=auto_eval
         )
+        return submission_dir
 
     @property
     def submissions(self) -> List[SubmissionDir]:

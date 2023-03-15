@@ -23,10 +23,10 @@ class NewSubmissionRequest(BaseModel):
     benchmark_id: str
     filename: str
     hash: str
-    multipart: bool
     has_scores: bool
-    leaderboard: str
+    multipart: bool
     index: Optional[List[SubmissionRequestFileIndexItem]]
+    leaderboard: Optional[str]
 
 
 class NewSubmission(BaseModel):
