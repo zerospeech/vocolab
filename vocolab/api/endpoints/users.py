@@ -112,7 +112,11 @@ async def create_new_submission(username: str, data: models.api.NewSubmissionReq
         benchmark_label=new_submission.benchmark_id,
         auto_eval=new_submission.auto_eval,
         username=current_user.username,
-        leaderboard_file=data.leaderboard
+        leaderboard_file=data.leaderboard,
+        filehash=data.hash,
+        multipart=data.multipart,
+        has_scores=data.has_scores,
+        index=data.index
     )
 
     return new_submission.id

@@ -5,7 +5,8 @@
     "end_date": null,
     "url": "https://zerospeech.com/track/test",
     "active": true,
-    "evaluator": null
+    "evaluator": null,
+    "auto_eval": false
   },
   {
     "label": "abx-15",
@@ -21,7 +22,8 @@
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_1/benchmarks_datasets/#zrc2017-and-abx17",
     "active": false,
-    "evaluator": null
+    "evaluator": null,
+    "auto_eval": false
   },
   {
     "label": "abx-LS",
@@ -29,7 +31,8 @@
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_1/benchmarks_datasets/#abxls-dataset-and-benchmark",
     "active": false,
-    "evaluator": null
+    "evaluator": null,
+    "auto_eval": false
   },
   {
     "label": "tde-15",
@@ -37,7 +40,8 @@
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_2/tasks_goals/",
     "active": false,
-    "evaluator": null
+    "evaluator": null,
+    "auto_eval": false
   },
   {
     "label": "tde-17",
@@ -45,7 +49,8 @@
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_2/tasks_goals/",
     "active": false,
-    "evaluator": null
+    "evaluator": null,
+    "auto_eval": false
   },
   {
     "label": "slm-21",
@@ -53,7 +58,8 @@
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_4/tasks_goals/",
     "active": false,
-    "evaluator": null
+    "evaluator": null,
+    "auto_eval": false
   },
   {
     "label": "ttso-19",
@@ -61,6 +67,7 @@
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_3/tasks_goals/",
     "active": false,
-    "evaluator": null
+    "evaluator": null,
+    "auto_eval": false
   }
 ]

@@ -150,7 +150,7 @@ class ChallengeSubmission(BaseModel):
     """ Data representation of a submission to a challenge """
     id: str
     user_id: int
-    benchmark_id: int
+    benchmark_id: str
     model_id: str
     submit_date: datetime
     status: SubmissionStatus

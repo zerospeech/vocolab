@@ -35,7 +35,7 @@ async def get_sub_list(benchmark_id: str) -> model_queries.ChallengeSubmissionLi
 
 
 @router.get("/{benchmark_id}/models/list")
-async def get_models_list(challenge_id: str):
+async def get_models_list(benchmark_id: str):
     pass
 
 
