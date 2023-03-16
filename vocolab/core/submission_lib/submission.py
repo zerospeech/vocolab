@@ -8,7 +8,7 @@ from typing import List, Optional
 from fastapi import UploadFile
 from pydantic import BaseModel
 
-from vocolab import get_settings
+from vocolab import get_settings, exc
 from .logs import SubmissionLogger
 from .upload import MultipartUploadHandler, SinglepartUploadHandler, ManifestIndexItem
 from ..commons import unzip, ssh_exec, rsync, zip_folder, scp
@@ -161,9 +161,6 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
                 data=data
             )
             handler.dump_to_index(self.multipart_index_file)
-
-            if handler.completed():
-                handler.merge_parts()
         else:
             """ Single part upload """
             handler = SinglepartUploadHandler(root_dir=self.root_dir)
@@ -174,10 +171,32 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
             )
 
         if handler.completed():
-            """ Upload completed """
-            unzip(handler.target_file, self.content_location)
             return True, []
         return False, handler.remaining_items
+
+    def complete_upload(self):
+        """ Actions to perform after upload has completed on a submission (extract files, update metadata, etc)"""
+        logger = self.log_handler
+        if self.is_multipart():
+            handler = MultipartUploadHandler.load_from_index(self.multipart_index_file)
+            if not handler.completed():
+                raise exc.FailedOperation(f'Cannot Complete incomplete submission {self.submission_id} !!!')
+
+            # merge parts to target archive
+            logger.log(f"upload of parts for {self.submission_id} completed, merging parts...")
+            handler.merge_parts()
+            logger.log("parts merged successfully")
+        else:
+            handler = SinglepartUploadHandler(root_dir=self.root_dir)
+            if not handler.completed():
+                raise exc.FailedOperation(f'Cannot Complete incomplete submission {self.submission_id} !!!')
+
+            logger.log(f"upload for {self.submission_id} completed")
+
+        # unzip archive to content location
+        logger.log(f"unzipping archive {handler.target_file} into {self.content_location}")
+        unzip(handler.target_file, self.content_location)
+
 
     def send_content(self, hostname: str) -> Path:
         """ Send content to a remote host for evaluation (return target location) """

@@ -77,3 +77,8 @@ class SecurityError(VocoLabException):
 class ServerError(VocoLabException):
     """ Error with the starting of a server/service """
     pass
+
+
+class FailedOperation(VocoLabException):
+    """ Could not complete the requested operation """
+    pass

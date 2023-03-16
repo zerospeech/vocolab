@@ -34,7 +34,7 @@ async def get_submission_scores(submission_id: str):
     pass
 
 
-@router.get("/{submission_id}/content/mode")
+@router.get("/{submission_id}/content/status")
 async def submission_mode(submission_id: str):
     """
     Should return the submission mode
@@ -45,25 +45,7 @@ async def submission_mode(submission_id: str):
     pass
 
 
-@router.get("/{submission_id}/content/reset")
-async def reset_submission(submission_id: str):
-    """
-    remove content of submission & allow new content to be added
-    """
-    # todo implement this
-    pass
-
-
-@router.post('{submission_id}/content/init')
-async def upload_manifest(submission_id: str,
-                          current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
-    # todo: initialise manifest before upload
-    # create submission dir
-    # add manifest and promise of files
-    pass
-
-
-@router.put("/{submission_id}/content/add", response_model=models.api.UploadSubmissionPartResponse)
+@router.post("/{submission_id}/content/add")
 async def upload_submission(
         submission_id: str,
         part_name: str,
@@ -88,10 +70,11 @@ async def upload_submission(
         is_completed, remaining = sub_dir.add_content(file_name=part_name, data=file_data)
 
         if is_completed:
-            # todo: fix completed actions
             # run the completion of the submission on the background
-            # background_tasks.add_task(submission_lib.complete_submission, submission_id, with_eval=True)
-            pass
+            background_tasks.add_task(sub_dir.complete_upload)
+            # Todo: other tasks can be relative to completion
+            # - leaderboard extraction
+            # - auto_eval
 
         return models.api.UploadSubmissionPartResponse(
             completed=is_completed, remaining=[n.file_name for n in remaining]
