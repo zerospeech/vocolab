@@ -154,7 +154,9 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
         """
         if self.is_multipart():
             """ Multipart upload """
+            print("HELLO 1")
             handler = MultipartUploadHandler.load_from_index(self.multipart_index_file)
+            print("Hello 2")
             handler.add_part(
                 logger=self.log_handler,
                 file_name=file_name,

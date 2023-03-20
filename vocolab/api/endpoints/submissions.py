@@ -49,10 +49,11 @@ async def upload_submission(
         submission_id: str,
         part_name: str,
         background_tasks: BackgroundTasks,
-        file_data: UploadFile = File(...),
+        file: UploadFile = File(...),
         current_user: model_queries.User = Depends(api_lib.get_current_active_user),
 ):
-    out.console.info(f"user: {current_user.username}")
+    out.console.info(f"user: {current_user.username} is uploading {file.filename}")
+    out.console.inspect(file)
     submission = await model_queries.ChallengeSubmission.get(submission_id)
     if submission is None:
         raise HTTPException(status_code=404, detail="submission not found")
@@ -66,7 +67,8 @@ async def upload_submission(
         raise HTTPException(status_code=417, detail="Expected submission directory to exist")
 
     try:
-        is_completed, remaining = sub_dir.add_content(file_name=part_name, data=file_data)
+        # fixme: there is an issue with upload.json on creation it does not correspond to schema
+        is_completed, remaining = sub_dir.add_content(file_name=part_name, data=file)
 
         if is_completed:
             # run the completion of the submission on the background
