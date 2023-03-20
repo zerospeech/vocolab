@@ -13,6 +13,7 @@ from ..db import zrDB, db_exc
 
 st = get_settings()
 
+
 class EvaluatorItem(BaseModel):
     """ Data representation of an evaluator """
     id: int
@@ -188,7 +189,7 @@ class BenchmarkList(BaseModel):
 class Leaderboard(BaseModel):
     """ Data representation of a Leaderboard """
     label: str  # Name of leaderboard
-    benchmark_id: str # Label of the Benchmark
+    benchmark_id: str  # Label of the Benchmark
     archived: bool  # is_archived
     static_files: bool  # has static files
     sorting_key: Optional[str]  # path to the item to use as sorting key

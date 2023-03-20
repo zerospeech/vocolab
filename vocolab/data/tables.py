@@ -94,6 +94,7 @@ submissions_table = sqlalchemy.Table(
     sqlalchemy.Column("model_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("models.id")),
     sqlalchemy.Column("submit_date", sqlalchemy.DateTime),
     sqlalchemy.Column("status", sqlalchemy.String),
+    sqlalchemy.Column("has_scores", sqlalchemy.Boolean),
     sqlalchemy.Column("auto_eval", sqlalchemy.Boolean),
     sqlalchemy.Column("evaluator_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("evaluators.id")),
     sqlalchemy.Column("author_label", sqlalchemy.String)

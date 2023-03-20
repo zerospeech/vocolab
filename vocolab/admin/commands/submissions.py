@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import sys
 
@@ -19,21 +20,23 @@ class SubmissionCMD(cmd_lib.CMD):
 
         # custom arguments
         self.parser.add_argument('-u', '--user', type=int, help='Filter by user ID')
-        self.parser.add_argument('-t', '--track', type=int, help='Filter by track ID')
+        self.parser.add_argument('-b', '--benchmark', type=int, help='Filter by track ID')
         self.parser.add_argument('-s', '--status',
                                  choices=model_queries.SubmissionStatus.get_values(),
                                  help='Filter by status')
 
     @staticmethod
-    async def fetch_by(args) -> model_queries.ChallengeSubmissionList:
+    async def fetch_by(args: argparse.Namespace) -> model_queries.ChallengeSubmissionList:
         if args.user:
             return await model_queries.ChallengeSubmissionList.get_from_user(user_id=args.user)
 
-        elif args.track:
-            return await model_queries.ChallengeSubmissionList.get_from_challenge(challenge_id=args.track)
+        elif args.benchmark:
+            return await model_queries.ChallengeSubmissionList.get_from_challenge(benchmark_id=args.benchmark)
 
         elif args.status:
             return await model_queries.ChallengeSubmissionList.get_by_status(status=args.status)
+
+        return await model_queries.ChallengeSubmissionList.get_all()
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
@@ -51,7 +54,7 @@ class SubmissionCMD(cmd_lib.CMD):
 
         for i in items:
             table.add_row(
-                f"{i.id}", f"{i.user_id}", f"{i.track_id}", f"{i.submit_date.strftime('%d/%m/%Y')}",
+                f"{i.id}", f"{i.user_id}", f"{i.benchmark_id}", f"{i.submit_date.strftime('%d/%m/%Y')}",
                 f"{i.status}", f"{i.evaluator_id}", f"{i.author_label}"
             )
         # print

@@ -6,7 +6,7 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 from fastapi import UploadFile
-from fsplit.filesplit import Filesplit
+from filesplit.merge import Merge
 from pydantic import BaseModel, Field
 
 from vocolab import exc
@@ -166,22 +166,24 @@ class MultipartUploadHandler(BaseModel):
 
     def merge_parts(self):
         """ Merge parts into the target file using filesplit protocol """
-        # TODO: update filesplit==3.0.2 to 4.0.0 (breaking upgrade)
-        # for update see https://pypi.org/project/filesplit/
         for item in self.index:
             assert md5sum(self.store_location / item.file_name) == item.file_hash, \
                 f"file {item.file_name} does not match md5"
 
         df = pd.DataFrame([
-            (i.file_name, i.file_size)
+            (i.file_name, i.file_size, False)
             for i in self.index
         ])
-        df.columns = ['filename', 'filesize']
-        df['encoding'] = np.nan
-        df['header'] = np.nan
-        df.to_csv((self.store_location / 'fs_manifest.csv'))
-        fs = Filesplit()
-        fs.merge(input_dir=f"{self.store_location}", output_file=str(self.target_file))
+        df.columns = ['filename', 'filesize', 'header']
+        df.to_csv((self.store_location / 'manifest'))
+
+        merge = Merge(
+            inputdir=str(self.store_location),
+            outputdir=str(self.target_location),
+            outputfilename=self.target_file.name
+        )
+        merge.merge()
+        # Check
         assert md5sum(self.target_file) == self.merge_hash, "output file does not match original md5"
 
     def clean(self):

@@ -197,7 +197,6 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
         logger.log(f"unzipping archive {handler.target_file} into {self.content_location}")
         unzip(handler.target_file, self.content_location)
 
-
     def send_content(self, hostname: str) -> Path:
         """ Send content to a remote host for evaluation (return target location) """
         is_remote = hostname != _settings.app_options.hostname

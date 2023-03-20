@@ -21,6 +21,7 @@ class NewSubmissionRequest(BaseModel):
     """ Dataclass used for input in the creation of a new submission to a challenge """
     model_id: str
     benchmark_id: str
+    author_label: str
     filename: str
     hash: str
     has_scores: bool

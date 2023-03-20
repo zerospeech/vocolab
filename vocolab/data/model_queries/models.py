@@ -155,6 +155,7 @@ class ChallengeSubmission(BaseModel):
     submit_date: datetime
     status: SubmissionStatus
     auto_eval: bool
+    has_scores: bool
     evaluator_id: Optional[int]
     author_label: Optional[str] = None
 
@@ -164,22 +165,26 @@ class ChallengeSubmission(BaseModel):
     @classmethod
     async def create(
             cls, user_id: int, username: str,
-            model_id: str, benchmark_id: str
+            model_id: str, benchmark_id: str,
+            has_scores: bool, author_label: str
     ) -> "ChallengeSubmission":
         """ Creates a database entry for the new submission """
         benchmark = await Benchmark.get(benchmark_id=benchmark_id)
 
-        submission_id = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{username}"
+        print('Hello 1.2')
 
+        submission_id = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{username}"
         entry = cls.parse_obj(dict(
             id=submission_id,
             model_id=model_id,
             benchmark_id=benchmark_id,
             user_id=user_id,
+            has_scores=has_scores,
             submit_date=datetime.now(),
             status=SubmissionStatus.uploading,
             evaluator_id=benchmark.evaluator,
-            auto_eval=benchmark.auto_eval
+            auto_eval=benchmark.auto_eval,
+            author_label=author_label
         ))
 
         await db.zrDB.execute(
@@ -224,6 +229,7 @@ class ChallengeSubmission(BaseModel):
 
 
 class ChallengeSubmissionList(BaseModel):
+    """ Data representation of a list of Submissions """
     items: List[ChallengeSubmission]
 
     def __iter__(self) -> Iterable[ChallengeSubmission]:
@@ -231,6 +237,7 @@ class ChallengeSubmissionList(BaseModel):
 
     @classmethod
     async def get_from_challenge(cls, benchmark_id: str):
+        """ Get submissions filtered by benchmark """
         items = await db.zrDB.fetch_all(
             tables.submissions_table.select().where(
                 tables.submissions_table.c.benchmark_id == benchmark_id
@@ -243,6 +250,7 @@ class ChallengeSubmissionList(BaseModel):
 
     @classmethod
     async def get_from_model(cls, model_id: str):
+        """ Get submissions filtered by model """
         items = await db.zrDB.fetch_all(
             tables.submissions_table.select().where(
                 tables.submissions_table.c.model_id == model_id
@@ -255,6 +263,7 @@ class ChallengeSubmissionList(BaseModel):
 
     @classmethod
     async def get_from_user(cls, user_id: int):
+        """ Get submissions filtered by user """
         items = await db.zrDB.fetch_all(
             tables.submissions_table.select().where(
                 tables.submissions_table.c.user_id == user_id
@@ -267,10 +276,22 @@ class ChallengeSubmissionList(BaseModel):
 
     @classmethod
     async def get_by_status(cls, status: SubmissionStatus):
+        """ Get submissions filtered by status """
         items = await db.zrDB.fetch_all(
             tables.submissions_table.select().where(
                 tables.submissions_table.c.status == status.value
             )
+        )
+        if items is None:
+            items = []
+
+        return cls(items=items)
+
+    @classmethod
+    async def get_all(cls):
+        """ Get all submissions """
+        items = await db.zrDB.fetch_all(
+            tables.submissions_table.select()
         )
         if items is None:
             items = []
