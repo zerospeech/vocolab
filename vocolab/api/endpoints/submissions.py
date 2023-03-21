@@ -52,8 +52,10 @@ async def upload_submission(
         file: UploadFile = File(...),
         current_user: model_queries.User = Depends(api_lib.get_current_active_user),
 ):
+    if _settings.is_locked():
+        raise exc.APILockedException()
+
     out.console.info(f"user: {current_user.username} is uploading {file.filename}")
-    out.console.inspect(file)
     submission = await model_queries.ChallengeSubmission.get(submission_id)
     if submission is None:
         raise HTTPException(status_code=404, detail="submission not found")
@@ -88,5 +90,9 @@ async def upload_submission(
 @router.delete("/{submission_id}/remove")
 async def remove_submission(submission_id: str,
                             current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
-    # todo implement this
+    if _settings.is_locked():
+        raise exc.APILockedException()
+
+    out.log.info(f"user {current_user.username} requested that the submission {submission_id} gets deleted !")
+    # todo implement delete operation
     pass

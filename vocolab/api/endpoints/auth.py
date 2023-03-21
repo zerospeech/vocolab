@@ -44,6 +44,9 @@ async def post_signup(request: Request,
                       affiliation: str = Form(...), email: EmailStr = Form(...),
                       username: str = Form(...), password: str = Form(...)) -> str:
     """ Create a new user via the HTML form  (returns a html page) """
+    if _settings.is_locked():
+        raise exc.APILockedException()
+
     user = models.api.UserCreateRequest(
         username=username,
         email=email,
@@ -79,6 +82,9 @@ async def password_reset_request(
         html_response: bool = False,
         username: str = Form(...), email: EmailStr = Form(...)):
     """ Request a users password to be reset """
+    if _settings.is_locked():
+        raise exc.APILockedException()
+
     user = await model_queries.User.get(by_username=username)
     if user.email != email:
         raise ValueError('Bad request, no such user')
@@ -114,6 +120,9 @@ async def password_reset_request(
 async def post_password_update(v: str, request: Request, html_response: bool = False, password: str = Form(...),
                                password_validation: str = Form(...), session_code: str = Form(...)):
     """Update a users password (requires a reset session)"""
+    if _settings.is_locked():
+        raise exc.APILockedException()
+
     try:
         if v != session_code:
             raise ValueError('session validation not passed !!!')

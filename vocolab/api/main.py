@@ -74,7 +74,7 @@ async def value_error_reformatting(request: Request, exc: ValueError):
 
 @app.exception_handler(VocoLabException)
 async def zerospeech_error_formatting(request: Request, exc: VocoLabException):
-    if exc.data:
+    if hasattr(exc, 'data'):
         content = dict(message=f"{str(exc)}", data=str(exc.data))
     else:
         content = dict(message=f"{str(exc)}")

@@ -8,7 +8,7 @@ from fastapi import (
     APIRouter, Depends, Response, HTTPException
 )
 
-from vocolab import out
+from vocolab import out, exc
 from vocolab.core import api_lib, users_lib, submission_lib
 from vocolab.data import model_queries, models
 from vocolab.settings import get_settings
@@ -41,6 +41,9 @@ def update_profile(
         username: str,
         user_data: users_lib.UserProfileData,
         current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
+    if _settings.is_locked():
+        raise exc.APILockedException()
+
     if current_user.username != username:
         raise NonAllowedOperation()
 
@@ -64,6 +67,9 @@ async def list_users_models(username: str, current_user: model_queries.User = De
 async def create_new_model(username: str, author_name: str, data: models.api.NewModelIdRequest,
                            current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     """ Create a new model id"""
+    if _settings.is_locked():
+        raise exc.APILockedException()
+
     if current_user.username != username:
         raise NonAllowedOperation()
 
@@ -95,6 +101,9 @@ async def list_users_submissions(username: str,
 async def create_new_submission(username: str, data: models.api.NewSubmissionRequest,
                                 current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     """ Create a new empty submission with the given information """
+    if _settings.is_locked():
+        raise exc.APILockedException()
+
     if current_user.username != username:
         raise NonAllowedOperation()
 

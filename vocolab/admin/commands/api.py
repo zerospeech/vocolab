@@ -27,6 +27,30 @@ class APICMD(cmd_lib.CMD):
         self.parser.print_help()
 
 
+class APILockCMD(cmd_lib.CMD):
+    """ Command to check API Lock status """
+
+    def __init__(self, root, name, cmd_path):
+        super(APILockCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument(
+            "action", choices=['lock', 'unlock', 'status'], default='status',
+            nargs="?", help="Action to perform (default status)"
+        )
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+
+        if args.action == "lock":
+            _settings.data_lock.touch()
+        elif args.action == "unlock":
+            _settings.data_lock.unlink()
+        else:
+            if _settings.is_locked():
+                out.cli.print(f"API is locked")
+            else:
+                out.cli.print(f"API is not locked")
+
+
 class RunAPICMD(cmd_lib.CMD):
     """ Commands to run the api daemon """
 
