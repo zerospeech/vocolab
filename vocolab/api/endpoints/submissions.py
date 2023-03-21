@@ -67,7 +67,6 @@ async def upload_submission(
         raise HTTPException(status_code=417, detail="Expected submission directory to exist")
 
     try:
-        # fixme: there is an issue with upload.json on creation it does not correspond to schema
         is_completed, remaining = sub_dir.add_content(file_name=part_name, data=file)
 
         if is_completed:

@@ -171,8 +171,6 @@ class ChallengeSubmission(BaseModel):
         """ Creates a database entry for the new submission """
         benchmark = await Benchmark.get(benchmark_id=benchmark_id)
 
-        print('Hello 1.2')
-
         submission_id = f"{datetime.now().strftime('%Y%m%d%H%M%S%f')}_{username}"
         entry = cls.parse_obj(dict(
             id=submission_id,

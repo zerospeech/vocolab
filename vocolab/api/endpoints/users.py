@@ -76,7 +76,9 @@ async def create_new_model(username: str, author_name: str, data: models.api.New
         out.console.print(e)
         raise e
 
-    return model_id
+    return dict(
+        model_id=model_id, user=current_user.username,
+    )
 
 
 @router.get("/{username}/submissions/list")
@@ -86,50 +88,40 @@ async def list_users_submissions(username: str,
     if current_user.username != username:
         raise NonAllowedOperation()
 
-    items = await model_queries.ChallengeSubmissionList.get_from_user(user_id=current_user.id)
-    return items
-
-
-@router.get("/{username}/submissions/create")
-async def wtf(username: str, current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
-    print(f"WTF is going on with : {username}")
-    return dict(fuck=True, who=current_user.username)
+    return await model_queries.ChallengeSubmissionList.get_from_user(user_id=current_user.id)
 
 
 @router.post("/{username}/submissions/create")
 async def create_new_submission(username: str, data: models.api.NewSubmissionRequest,
                                 current_user: model_queries.User = Depends(api_lib.get_current_active_user)):
     """ Create a new empty submission with the given information """
-    try:
-        if current_user.username != username:
-            raise NonAllowedOperation()
+    if current_user.username != username:
+        raise NonAllowedOperation()
 
-        print('Hello 1')
-        new_submission = await model_queries.ChallengeSubmission.create(
-            user_id=current_user.id,
-            username=current_user.username,
-            model_id=data.model_id,
-            benchmark_id=data.benchmark_id,
-            has_scores=data.has_scores,
-            author_label=data.author_label
-        )
-        print("Hello 2")
+    new_submission = await model_queries.ChallengeSubmission.create(
+        user_id=current_user.id,
+        username=current_user.username,
+        model_id=data.model_id,
+        benchmark_id=data.benchmark_id,
+        has_scores=data.has_scores,
+        author_label=data.author_label
+    )
 
-        # create model_id & submission dir
-        model_dir = submission_lib.ModelDir.load(data.model_id)
-        model_dir.make_submission(
-            submission_id=new_submission.id,
-            benchmark_label=new_submission.benchmark_id,
-            auto_eval=new_submission.auto_eval,
-            username=current_user.username,
-            leaderboard_file=data.leaderboard,
-            filehash=data.hash,
-            multipart=data.multipart,
-            has_scores=data.has_scores,
-            index=data.index
-        )
+    # create model_id & submission dir
+    model_dir = submission_lib.ModelDir.load(data.model_id)
+    model_dir.make_submission(
+        submission_id=new_submission.id,
+        benchmark_label=new_submission.benchmark_id,
+        auto_eval=new_submission.auto_eval,
+        username=current_user.username,
+        leaderboard_file=data.leaderboard,
+        filehash=data.hash,
+        multipart=data.multipart,
+        has_scores=data.has_scores,
+        index=data.index
+    )
 
-        return new_submission.id
-    except Exception as e:
-        print(e)
-        raise ValueError(f'WTF happened: {e}')
+    return dict(
+        status=new_submission.status, benchmark=new_submission.benchmark_id,
+        user=current_user.username, submission_id=new_submission.id, auto_eval=new_submission.auto_eval
+    )

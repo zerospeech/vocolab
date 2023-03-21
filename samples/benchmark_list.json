@@ -9,7 +9,7 @@
     "auto_eval": false
   },
   {
-    "label": "abx-15",
+    "label": "abx15",
     "start_date": "2015-01-20",
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_1/benchmarks_datasets/#zr2015-and-abx15",
@@ -17,7 +17,7 @@
     "evaluator": null
   },
   {
-    "label": "abx-17",
+    "label": "abx17",
     "start_date": "2017-01-20",
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_1/benchmarks_datasets/#zrc2017-and-abx17",
@@ -26,7 +26,7 @@
     "auto_eval": false
   },
   {
-    "label": "abx-LS",
+    "label": "abxLS",
     "start_date": "2021-12-12",
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_1/benchmarks_datasets/#abxls-dataset-and-benchmark",
@@ -35,7 +35,7 @@
     "auto_eval": false
   },
   {
-    "label": "tde-15",
+    "label": "tde15",
     "start_date": "2015-01-20",
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_2/tasks_goals/",
@@ -44,7 +44,7 @@
     "auto_eval": false
   },
   {
-    "label": "tde-17",
+    "label": "tde17",
     "start_date": "2017-01-20",
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_2/tasks_goals/",
@@ -53,7 +53,7 @@
     "auto_eval": false
   },
   {
-    "label": "slm-21",
+    "label": "sLM21",
     "start_date": "2021-12-12",
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_4/tasks_goals/",
@@ -62,7 +62,16 @@
     "auto_eval": false
   },
   {
-    "label": "ttso-19",
+    "label": "prosAudit",
+    "start_date": "2023-02-01",
+    "end_date": null,
+    "url": "https://zerospeech.com/tasks/task_4/tasks_goals/",
+    "active": true,
+    "evaluator": null,
+    "auto_eval": false
+  },
+  {
+    "label": "ttso19",
     "start_date": "2019-01-20",
     "end_date": null,
     "url": "https://zerospeech.com/tasks/task_3/tasks_goals/",

@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from vocolab import get_settings, exc
 from .logs import SubmissionLogger
-from .upload import MultipartUploadHandler, SinglepartUploadHandler, ManifestIndexItem
+from .upload import MultiPartUploadHandler, SinglePartUploadHandler, ManifestIndexItem
 from ..commons import unzip, ssh_exec, rsync, zip_folder, scp
 from ...data.models.api import SubmissionRequestFileIndexItem
 
@@ -154,9 +154,7 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
         """
         if self.is_multipart():
             """ Multipart upload """
-            print("HELLO 1")
-            handler = MultipartUploadHandler.load_from_index(self.multipart_index_file)
-            print("Hello 2")
+            handler = MultiPartUploadHandler.load_from_index(self.multipart_index_file)
             handler.add_part(
                 logger=self.log_handler,
                 file_name=file_name,
@@ -165,7 +163,7 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
             handler.dump_to_index(self.multipart_index_file)
         else:
             """ Single part upload """
-            handler = SinglepartUploadHandler(root_dir=self.root_dir)
+            handler = SinglePartUploadHandler(root_dir=self.root_dir)
             handler.write_data(
                 logger=self.log_handler,
                 file_name=file_name,
@@ -180,7 +178,7 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
         """ Actions to perform after upload has completed on a submission (extract files, update metadata, etc)"""
         logger = self.log_handler
         if self.is_multipart():
-            handler = MultipartUploadHandler.load_from_index(self.multipart_index_file)
+            handler = MultiPartUploadHandler.load_from_index(self.multipart_index_file)
             if not handler.completed():
                 raise exc.FailedOperation(f'Cannot Complete incomplete submission {self.submission_id} !!!')
 
@@ -189,7 +187,7 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
             handler.merge_parts()
             logger.log("parts merged successfully")
         else:
-            handler = SinglepartUploadHandler(root_dir=self.root_dir)
+            handler = SinglePartUploadHandler(root_dir=self.root_dir)
             if not handler.completed():
                 raise exc.FailedOperation(f'Cannot Complete incomplete submission {self.submission_id} !!!')
 
@@ -198,6 +196,8 @@ class SubmissionDir(BaseModel, arbitrary_types_allowed=True):
         # unzip archive to content location
         logger.log(f"unzipping archive {handler.target_file} into {self.content_location}")
         unzip(handler.target_file, self.content_location)
+        # clean-up download artifacts
+        # handler.clean()
 
     def send_content(self, hostname: str) -> Path:
         """ Send content to a remote host for evaluation (return target location) """
@@ -349,7 +349,7 @@ class ModelDir(BaseModel):
             if len(index) <= 0:
                 raise ValueError('Parts list is empty')
             submission_dir.multipart_dir.mkdir(exist_ok=True)
-            upload_handler = MultipartUploadHandler(
+            upload_handler = MultiPartUploadHandler(
                 store_location=submission_dir.multipart_dir,
                 target_location=submission_dir.root_dir,
                 merge_hash=filehash,
@@ -357,7 +357,7 @@ class ModelDir(BaseModel):
             )
             with submission_dir.multipart_index_file.open('w') as fp:
                 fp.write(
-                    upload_handler.json(include={'index'}, indent=4)
+                    upload_handler.json(indent=4)
                 )
         else:
             with submission_dir.content_archive_hash_file.open('w') as fp:

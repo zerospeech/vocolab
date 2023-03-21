@@ -23,7 +23,6 @@ async def get_challenge_list(include_inactive: bool = False):
 @router.get('/{benchmark_id}/info')
 async def get_challenge_info(benchmark_id: str):
     """ Return information of a specific benchmark """
-    # todo add leaderboards to challenge info
     return await model_queries.Benchmark.get(benchmark_id=benchmark_id, allow_inactive=True)
 
 

@@ -26,7 +26,7 @@ NOTE: v3.0.2 is currently used, an update to v4 needs to be implemented.
 """
 
 
-class SinglepartUploadHandler(BaseModel):
+class SinglePartUploadHandler(BaseModel):
     root_dir: Path
 
     @property
@@ -64,6 +64,10 @@ class SinglepartUploadHandler(BaseModel):
 
         logger.log(f" --> file was uploaded successfully", date=False)
 
+    def clean(self):
+        """ Delete download artifacts """
+        pass
+
 
 class ManifestIndexItem(BaseModel):
     """ Model representing a file item in the SplitManifest """
@@ -86,7 +90,7 @@ class ManifestIndexItem(BaseModel):
         )
 
 
-class MultipartUploadHandler(BaseModel):
+class MultiPartUploadHandler(BaseModel):
     """ Data Model used for the binary split function as a manifest to allow merging """
     store_location: Path
     merge_hash: str
@@ -139,7 +143,6 @@ class MultipartUploadHandler(BaseModel):
             - ValueNotValid if md5 hash of file does not match md5 recorded in the manifest
         """
         logger.log(f"adding a new part to upload: {self.store_location / file_name}")
-        # todo load information from index and name ???
 
         # write data on disk
         file_part = self.store_location / file_name
