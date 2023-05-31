@@ -23,7 +23,6 @@ class LeaderboardEntry(BaseModel):
         orm_mode = True
 
 
-
 class LeaderboardEntryList(BaseModel):
     """ Data representation of a leaderboard entry list"""
     items: List[LeaderboardEntry]
@@ -63,10 +62,3 @@ class Leaderboard(BaseModel):
         if not ld_entries:
             return LeaderboardEntryList(items=[])
         return LeaderboardEntryList.parse_obj(dict(items=ld_entries))
-
-
-
-
-
-
-

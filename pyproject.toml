@@ -29,8 +29,12 @@ repository = "https://github.com/zerospeech/vocolab"
 voco = "vocolab.admin.main:run_cli"
 
 [project.optional-dependencies]
+extend = [
+    # todo migrate towards normal install when package is published
+    "git+ssh://git@github.com/zerospeech/vocolab-ext.git"
+]
+
 dev = [
-   "zerospeech-benchmarks[all]",
     "ipython",
     "jupyterlab",
     "pytest",

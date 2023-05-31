@@ -108,7 +108,7 @@ async def password_reset_request(
     if html_response:
         data = dict(
             image_dir=f"{request.base_url}static/img",
-            title=f"Password Change Request Received !",
+            title="Password Change Request Received !",
             body=f"A verification email will be sent to {email}",
             success=True
         )

@@ -125,6 +125,7 @@ class ModelIDList(BaseModel):
         return cls.parse_obj(dict(items=items))
 
 
+
 class SubmissionStatus(str, Enum):
     """ Definition of different states of submissions """
     # TODO: maybe add submission type (with scores...)

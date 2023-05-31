@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Generator, Optional
 
 from pydantic import BaseModel
+from vocolab_ext.leaderboards import LeaderboardRegistry, LeaderboardManager
 
 from vocolab import get_settings
 from vocolab.data import models
@@ -12,7 +13,7 @@ from vocolab.data import models
 _settings = get_settings()
 
 
-class LeaderboardDir(BaseModel):
+class LeaderboardsDir(BaseModel):
     """ Handler class for disk storage of Leaderboards """
     location: Path
     sorting_key: Optional[str]

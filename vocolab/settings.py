@@ -147,6 +147,11 @@ class UserSettings(BaseModel):
     submission_interval: timedelta = timedelta(days=1)
 
 
+class VocolabExtensions(BaseModel):
+    leaderboards_extension: Optional[str] = None
+    submission_extension: Optional[str] = None
+
+
 class _VocoLabSettings(BaseSettings):
     """ Base Settings for module """
     app_home: DirectoryPath = Path(__file__).parent
@@ -165,6 +170,7 @@ class _VocoLabSettings(BaseSettings):
     notify_options: NotifySettings = NotifySettings()
     server_options: ServerSettings = ServerSettings()
     user_options: UserSettings = UserSettings()
+    extensions: VocolabExtensions = VocolabExtensions()
 
     CUSTOM_TEMPLATES_DIR: Optional[Path] = None
 
