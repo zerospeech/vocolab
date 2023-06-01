@@ -1,14 +1,18 @@
 import shlex
 from datetime import date
 from datetime import datetime
+from dataclasses import asdict
 from pathlib import Path
 from typing import Optional, List, Any, Iterable
 
 from pydantic import BaseModel, HttpUrl, Json
 
+from vocolab_ext.leaderboards import LeaderboardEntryBase
+
 from vocolab import get_settings
-from vocolab.data import models, tables
 from vocolab.core import misc, leaderboards_lib
+from vocolab.data import models, tables
+from .auth import User
 from ..db import zrDB, db_exc
 
 st = get_settings()
@@ -201,8 +205,8 @@ class Leaderboard(BaseModel):
     class Config:
         orm_mode = True
 
-    def get_dir(self):
-        leaderboards_lib.LeaderboardDir.load(
+    def get_dir(self) -> leaderboards_lib.LeaderboardDir:
+        return leaderboards_lib.LeaderboardDir.load(
             label=self.label,
             sorting_key=self.sorting_key
         )
@@ -303,12 +307,62 @@ class LeaderboardList(BaseModel):
         return cls(items=ld_list)
 
 
-class LeaderboardEntry:
+class LeaderboardEntry(BaseModel):
     """ Data representation of a leaderboard entry """
     id: Optional[int]
     data: Json
     entry_path: Path
     submission_id: str
     leaderboard_id: str
+    model_id: str
     user_id: int
+    authors: str
+    author_label: str
+    description: str
     submitted_at: datetime
+
+    async def base(self) -> LeaderboardEntryBase:
+        user = await User.get(by_uid=self.user_id)
+        return LeaderboardEntryBase(
+            submission_id=self.submission_id,
+            model_id=self.model_id,
+            description=self.description,
+            authors=self.authors,
+            author_label=self.author_label,
+            submission_date=self.submitted_at,
+            submitted_by=user.username
+        )
+
+    async def update(self, base: LeaderboardEntryBase):
+        self.submission_id = base.submission_id
+        self.model_id = base.model_id
+        self.description = base.description
+        self.authors = base.authors
+        self.author_label = base.author_label
+        self.submitted_at = base.submission_date
+
+        base_dict = asdict(base)
+        del base["submitted_by"]
+        query = tables.leaderboards_table.update().where(
+            tables.leaderboard_entry_table.c.id == self.id
+        ).values(
+            **base_dict
+        )
+        await zrDB.execute(query)
+        # todo: check how this would work ???
+        (await self.leaderboard()).get_dir().update_entry(await self.base())
+
+
+    async def leaderboard(self) -> Leaderboard:
+        return await Leaderboard.get(self.leaderboard_id)
+
+    @classmethod
+    async def get(cls, by_id) -> Optional["LeaderboardEntry"]:
+        query = tables.leaderboard_entry_table.select().where(
+            tables.leaderboard_entry_table.c.id == by_id
+        )
+        ld = await zrDB.fetch_one(query)
+        if ld is None:
+            return None
+        return cls.parse_obj(ld)
+

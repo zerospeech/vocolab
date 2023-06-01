@@ -1,50 +1,58 @@
 [
   {
     "label": "test-leaderboard",
-    "challenge_id": 1,
+    "benchmark_id": 1,
     "archived": false,
-    "static_files": false
+    "static_files": false,
+    "sorting_key": null
   },
   {
     "label": "abx-15-leaderboard",
-    "challenge_id": 2,
+    "benchmark_id": 2,
     "archived": false,
-    "static_files": false
+    "static_files": false,
+    "sorting_key": null
   },
   {
     "label": "abx-17-leaderboard",
-    "challenge_id": 3,
+    "benchmark_id": 3,
     "archived": false,
-    "static_files": false
+    "static_files": false,
+    "sorting_key": null
   },
   {
     "label": "abx-LS-leaderboard",
-    "challenge_id": 4,
+    "benchmark_id": 4,
     "archived": false,
-    "static_files": false
+    "static_files": false,
+    "sorting_key": null
   },
   {
     "label": "sLM21-leaderboard",
-    "challenge_id": 7,
+    "benchmark_id": 7,
     "archived": false,
-    "static_files": false
+    "static_files": false,
+    "sorting_key": null
   },
   {
     "label": "tde-15-leaderboard",
-    "challenge_id": 5,
+    "benchmark_id": 5,
     "archived": false,
-    "static_files": false
+    "static_files": false,
+    "sorting_key": null
   },
-    {
+  {
     "label": "tde-17-leaderboard",
-    "challenge_id": 6,
+    "benchmark_id": 6,
     "archived": false,
-    "static_files": false
+    "static_files": false,
+    "sorting_key": null
   },
-    {
+  {
     "label": "tts0-leaderboard",
-    "challenge_id": 8,
+    "benchmark_id": 8,
     "archived": false,
-    "static_files": false
+    "static_files": false,
+    "sorting_key": null
   }
 ]

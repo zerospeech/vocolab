@@ -1,22 +1,24 @@
 import json
 import shutil
-from datetime import datetime
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Generator, Optional, Any
 
 from pydantic import BaseModel
 from vocolab_ext.leaderboards import LeaderboardRegistry, LeaderboardManager
 
 from vocolab import get_settings
-from vocolab.data import models
 
 _settings = get_settings()
 
+# Load leaderboard manager from extensions
+leaderboard_manager: LeaderboardManager = LeaderboardRegistry().load(_settings.extensions.leaderboards_extension)
 
-class LeaderboardsDir(BaseModel):
+
+class LeaderboardDir(BaseModel):
     """ Handler class for disk storage of Leaderboards """
     location: Path
     sorting_key: Optional[str]
+    leaderboard_type: str
 
     @property
     def label(self) -> str:
@@ -34,11 +36,11 @@ class LeaderboardsDir(BaseModel):
         return self.location / 'entries'
 
     @property
-    def entries(self) -> Generator[models.api.LeaderboardEntryItem, None, None]:
+    def entries(self) -> Generator[Any, None, None]:
         """ Generator containing entry objects """
         for item in self.entry_dir.glob("*.json"):
             with item.open() as fp:
-                yield models.api.LeaderboardEntryItem.parse_obj(json.load(fp))
+                yield leaderboard_manager.load_entry_from_obj(self.leaderboard_type, json.load(fp))
 
     @property
     def static_dir(self):
@@ -49,28 +51,34 @@ class LeaderboardsDir(BaseModel):
         """ Boolean checking whether this leaderboard has static files """
         return self.static_dir.is_dir()
 
-    def load_object(self, from_cache: bool) -> models.api.LeaderboardObj:
+    def load_object(self, from_cache: bool = True, raw: bool = False):
         """ Loads leaderboard object (cached or from entries)"""
-        if from_cache and self.cached_store.is_file():
-            with self.cached_store.open() as fp:
-                return models.api.LeaderboardObj.parse_obj(json.load(fp))
-        return models.api.LeaderboardObj(
-            updatedOn=datetime.now(),
-            data=[item for item in self.entries],
-            sorting_key=self.sorting_key
-        )
+        if self.cached_store.is_file():
+            if raw:
+                with self.cached_store.open() as fp:
+                    return json.load(fp)
+            if from_cache:
+                with self.cached_store.open() as fp:
+                    data = json.load(fp)
+                return leaderboard_manager.load_leaderboard_from_obj(name=self.leaderboard_type, obj=data)
+
+        # leaderboard file not found, build it
+        self.mkcache()
+        # recall function
+        return self.load_object(from_cache=True, raw=raw)
 
     def mkcache(self):
         """ Create cached version of final leaderboard """
-        data = self.load_object(from_cache=False)
-        with self.cached_store.open('w') as fp:
-            fp.write(data.json(indent=4))
+        # load entries into object
+        ld_m: LeaderboardManager = leaderboard_manager.create_from_entry_folder(self.leaderboard_type, self.entry_dir)
+        # export as json
+        ld_m.export_as_csv(self.cached_store)
 
     @classmethod
-    def load(cls, label: str, sorting_key: str):
+    def load(cls, label: str, sorting_key: Optional[str] = None):
         """ Load leaderboard dir  """
         loc = _settings.leaderboard_dir / label
-        if not loc.is_file():
+        if not loc.is_dir():
             raise ValueError(f'Leaderboard named {label} does not exist')
         return cls(
             location=loc,
