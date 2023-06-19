@@ -3,11 +3,10 @@ import base64
 import json
 import shutil
 import subprocess
-from collections import Callable
 from contextlib import contextmanager
 from datetime import datetime, date, time
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Callable
 
 from dateutil import parser
 
