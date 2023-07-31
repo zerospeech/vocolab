@@ -7,10 +7,8 @@ from rich.prompt import Prompt, Confirm, IntPrompt
 from rich.table import Table
 
 from vocolab import out
-from vocolab.admin import cmd_lib
-from vocolab.db import schema
-from vocolab.db.q import leaderboardQ
-from vocolab.lib import leaderboards_lib
+from vocolab.core import leaderboards_lib, cmd_lib
+from vocolab.data import model_queries
 
 
 class LeaderboardCMD(cmd_lib.CMD):
@@ -22,28 +20,22 @@ class LeaderboardCMD(cmd_lib.CMD):
     def run(self, argv):
         _ = self.parser.parse_args(argv)
         try:
-            leaderboards = asyncio.run(leaderboardQ.list_leaderboards())
+            leaderboards: model_queries.LeaderboardList = asyncio.run(model_queries.LeaderboardList.get_all())
         except ValueError:
-            leaderboards = []
+            leaderboards = model_queries.LeaderboardList(items=[])
 
         table = Table(show_header=True, header_style="bold magenta")
-        table.add_column('ID')
         table.add_column('Label')
         table.add_column('Archived')
-        table.add_column('External Entries', no_wrap=False, overflow='fold')
         table.add_column('Static Files')
-        table.add_column('Challenge ID')
-        table.add_column('EntryFile', no_wrap=False, overflow='fold')
-        table.add_column('LeaderboardFile', no_wrap=False, overflow='fold')
+        table.add_column('Benchmark ID')
         table.add_column('Key', no_wrap=False, overflow='fold')
-
         for entry in leaderboards:
             table.add_row(
-                f"{entry.id}", f"{entry.label}", f"{entry.archived}",
-                f"{entry.external_entries}", f"{entry.static_files}", f"{entry.challenge_id}",
-                f"{entry.entry_file}", f"{entry.path_to}", f"{entry.sorting_key}"
+                f"{entry.label}", f"{entry.archived}",
+                f"{entry.static_files}", f"{entry.benchmark_id}",
+                f"{entry.sorting_key}"
             )
-        # print table
         out.cli.print(table, no_wrap=False)
 
 
@@ -57,34 +49,16 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
     @staticmethod
     def ask_input():
         label = Prompt.ask("Label: ")
-        challenge_id = IntPrompt.ask("Challenge ID")
-
-        path_to = Prompt.ask(f"Leaderboard Compiled filename (default: {label}.json)")
-        if not path_to:
-            path_to = f"{label}.json"
-
-        entry_file = out.cli.raw.input(
-            f"Leaderboard individual entry filename (default: {label}-entry.json ): ")
-        if not entry_file:
-            entry_file = f"{label}-entry.json"
-
-        while True:
-            external_entries = out.cli.raw.input("Location of external entries: ")
-            external_entries = Path(external_entries)
-            if external_entries.is_dir():
-                break
-            else:
-                out.cli.error(f"External entries must be a valid directory")
-
+        benchmark_id = IntPrompt.ask("Benchmark ID")
         add_static_files = Confirm.ask("Does this leaderboard include static files", default=True)
+        archived = not Confirm.ask("Does this leaderboard accept new entries", default=True)
 
         return dict(
             label=label,
-            challenge_id=challenge_id,
-            path_to=path_to,
-            entry_file=entry_file,
-            external_entries=external_entries,
+            benchmark_id=benchmark_id,
+            archived=archived,
             static_files=add_static_files,
+            sorting_key=None
         )
 
     def run(self, argv):
@@ -107,14 +81,14 @@ class CreateLeaderboardCMD(cmd_lib.CMD):
             lds = [self.ask_input()]
 
         for item in lds:
-            asyncio.run(leaderboards_lib.create(
-                challenge_id=item.get("challenge_id"),
-                label=item.get("label"),
-                entry_file=item.get("entry_file"),
-                external_entries=item.get("external_entries"),
-                static_files=item.get("static_files", False),
-                archived=item.get("archived", False),
-                path_to=item.get("path_to")
+            asyncio.run(model_queries.Leaderboard.create(
+                model_queries.Leaderboard(
+                    label=item.get("label"),
+                    benchmark_id=item.get("benchmark_id"),
+                    static_files=item.get("static_files", False),
+                    archived=item.get("archived", False),
+                    sorting_key=item.get("sorting_key", None),
+                )
             ))
             out.cli.info(f"Successfully created leaderboard : {item.get('label')}")
 
@@ -124,52 +98,94 @@ class EditLeaderboardCMD(cmd_lib.CMD):
 
     def __init__(self, root, name, cmd_path):
         super(EditLeaderboardCMD, self).__init__(root, name, cmd_path)
-        self.leaderboard_fields = schema.LeaderBoard.get_field_names()
-        self.leaderboard_fields.remove('id')
+        self.leaderboard_fields = model_queries.Leaderboard.get_field_names()
 
         # arguments
-        self.parser.add_argument("leaderboard_id", type=int, help='The id of the entry')
+        self.parser.add_argument("leaderboard_id", type=str, help='The id of the entry')
         self.parser.add_argument("field_name", type=str, choices=self.leaderboard_fields,
                                  help="The name of the field")
         self.parser.add_argument('field_value', help="The new value of the field")
 
+    @staticmethod
+    async def update_value(leaderboard_id: str, field_name: str, value: str):
+        leaderboard = await model_queries.Leaderboard.get(leaderboard_id=leaderboard_id)
+        return await leaderboard.update_property(variable_name=field_name, value=value, allow_parsing=True)
+
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        res = asyncio.run(leaderboardQ.update_leaderboard_value(
+        res = asyncio.run(self.update_value(
             leaderboard_id=args.leaderboard_id,
-            variable_name=args.field_name,
-            value=args.field_value,
-            allow_parsing=True
+            field_name=args.field_name,
+            value=args.field_value
         ))
         out.cli.info(f"Field {args.field_name}={res} :white_check_mark:")
 
 
 class ShowLeaderboardCMD(cmd_lib.CMD):
     """ Print final leaderboard object """
-    
+
     def __init__(self, root, name, cmd_path):
         super(ShowLeaderboardCMD, self).__init__(root, name, cmd_path)
-        self.parser.add_argument('leaderboard_id', type=int)
+        self.parser.add_argument('label', type=str)
         self.parser.add_argument('--raw-output', action="store_true",
                                  help="Print in raw json without formatting")
 
+    @staticmethod
+    async def get_leaderboard(label: str):
+        return await model_queries.Leaderboard.get(label)
+
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        leaderboard = asyncio.run(leaderboards_lib.get_leaderboard(leaderboard_id=args.leaderboard_id))
+        ld = asyncio.run(self.get_leaderboard(label=args.label))
+        leaderboard_obj = ld.get_dir().load_object(from_cache=True, raw=True)
+
         if args.raw_output:
-            out.cli.raw.out(json.dumps(leaderboard))
+            out.cli.raw.out(json.dumps(leaderboard_obj, indent=4))
         else:
-            out.cli.print(leaderboard)
-    
+            out.cli.print(leaderboard_obj)
+
 
 class BuildLeaderboardCMD(cmd_lib.CMD):
     """ Compile entries into the leaderboard """
-    
+
     def __init__(self, root, name, cmd_path):
         super(BuildLeaderboardCMD, self).__init__(root, name, cmd_path)
         self.parser.add_argument('leaderboard_id', type=int, help='The id of the leaderboard')
 
+    @staticmethod
+    async def get_leaderboard(label: str):
+        return await model_queries.Leaderboard.get(label)
+
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        ld_file = asyncio.run(leaderboards_lib.build_leaderboard(leaderboard_id=args.leaderboard_id))
-        out.cli.info(f"Successfully build {ld_file}")
+        ld = asyncio.run(self.get_leaderboard(label=args.label))
+        ld.get_dir().mkcache()
+        out.cli.info(f"Successfully build {ld}")
+
+
+class LeaderboardEntries(cmd_lib.CMD):
+    """ Leaderboard entries """
+
+    def __init__(self, root, name, cmd_path):
+        super(LeaderboardEntries, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('--by-leaderboard', type="str")
+        self.parser.add_argument('--by-model', type="str")
+        self.parser.add_argument('--by-benchmark', type="str")
+
+
+class ImportLeaderboardEntries(cmd_lib.CMD):
+    """ Compile entries into the leaderboard """
+
+    def __init__(self, root, name, cmd_path):
+        super(BuildLeaderboardCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument('leaderboard_id', type=int, help='The id of the leaderboard')
+
+    @staticmethod
+    async def get_leaderboard(label: str):
+        return await model_queries.Leaderboard.get(label)
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+        ld = asyncio.run(self.get_leaderboard(label=args.label))
+        ld.get_dir().mkcache()
+        out.cli.info(f"Successfully build {ld}")

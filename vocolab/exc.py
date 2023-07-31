@@ -1,7 +1,11 @@
 """ A File containing Exceptions definitions """
 from typing import Any, Optional
 
-from starlette import status as http_status
+from fastapi import status as http_status
+
+from vocolab.settings import get_settings
+
+_settings = get_settings()
 
 
 class VocoLabException(Exception):
@@ -27,6 +31,16 @@ class VocoLabException(Exception):
 
     def __str__(self):
         return f"{self.__class__.__name__}: {self.message}"
+
+
+class APILockedException(VocoLabException):
+    """ Error to return when write operations are not permitted"""
+
+    def __init__(self):
+        super(APILockedException, self).__init__(
+            msg=f"The {_settings.app_options.app_name} is in LOCKED mode, write operations are not allowed",
+            status=http_status.HTTP_423_LOCKED
+        )
 
 
 class OptionMissing(VocoLabException):
@@ -76,4 +90,9 @@ class SecurityError(VocoLabException):
 
 class ServerError(VocoLabException):
     """ Error with the starting of a server/service """
+    pass
+
+
+class FailedOperation(VocoLabException):
+    """ Could not complete the requested operation """
     pass

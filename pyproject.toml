@@ -29,8 +29,24 @@ repository = "https://github.com/zerospeech/vocolab"
 voco = "vocolab.admin.main:run_cli"
 
 [project.optional-dependencies]
+
+extras = [
+    # todo migrate towards normal install when package is published
+    "vocolab-ext @ https://github.com/zerospeech/vocolab-ext/archive/master.zip"
+]
+
+eval = [
+    "vocolab[extras]",
+    "celery",
+]
+
+zerospeech = [
+    "vocolab[extras]",
+    # todo migrate this to pip version
+    "zerospeech-benchmarks @ https://github.com/zerospeech/vocolab-ext/archive/develop.zip"
+]
+
 dev = [
-   "zerospeech-benchmarks[all]",
     "ipython",
     "jupyterlab",
     "pytest",
@@ -38,7 +54,6 @@ dev = [
     "build",
     "icecream"
 ]
-
 
 
 [build-system]

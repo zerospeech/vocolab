@@ -1,22 +1,22 @@
-import secrets
-import shutil
-
 import os
 import platform
+import secrets
+import shutil
+import tempfile
+from contextlib import contextmanager
 from datetime import timedelta
 from functools import lru_cache
-from pathlib import Path
-from typing import List, Union, Set, Dict, Optional, Literal
 from importlib.metadata import version, PackageNotFoundError
+from pathlib import Path
+from typing import List, Union, Set, Dict, Optional, Generator
 
 try:
     from tomllib import load as toml_load
 except ImportError:
     from toml import load as toml_load
 
-
 from pydantic import (
-    BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork, BaseModel, Field
+    BaseSettings, EmailStr, DirectoryPath, HttpUrl, IPvAnyNetwork, BaseModel
 )
 
 
@@ -36,10 +36,6 @@ class ConsoleOutputSettings(BaseModel):
     ROTATING_LOGS: bool = True
     LOG_FILE: Optional[Path] = None
     ERROR_LOG_FILE: Optional[Path] = None
-
-
-class DatabaseSettings(BaseModel):
-    db_file: str = 'vocolab.db'
 
 
 class CeleryWorkerOptions(BaseModel):
@@ -73,10 +69,11 @@ class TaskQueueSettings(BaseModel):
     HOSTS: Set[str] = set()
     REMOTE_STORAGE: Dict[str, Path] = dict()
     REMOTE_BIN: Dict[str, Path] = dict()
-    AUTO_EVAL: bool = True
+    AUTO_EVAL: bool = False
 
 
 class AppSettings(BaseModel):
+    platform_name: str = "VOCOLAB"
     app_name: str = "VocoLab Challenge API"
     maintainers: str = "Organisation Name"
     admin_email: EmailStr = EmailStr("contact@email.com")
@@ -150,10 +147,18 @@ class UserSettings(BaseModel):
     submission_interval: timedelta = timedelta(days=1)
 
 
+class VocolabExtensions(BaseModel):
+    leaderboards_extension: Optional[str] = None
+    submission_extension: Optional[str] = None
+
+
 class _VocoLabSettings(BaseSettings):
     """ Base Settings for module """
     app_home: DirectoryPath = Path(__file__).parent
-    DATA_FOLDER: DirectoryPath = Path('data/')
+    DATA_FOLDER: DirectoryPath = Path('/data')
+    TMP_ROOT: DirectoryPath = Path('/tmp')
+    ARCHIVE_FOLDER: Path = Path('/archive')
+    ARCHIVE_HOST: str = "localhost"
 
     # Settings Categories
     app_options: AppSettings = AppSettings()
@@ -165,9 +170,16 @@ class _VocoLabSettings(BaseSettings):
     notify_options: NotifySettings = NotifySettings()
     server_options: ServerSettings = ServerSettings()
     user_options: UserSettings = UserSettings()
-    database_options: DatabaseSettings = DatabaseSettings()
+    extensions: VocolabExtensions = VocolabExtensions()
 
     CUSTOM_TEMPLATES_DIR: Optional[Path] = None
+
+    @property
+    def data_lock(self) -> Path:
+        return self.DATA_FOLDER / 'readonly.lock'
+
+    def is_locked(self) -> bool:
+        return self.data_lock.is_file()
 
     @property
     def static_files_directory(self) -> Path:
@@ -192,7 +204,13 @@ class _VocoLabSettings(BaseSettings):
     @property
     def submission_archive_dir(self) -> Path:
         """directory pointing to archived submissions """
-        return self.DATA_FOLDER / 'submissions/archive'
+        return self.ARCHIVE_FOLDER / 'submissions'
+
+    @property
+    def remote_archive(self) -> bool:
+        return self.ARCHIVE_HOST not in (
+            'localhost', '127.0.0.1', self.app_options.hostname
+        )
 
     @property
     def templates_dir(self) -> Path:
@@ -231,7 +249,36 @@ class _VocoLabSettings(BaseSettings):
         with (self.DATA_FOLDER / '.secret').open('rb') as fp:
             return fp.read().decode()
 
+    @property
+    def database_file(self):
+        """ Path to the database file """
+        return self.DATA_FOLDER / 'vocolab.db'
 
+    @property
+    def database_connection_url(self):
+        """ Database connection url """
+        return f"sqlite:///{self.database_file}"
+
+    @property
+    def email_verif_path(self) -> str:
+        """ Load API path for verifying emails """
+        with (self.DATA_FOLDER / 'email_verification.path').open() as fp:
+            return fp.read().strip()
+
+    @property
+    def password_reset_path(self) -> str:
+        """ Load API path for resetting passwords """
+        with (self.DATA_FOLDER / 'password_reset.path').open() as fp:
+            return fp.read().strip()
+
+    @contextmanager
+    def get_temp_dir(self) -> Generator[Path, None, None]:
+        """ Create a temporary directory """
+        temp_dir = tempfile.TemporaryDirectory(prefix="voco-", dir=str(self.TMP_ROOT))
+        try:
+            yield Path(temp_dir.name)
+        finally:
+            temp_dir.cleanup()
 
     class Config:
         env_prefix = 'VC_'

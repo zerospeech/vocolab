@@ -1,11 +1,12 @@
 import sys
 
 from vocolab import get_settings, out
-from vocolab.admin import cmd_lib, commands
+from vocolab.core import cmd_lib
+from vocolab.admin import commands
 
 # settings
 _settings = get_settings()
-has_db = (_settings.DATA_FOLDER / _settings.database_options.db_file).is_file()
+has_db = _settings.database_file.is_file()
 has_users = has_db and _settings.user_data_dir.is_dir()
 has_challenges = has_db
 has_submissions = _settings.submission_dir.is_dir()
@@ -21,15 +22,15 @@ def build_cli():
         # user functions
         tree.add_cmd_tree(
             commands.user.UsersCMD(CMD_NAME, 'users', ''),
-            commands.user.UserSessionsCMD(CMD_NAME, 'sessions', 'users'),
-            commands.user.CloseUserSessionsCMD(CMD_NAME, 'close', 'users:sessions'),
-            commands.user.CreateUserSessionsCMD(CMD_NAME, 'create', 'users:sessions'),
+            # commands.user.UserSessionsCMD(CMD_NAME, 'sessions', 'users'),
+            # commands.user.CloseUserSessionsCMD(CMD_NAME, 'close', 'users:sessions'),
+            commands.user.CreateUserSessionCMD(CMD_NAME, 'create', 'users:sessions'),
             commands.user.CreateUserCMD(CMD_NAME, 'create', 'users'),
             commands.user.VerifyUserCMD(CMD_NAME, 'verify', 'users'),
             commands.user.UserActivationCMD(CMD_NAME, 'activate', 'users'),
             commands.user.PasswordUserCMD(CMD_NAME, 'password', 'users'),
             commands.user.CheckPasswordCMD(CMD_NAME, 'check', 'users:password'),
-            commands.user.ResetSessionsCMD(CMD_NAME, 'reset', 'users:password'),
+            # commands.user.ResetSessionsCMD(CMD_NAME, 'reset', 'users:password'),
             commands.user.NotifyCMD(CMD_NAME, 'notify', 'users'),
             commands.user.DeleteUser(CMD_NAME, 'delete', 'users')
         )
@@ -37,9 +38,9 @@ def build_cli():
     if has_challenges:
         # challenge functions
         tree.add_cmd_tree(
-            commands.challenges.ChallengesCMD(CMD_NAME, 'challenges', ''),
-            commands.challenges.AddChallengeCMD(CMD_NAME, 'add', 'challenges'),
-            commands.challenges.SetChallenge(CMD_NAME, 'set', 'challenges')
+            commands.challenges.BenchmarksCMD(CMD_NAME, 'benchmarks', ''),
+            commands.challenges.AddBenchmarkCMD(CMD_NAME, 'add', 'benchmarks'),
+            commands.challenges.SetBenchmarkCMD(CMD_NAME, 'set', 'benchmarks')
         )
 
     if has_db:
@@ -81,6 +82,7 @@ def build_cli():
         commands.settings.GenerateEnvFileCMD(CMD_NAME, 'template', 'settings'),
         commands.api.APICMD(CMD_NAME, 'api', ''),
         commands.api.DebugAPICMD(CMD_NAME, 'serve', 'api'),
+        commands.api.APILockCMD(CMD_NAME, 'lock', 'api'),
         commands.api.APInitEnvironmentCMD(CMD_NAME, 'init', 'api'),
         commands.api.ConfigFiles(CMD_NAME, 'config', 'api'),
         commands.api.GunicornConfigGeneration(CMD_NAME, 'gunicorn', 'api:config'),

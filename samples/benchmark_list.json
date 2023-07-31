@@ -1,0 +1,82 @@
+[
+  {
+    "label": "test-challenge",
+    "start_date": "2022-02-21",
+    "end_date": null,
+    "url": "https://zerospeech.com/track/test",
+    "active": true,
+    "evaluator": null,
+    "auto_eval": false
+  },
+  {
+    "label": "abx15",
+    "start_date": "2015-01-20",
+    "end_date": null,
+    "url": "https://zerospeech.com/tasks/task_1/benchmarks_datasets/#zr2015-and-abx15",
+    "active": false,
+    "evaluator": null
+  },
+  {
+    "label": "abx17",
+    "start_date": "2017-01-20",
+    "end_date": null,
+    "url": "https://zerospeech.com/tasks/task_1/benchmarks_datasets/#zrc2017-and-abx17",
+    "active": false,
+    "evaluator": null,
+    "auto_eval": false
+  },
+  {
+    "label": "abxLS",
+    "start_date": "2021-12-12",
+    "end_date": null,
+    "url": "https://zerospeech.com/tasks/task_1/benchmarks_datasets/#abxls-dataset-and-benchmark",
+    "active": false,
+    "evaluator": null,
+    "auto_eval": false
+  },
+  {
+    "label": "tde15",
+    "start_date": "2015-01-20",
+    "end_date": null,
+    "url": "https://zerospeech.com/tasks/task_2/tasks_goals/",
+    "active": false,
+    "evaluator": null,
+    "auto_eval": false
+  },
+  {
+    "label": "tde17",
+    "start_date": "2017-01-20",
+    "end_date": null,
+    "url": "https://zerospeech.com/tasks/task_2/tasks_goals/",
+    "active": false,
+    "evaluator": null,
+    "auto_eval": false
+  },
+  {
+    "label": "sLM21",
+    "start_date": "2021-12-12",
+    "end_date": null,
+    "url": "https://zerospeech.com/tasks/task_4/tasks_goals/",
+    "active": false,
+    "evaluator": null,
+    "auto_eval": false
+  },
+  {
+    "label": "prosAudit",
+    "start_date": "2023-02-01",
+    "end_date": null,
+    "url": "https://zerospeech.com/tasks/task_4/tasks_goals/",
+    "active": true,
+    "evaluator": null,
+    "auto_eval": false
+  },
+  {
+    "label": "ttso19",
+    "start_date": "2019-01-20",
+    "end_date": null,
+    "url": "https://zerospeech.com/tasks/task_3/tasks_goals/",
+    "active": false,
+    "evaluator": null,
+    "auto_eval": false
+  }
+]

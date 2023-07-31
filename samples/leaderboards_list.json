@@ -1,0 +1,58 @@
+[
+  {
+    "label": "test-leaderboard",
+    "benchmark_id": 1,
+    "archived": false,
+    "static_files": false,
+    "sorting_key": null
+  },
+  {
+    "label": "abx-15-leaderboard",
+    "benchmark_id": 2,
+    "archived": false,
+    "static_files": false,
+    "sorting_key": null
+  },
+  {
+    "label": "abx-17-leaderboard",
+    "benchmark_id": 3,
+    "archived": false,
+    "static_files": false,
+    "sorting_key": null
+  },
+  {
+    "label": "abx-LS-leaderboard",
+    "benchmark_id": 4,
+    "archived": false,
+    "static_files": false,
+    "sorting_key": null
+  },
+  {
+    "label": "sLM21-leaderboard",
+    "benchmark_id": 7,
+    "archived": false,
+    "static_files": false,
+    "sorting_key": null
+  },
+  {
+    "label": "tde-15-leaderboard",
+    "benchmark_id": 5,
+    "archived": false,
+    "static_files": false,
+    "sorting_key": null
+  },
+  {
+    "label": "tde-17-leaderboard",
+    "benchmark_id": 6,
+    "archived": false,
+    "static_files": false,
+    "sorting_key": null
+  },
+  {
+    "label": "tts0-leaderboard",
+    "benchmark_id": 8,
+    "archived": false,
+    "static_files": false,
+    "sorting_key": null
+  }
+]

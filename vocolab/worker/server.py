@@ -5,8 +5,8 @@ from typing import Dict
 from celery import Celery
 
 from vocolab import out, get_settings
-from vocolab.db.models import tasks
-from vocolab.lib import worker_lib
+from vocolab.data import models
+from vocolab.core import worker_lib
 
 # """""""""""""""""""""""""""""""""""""
 # todo: read up on what is the best pool/supervisor
@@ -28,19 +28,19 @@ app.conf.update({
 
 @app.task(name='echo-task', ignore_result=True)
 def echo(slm: Dict):
-    slm = tasks.SimpleLogMessage(**slm)
+    slm = models.tasks.SimpleLogMessage(**slm)
     worker_lib.tasks.echo_fn(slm)
 
 
 @app.task(name='update-task', ignore_result=True)
 def update(sum_: Dict):
-    sum_ = tasks.SubmissionUpdateMessage(**sum_)
+    sum_ = models.tasks.SubmissionUpdateMessage(**sum_)
     out.log.log(f'updating {sum_.submission_id}')
     worker_lib.tasks.update_task_fn(sum_)
 
 
 @app.task(name='eval-task', ignore_result=True)
 def evaluate(sem: Dict):
-    sem = tasks.SubmissionEvaluationMessage(**sem)
+    sem = models.tasks.SubmissionEvaluationMessage(**sem)
     out.log.log(f'evaluating {sem.submission_id}')
     worker_lib.tasks.evaluate_submission_fn(sem)

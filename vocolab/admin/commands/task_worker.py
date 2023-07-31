@@ -6,8 +6,8 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from vocolab import out, get_settings
-from vocolab.admin import cmd_lib
-from vocolab.db.models import tasks
+from vocolab.core import cmd_lib
+from vocolab.data import models
 from vocolab.worker import server
 
 _settings = get_settings()
@@ -54,7 +54,7 @@ class SendEchoMessage(cmd_lib.CMD):
     def run(self, argv):
         args = self.parser.parse_args(argv)
         server.echo().delay(
-            tasks.SimpleLogMessage(
+            models.tasks.SimpleLogMessage(
                 label="cli-echo-testing",
                 message=f"{args.message}"
             ).dict()

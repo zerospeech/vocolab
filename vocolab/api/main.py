@@ -9,10 +9,11 @@ from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
 from vocolab import settings, out
 from vocolab.api import router as v1_router
-from vocolab.db import zrDB, create_db
+from vocolab.data import db
 from vocolab.exc import VocoLabException
 
 _settings = settings.get_settings()
@@ -30,15 +31,6 @@ app = FastAPI(
     middleware=middleware
 )
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     # allow_origin_regex=_settings.origin_regex,
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -49,7 +41,11 @@ async def log_requests(request: Request, call_next):
 
     start_time = time.time()
 
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception as e:
+        print(e)
+        raise e
 
     process_time = (time.time() - start_time) * 1000
     formatted_process_time = '{0:.2f}'.format(process_time)
@@ -78,6 +74,19 @@ async def value_error_reformatting(request: Request, exc: ValueError):
 
 @app.exception_handler(VocoLabException)
 async def zerospeech_error_formatting(request: Request, exc: VocoLabException):
+    if hasattr(exc, 'data'):
+        content = dict(message=f"{str(exc)}", data=str(exc.data))
+    else:
+        content = dict(message=f"{str(exc)}")
+
+    return JSONResponse(
+        status_code=exc.status,
+        content=content,
+    )
+
+
+@app.exception_handler(ValidationError)
+async def zerospeech_error_formatting(request: Request, exc: VocoLabException):
     if exc.data:
         content = dict(message=f"{str(exc)}", data=str(exc.data))
     else:
@@ -92,9 +101,9 @@ async def zerospeech_error_formatting(request: Request, exc: VocoLabException):
 @app.on_event("startup")
 async def startup():
     # conditional creation of the necessary files
-    create_db()
+    db.build_database_from_schema()
     # pool connection to databases
-    await zrDB.connect()
+    await db.zrDB.connect()
     # create data_folders
     _settings.user_data_dir.mkdir(exist_ok=True, parents=True)
     _settings.leaderboard_dir.mkdir(exist_ok=True)
@@ -112,7 +121,7 @@ async def startup():
 async def shutdown():
     # clean up db connection pool
     out.log.info("shutdown of api server")
-    await zrDB.disconnect()
+    await db.zrDB.disconnect()
 
 
 # sub applications

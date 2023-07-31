@@ -1,16 +1,12 @@
+import argparse
 import asyncio
-import shutil
 import sys
-from pathlib import Path
 
 from rich.table import Table
 
 from vocolab import out, get_settings
-from vocolab.admin import cmd_lib
-from vocolab.db.models.api import NewSubmissionRequest, NewSubmission
-from vocolab.db.q import challengesQ, userQ
-from vocolab.db import schema as db_challenges
-from vocolab.lib import submissions_lib
+from vocolab.core import submission_lib, cmd_lib
+from vocolab.data import model_queries
 
 # api settings
 _settings = get_settings()
@@ -24,25 +20,27 @@ class SubmissionCMD(cmd_lib.CMD):
 
         # custom arguments
         self.parser.add_argument('-u', '--user', type=int, help='Filter by user ID')
-        self.parser.add_argument('-t', '--track', type=int, help='Filter by track ID')
+        self.parser.add_argument('-b', '--benchmark', type=int, help='Filter by track ID')
         self.parser.add_argument('-s', '--status',
-                                 choices=db_challenges.SubmissionStatus.get_values(),
+                                 choices=model_queries.SubmissionStatus.get_values(),
                                  help='Filter by status')
+
+    @staticmethod
+    async def fetch_by(args: argparse.Namespace) -> model_queries.ChallengeSubmissionList:
+        if args.user:
+            return await model_queries.ChallengeSubmissionList.get_from_user(user_id=args.user)
+
+        elif args.benchmark:
+            return await model_queries.ChallengeSubmissionList.get_from_challenge(benchmark_id=args.benchmark)
+
+        elif args.status:
+            return await model_queries.ChallengeSubmissionList.get_by_status(status=args.status)
+
+        return await model_queries.ChallengeSubmissionList.get_all()
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        fn_args = {}
-
-        if args.user:
-            fn_args['by_user'] = args.user
-
-        if args.track:
-            fn_args['by_track'] = args.track
-
-        if args.status:
-            fn_args['by_status'] = args.status
-
-        items = asyncio.run(challengesQ.list_submission(**fn_args))
+        items: model_queries.ChallengeSubmissionList = asyncio.run(self.fetch_by(args))
 
         # Prepare output
         table = Table(show_header=True, header_style="bold magenta")
@@ -56,7 +54,7 @@ class SubmissionCMD(cmd_lib.CMD):
 
         for i in items:
             table.add_row(
-                f"{i.id}", f"{i.user_id}", f"{i.track_id}", f"{i.submit_date.strftime('%d/%m/%Y')}",
+                f"{i.id}", f"{i.user_id}", f"{i.benchmark_id}", f"{i.submit_date.strftime('%d/%m/%Y')}",
                 f"{i.status}", f"{i.evaluator_id}", f"{i.author_label}"
             )
         # print
@@ -72,16 +70,18 @@ class SetSubmissionCMD(cmd_lib.CMD):
         # custom arguments
         self.parser.add_argument("submission_id")
         self.parser.add_argument(
-            'status', choices=[str(el.value) for el in db_challenges.SubmissionStatus]  # noqa: enum has value attribute
+            'status', choices=[str(el.value) for el in model_queries.SubmissionStatus]  # noqa: enum has value attribute
         )
+
+    @staticmethod
+    async def set_status(submission_id: str, status: model_queries.SubmissionStatus):
+        submission = await model_queries.ChallengeSubmission.get(submission_id=submission_id)
+        await submission.update_status(status=status)
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        submission_fs = submissions_lib.get_submission_dir(args.submission_id, as_obj=True)
-        submission_fs.clean_all_locks()
-        asyncio.run(challengesQ.update_submission_status(
-            by_id=args.submission_id, status=args.status
-        ))
+        status = model_queries.SubmissionStatus(args.status)
+        asyncio.run(self.set_status(args.submission_id, status))
 
 
 class CreateSubmissionCMD(cmd_lib.CMD):
@@ -89,62 +89,75 @@ class CreateSubmissionCMD(cmd_lib.CMD):
 
     def __init__(self, root, name, cmd_path):
         super(CreateSubmissionCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument("model_id", type=str)
         self.parser.add_argument("challenge_id", type=int)
         self.parser.add_argument("user_id", type=int)
         self.parser.add_argument("archive")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        archive = Path(args.archive)
+        # todo use new method
 
-        if not archive.is_file():
-            out.cli.error(f'Requested file {archive} does not exist')
+    # def run(self, argv):
+    #     args = self.parser.parse_args(argv)
+    #     archive = Path(args.archive)
+    #
+    #     if not archive.is_file():
+    #         out.cli.error(f'Requested file {archive} does not exist')
 
-        async def create_submission(ch_id, user_id):
-            try:
-                _challenge = await challengesQ.get_challenge(challenge_id=ch_id)
-                _user = await userQ.get_user(by_uid=user_id)
-
-                if not _user.enabled:
-                    out.cli.error(f'User {_user.username} is not allowed to perform this action')
-                    sys.exit(1)
-
-                _submission_id = await challengesQ.add_submission(new_submission=NewSubmission(
-                    user_id=_user.id,
-                    track_id=_challenge.id
-                ), evaluator_id=_challenge.evaluator)
-                return _challenge, _user, _submission_id
-            except ValueError:
-                out.cli.exception()
-                sys.exit(1)
-
-        # fetch db items
-        challenge, user, submission_id = asyncio.run(create_submission(args.challenge_id, args.user_id))
-
-        # create entry on disk
-        submissions_lib.make_submission_on_disk(
-            submission_id, user.username, challenge.label,
-            NewSubmissionRequest(
-                filename=archive.name, hash=submissions_lib.md5sum(archive),
-                multipart=False
-            )
-        )
-        # fetch folder
-        folder = submissions_lib.get_submission_dir(submission_id)
-        # copy file
-        shutil.copy(archive, folder / 'archive.zip')
-        submissions_lib.unzip(folder / 'archive.zip', folder / 'input')
-
-        # set status
-        (folder / 'upload.lock').unlink()
-        asyncio.run(
-            challengesQ.update_submission_status(by_id=submission_id, status=db_challenges.SubmissionStatus.uploaded)
-        )
+    # async def create_submission(ch_id, user_id):
+    #     try:
+    #         _challenge = await model_queries.Challenge.get(challenge_id=ch_id)
+    #         _user = await model_queries.User.get(by_uid=user_id)
+    #
+    #         _model_id = await model_queries.ModelID.get(model_id=args.model_id)
+    #         if _model_id is None:
+    #             out.cli.error(f"Model: {args.model_id} does not exist please create it !!")
+    #             sys.exit(1)
+    #
+    #         if not _user.enabled:
+    #             out.cli.error(f'User {_user.username} is not allowed to perform this action')
+    #             sys.exit(1)
+    #
+    #         _submission_id = await model_queries.ChallengeSubmission.create(
+    #             username=_user.username,
+    #
+    #             new_submission=NewSubmission(
+    #             user_id=_user.id,
+    #             track_id=_challenge.id
+    #         ), evaluator_id=_challenge.evaluator)
+    #         return _challenge, _user, _submission_id
+    #     except ValueError:
+    #         out.cli.exception()
+    #         sys.exit(1)
+    #
+    # # fetch db items
+    # challenge, user, submission_id = asyncio.run(create_submission(args.challenge_id, args.user_id))
+    #
+    # # create entry on disk
+    # submission_lib.make_submission_on_disk(
+    #     submission_id, user.username, challenge.label,
+    #     NewSubmissionRequest(
+    #         filename=archive.name, hash=submission_lib.md5sum(archive),
+    #         multipart=False
+    #     )
+    # )
+    # # fetch folder
+    # folder = submission_lib.get_submission_dir(submission_id)
+    # # copy file
+    # shutil.copy(archive, folder / 'archive.zip')
+    # submission_lib.unzip(folder / 'archive.zip', folder / 'input')
+    #
+    # # set status
+    # (folder / 'upload.lock').unlink()
+    # asyncio.run(
+    #     challengesQ.update_submission_status(by_id=submission_id, status=db_challenges.SubmissionStatus.uploaded)
+    # )
 
 
 class EvalSubmissionCMD(cmd_lib.CMD):
     """ Launches the evaluation of a submission """
-    sub_status = db_challenges.SubmissionStatus
+    sub_status = model_queries.SubmissionStatus
     no_eval = {
         sub_status.uploading, sub_status.on_queue, sub_status.invalid,
         sub_status.uploading, sub_status.validating, sub_status.evaluating,
@@ -164,8 +177,8 @@ class EvalSubmissionCMD(cmd_lib.CMD):
         else:
             extra_arguments = []
 
-        submission: db_challenges.ChallengeSubmission = asyncio.run(
-            challengesQ.get_submission(by_id=args.submission_id))
+        submission: model_queries.ChallengeSubmission = asyncio.run(
+            model_queries.ChallengeSubmission.get(submission_id=args.submission_id))
 
         if submission.status in self.no_eval:
             out.cli.print(f"Cannot evaluate a submission that has status : {submission.status}")
@@ -173,7 +186,7 @@ class EvalSubmissionCMD(cmd_lib.CMD):
 
         asyncio.run(
             # todo check if status is correctly set.
-            submissions_lib.evaluate(submission_id=submission.id, extra_args=extra_arguments)
+            submission_lib.evaluate(submission_id=submission.id, extra_args=extra_arguments)
         )
 
 
@@ -186,6 +199,8 @@ class FetchSubmissionFromRemote(cmd_lib.CMD):
         self.parser.add_argument("submission_id")
 
     def run(self, argv):
+        # todo recheck this
+
         args = self.parser.parse_args(argv)
         if args.hostname not in list(_settings.task_queue_options.REMOTE_STORAGE.keys()):
             out.cli.warning(f"Host {args.hostname} is not a valid remote storage host!\n")
@@ -200,7 +215,7 @@ class FetchSubmissionFromRemote(cmd_lib.CMD):
             sys.exit(1)
 
         # transferring
-        submissions_lib.fetch_submission_from_remote(host=args.hostname, submission_id=args.submission_id)
+        submission_lib.fetch_submission_from_remote(host=args.hostname, submission_id=args.submission_id)
 
 
 class UploadSubmissionToRemote(cmd_lib.CMD):
@@ -213,6 +228,7 @@ class UploadSubmissionToRemote(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
+        # todo recheck this
 
         if args.hostname not in list(_settings.task_queue_options.REMOTE_STORAGE.keys()):
             out.cli.warning(f"Host {args.hostname} is not a valid remote storage host!\n")
@@ -227,7 +243,7 @@ class UploadSubmissionToRemote(cmd_lib.CMD):
             sys.exit(1)
 
         # transferring
-        submissions_lib.transfer_submission_to_remote(host=args.hostname, submission_id=args.submission_id)
+        submission_lib.transfer_submission_to_remote(host=args.hostname, submission_id=args.submission_id)
 
 
 class DeleteSubmissionCMD(cmd_lib.CMD):
@@ -242,23 +258,24 @@ class DeleteSubmissionCMD(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
+        # todo recheck this
 
         if args.delete_by == 'by_id':
-            del_id = asyncio.run(submissions_lib.delete_submission(by_id=args.selector))
-            submissions_lib.delete_submission_files(del_id[0])
+            del_id = asyncio.run(submission_lib.delete_submission(by_id=args.selector))
+            submission_lib.delete_submission_files(del_id[0])
             out.cli.info(f"Successfully deleted: {args.selector}")
         elif args.delete_by == 'by_user':
-            deleted = asyncio.run(submissions_lib.delete_submission(by_user=int(args.selector)))
+            deleted = asyncio.run(submission_lib.delete_submission(by_user=int(args.selector)))
 
             for d in deleted:
-                submissions_lib.delete_submission_files(d)
+                submission_lib.delete_submission_files(d)
                 out.cli.info(f"Successfully deleted: {d}")
 
         elif args.delete_by == 'by_track':
-            deleted = asyncio.run(submissions_lib.delete_submission(by_track=int(args.selector)))
+            deleted = asyncio.run(submission_lib.delete_submission(by_track=int(args.selector)))
 
             for d in deleted:
-                submissions_lib.delete_submission_files(d)
+                submission_lib.delete_submission_files(d)
                 out.cli.info(f"Successfully deleted: {d}")
         else:
             out.cli.error("Error type of deletion unknown")
@@ -275,6 +292,7 @@ class SubmissionSetEvaluator(cmd_lib.CMD):
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
+        # todo recheck this
 
         asyncio.run(challengesQ.update_submission_evaluator(
             args.evaluator_id, by_id=args.submission_id
@@ -292,6 +310,7 @@ class SubmissionSetAuthorLabel(cmd_lib.CMD):
     def run(self, argv):
         args = self.parser.parse_args(argv)
 
+        # todo recheck this
         asyncio.run(challengesQ.update_submission_author_label(
             args.author_label, by_id=args.submission_id
         ))
@@ -311,16 +330,17 @@ class ArchiveSubmissionCMD(cmd_lib.CMD):
     async def archive_submission(*args):
         for submission_id in args:
             # archive leaderboard entry
-            await submissions_lib.archive_leaderboard_entries(submission_id)
+            await submission_lib.archive_leaderboard_entries(submission_id)
             # remove submission from db
-            await submissions_lib.delete_submission(by_id=submission_id)
+            await submission_lib.delete_submission(by_id=submission_id)
             # zip & archive files
-            submissions_lib.archive_submission_files(submission_id)
+            submission_lib.archive_submission_files(submission_id)
 
             out.cli.info(f"Successfully archived: {submission_id}")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
+        # todo recheck this
 
         if args.type == 'by_id':
             asyncio.run(self.archive_submission(args.selector))

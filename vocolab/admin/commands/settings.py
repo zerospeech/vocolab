@@ -5,7 +5,7 @@ from rich import inspect
 from rich.markdown import Markdown
 
 from vocolab import get_settings, out
-from vocolab.admin import cmd_lib
+from vocolab.core import cmd_lib
 
 _settings = get_settings()
 

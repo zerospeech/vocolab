@@ -10,21 +10,45 @@ from urllib.parse import urlparse
 from jinja2 import Environment, FileSystemLoader
 
 from vocolab import get_settings, out
-from vocolab.admin import cmd_lib
-from vocolab.db.base import create_db
+from vocolab.core import cmd_lib
+from vocolab.data import db
 
 _settings = get_settings()
 
 
 class APICMD(cmd_lib.CMD):
     """ Command for api instance administration """
-    
+
     def __init__(self, root, name, cmd_path):
         super(APICMD, self).__init__(root, name, cmd_path)
 
     def run(self, argv):
         _ = self.parser.parse_args(argv)
         self.parser.print_help()
+
+
+class APILockCMD(cmd_lib.CMD):
+    """ Command to check API Lock status """
+
+    def __init__(self, root, name, cmd_path):
+        super(APILockCMD, self).__init__(root, name, cmd_path)
+        self.parser.add_argument(
+            "action", choices=['lock', 'unlock', 'status'], default='status',
+            nargs="?", help="Action to perform (default status)"
+        )
+
+    def run(self, argv):
+        args = self.parser.parse_args(argv)
+
+        if args.action == "lock":
+            _settings.data_lock.touch()
+        elif args.action == "unlock":
+            _settings.data_lock.unlink()
+        else:
+            if _settings.is_locked():
+                out.cli.print(f"API is locked")
+            else:
+                out.cli.print(f"API is not locked")
 
 
 class RunAPICMD(cmd_lib.CMD):
@@ -99,11 +123,11 @@ class ProdAPICMD(cmd_lib.CMD):
             exec_args.extend(['zerospeech.api:app', '--reload', '--debug', '--no-access-log'])
 
         execv(executable, exec_args)
-        
-        
+
+
 class APInitEnvironmentCMD(cmd_lib.CMD):
     """ Initialise components needed for the API """
-    
+
     def __init__(self, root, name, cmd_path):
         super(APInitEnvironmentCMD, self).__init__(root, name, cmd_path)
 
@@ -121,7 +145,7 @@ class APInitEnvironmentCMD(cmd_lib.CMD):
         _settings.static_files_directory.mkdir(exist_ok=True, parents=True)
         # create tables
         out.cli.info(f"creating : tables in database ...")
-        create_db()
+        db.build_database_from_schema()
 
 
 class ConfigFiles(cmd_lib.CMD):
@@ -137,11 +161,11 @@ class ConfigFiles(cmd_lib.CMD):
 
 class GunicornConfigGeneration(cmd_lib.CMD):
     """ Generate a template gunicorn config file """
-    
+
     def __init__(self, root, name, cmd_path):
         super(GunicornConfigGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir))\
+        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir)) \
             .get_template("gunicorn_app.wsgi")
 
     def run(self, argv):
@@ -169,7 +193,7 @@ class SystemDSocketFileGeneration(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(SystemDSocketFileGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir))\
+        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir)) \
             .get_template("gunicorn.socket")
 
     def run(self, argv):
@@ -201,7 +225,7 @@ class SystemDUnitGeneration(cmd_lib.CMD):
         super(SystemDUnitGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
         self.parser.add_argument('gunicorn_config_file', type=str, help="File to configure gunicorn with")
-        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir), trim_blocks=True)\
+        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir), trim_blocks=True) \
             .get_template("api.service")
 
     def run(self, argv):
@@ -238,12 +262,12 @@ class NginxConfigGeneration(cmd_lib.CMD):
     def __init__(self, root, name, cmd_path):
         super(NginxConfigGeneration, self).__init__(root, name, cmd_path)
         self.parser.add_argument('-o', '--out-file', type=str, help="File to output result config")
-        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir), trim_blocks=True)\
+        self.template = Environment(loader=FileSystemLoader(_settings.config_template_dir), trim_blocks=True) \
             .get_template("nginx.conf")
 
     def run(self, argv):
         args = self.parser.parse_args(argv)
-        default_url = urlparse(_settings.API_BASE_URL)
+        default_url = urlparse(_settings.api_options.API_BASE_URL)
         data = dict(
             url=f"{default_url.netloc}{default_url.path}",
             bind_url=_settings.server_options.SERVER_BIND,

@@ -27,7 +27,6 @@ MANIFEST
 *.env
 !example.env
 !docker.env
-data/
 *.bin
 
 # custom shortcut files
